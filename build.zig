@@ -24,12 +24,12 @@ pub fn build(b: *std.Build) void {
     if (library) |l| {
         const lib = if (l == .static) b.addStaticLibrary(.{
             .name = "drivercon",
-            .root_source_file = b.path("src/root.zig"),
+            .root_source_file = b.path("src/library.zig"),
             .target = target,
             .optimize = optimize,
         }) else b.addSharedLibrary(.{
             .name = "drivercon",
-            .root_source_file = b.path("src/root.zig"),
+            .root_source_file = b.path("src/library.zig"),
             .target = target,
             .optimize = optimize,
         });
@@ -41,7 +41,7 @@ pub fn build(b: *std.Build) void {
         const serial = b.lazyDependency("serial", .{});
         const exe = b.addExecutable(.{
             .name = "drivercon",
-            .root_source_file = b.path("src/main.zig"),
+            .root_source_file = b.path("src/cli.zig"),
             .target = target,
             .optimize = optimize,
         });
@@ -73,7 +73,7 @@ pub fn build(b: *std.Build) void {
 
     if (library != null) {
         const lib_unit_tests = b.addTest(.{
-            .root_source_file = b.path("src/root.zig"),
+            .root_source_file = b.path("src/library.zig"),
             .target = target,
             .optimize = optimize,
         });
@@ -85,7 +85,7 @@ pub fn build(b: *std.Build) void {
     if (cli) {
         const serial = b.lazyDependency("serial", .{});
         const exe_unit_tests = b.addTest(.{
-            .root_source_file = b.path("src/main.zig"),
+            .root_source_file = b.path("src/cli.zig"),
             .target = target,
             .optimize = optimize,
         });
