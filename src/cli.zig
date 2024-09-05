@@ -1,8 +1,10 @@
 const builtin = @import("builtin");
 const std = @import("std");
 
+const args = @import("args");
 const drivercon = @import("drivercon");
 const serial = @import("serial");
+const command = @import("cli/command.zig");
 
 /// Enumerate and attempt driver connection through all potential USB serial
 /// devices. If a connection is successful, return the successfully connected
@@ -108,7 +110,26 @@ pub fn connect() !std.fs.File {
 }
 
 pub fn main() !void {
-    _ = try connect();
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
+    const options = args.parseWithVerbForCurrentProcess(
+        struct {
+            port: ?[]const u8 = null,
+            timeout: usize = 1000,
+
+            pub const shorthands = .{
+                .p = "port",
+                .t = "timeout",
+            };
+        },
+        union(enum) {
+            scan: command.scan,
+            ping: command.ping,
+        },
+        allocator,
+        .print,
+    ) catch return 1;
 }
 
 test {
