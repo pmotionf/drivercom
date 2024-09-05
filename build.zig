@@ -38,7 +38,14 @@ pub fn build(b: *std.Build) void {
     }
 
     if (cli) {
-        const serial = b.lazyDependency("serial", .{});
+        const serial = b.lazyDependency("serial", .{
+            .target = target,
+            .optimize = optimize,
+        });
+        const zig_args = b.lazyDependency("args", .{
+            .target = target,
+            .optimize = optimize,
+        });
         const exe = b.addExecutable(.{
             .name = "drivercon",
             .root_source_file = b.path("src/cli.zig"),
@@ -46,8 +53,10 @@ pub fn build(b: *std.Build) void {
             .optimize = optimize,
         });
         exe.root_module.addImport("drivercon", mod);
-        if (serial) |s|
-            exe.root_module.addImport("serial", s.module("serial"));
+        if (serial) |i|
+            exe.root_module.addImport("serial", i.module("serial"));
+        if (zig_args) |i|
+            exe.root_module.addImport("args", i.module("args"));
         b.installArtifact(exe);
 
         const run_cmd = b.addRunArtifact(exe);

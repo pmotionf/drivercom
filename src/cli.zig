@@ -89,7 +89,6 @@ pub fn connect() !std.fs.File {
         const response: *const drivercon.Message = @alignCast(
             std.mem.bytesAsValue(drivercon.Message, &buffer),
         );
-        std.debug.print("{any}\n", .{response});
         if (response.kind == .response and
             response.bcc == response.getBcc() and
             response.payload.u32[0] == random_connection_seed)

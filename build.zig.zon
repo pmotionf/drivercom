@@ -5,8 +5,13 @@
 
     .dependencies = .{
         .serial = .{
-            .url = "https://github.com/mochalins/serial/archive/ac51219.tar.gz",
-            .hash = "12207d1fef099fc736934e6204c54f5c9f9351560d11a0211e32c6b4c4f7d91d9ec5",
+            .url = "https://github.com/mochalins/serial/archive/a952d8b.tar.gz",
+            .hash = "12205e634eedafca1d9275bab13b0b549dbc8a941136e9ed14564ea4f65126dd88a0",
+            .lazy = true,
+        },
+        .args = .{
+            .url = "https://github.com/ikskuh/zig-args/archive/0abdd69.tar.gz",
+            .hash = "1220411a8c46d95bbf3b6e2059854bcb3c5159d428814099df5294232b9980517e9c",
             .lazy = true,
         },
     },
