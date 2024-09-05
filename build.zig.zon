@@ -1,0 +1,19 @@
+.{
+    .name = "drivercon",
+    .version = "0.0.1",
+    .minimum_zig_version = "0.14.0-dev.1392+37df6ba86",
+
+    .dependencies = .{
+        .serial = .{
+            .url = "https://github.com/mochalins/serial/archive/ac51219.tar.gz",
+            .hash = "12207d1fef099fc736934e6204c54f5c9f9351560d11a0211e32c6b4c4f7d91d9ec5",
+            .lazy = true,
+        },
+    },
+
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+    },
+}
