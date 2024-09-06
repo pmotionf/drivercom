@@ -10,6 +10,8 @@ pub var port: ?std.fs.File = null;
 pub var help: bool = false;
 pub var timeout: usize = 100;
 
+var ec = args.ErrorCollection.init(std.heap.page_allocator);
+
 pub const Options = struct {
     port: ?[]const u8 = null,
     /// Serial communication reponse timeout in milliseconds.
@@ -48,14 +50,32 @@ pub fn main() !void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
     const allocator = arena.allocator();
+
+    const stdout = std.io.getStdOut().writer();
+    const stderr = std.io.getStdErr().writer();
+    defer ec.deinit();
+
     const options = args.parseWithVerbForCurrentProcess(
         Options,
         Commands,
         allocator,
-        .print,
-    ) catch return;
-
-    const stdout = std.io.getStdOut().writer();
+        .{ .collect = &ec },
+    ) catch {
+        for (ec.errors()) |e| {
+            switch (e.kind) {
+                .unknown_verb => {
+                    try stderr.print("Unknown command {s}\n\n", .{e.option});
+                },
+                else => {
+                    try e.format("", .{}, stderr);
+                    try stderr.writeByteNTimes('\n', 2);
+                },
+            }
+            break;
+        }
+        try args.printHelp(Options, "drivercon", stdout);
+        return;
+    };
 
     var port_name: ?[]const u8 = null;
     inline for (std.meta.fields(@TypeOf(options.options))) |fld| {
