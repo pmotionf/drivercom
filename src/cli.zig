@@ -10,7 +10,7 @@ pub var port: ?std.fs.File = null;
 pub var help: bool = false;
 pub var timeout: usize = 100;
 
-const Options = struct {
+pub const Options = struct {
     port: ?[]const u8 = null,
     /// Serial communication reponse timeout in milliseconds.
     timeout: usize = 100,
@@ -23,7 +23,7 @@ const Options = struct {
     };
 
     pub const meta = .{
-        .full_text = "PMF Smart Driver connection utility",
+        .full_text = "PMF Smart Driver connection utility.",
         .usage_summary = "[--port] [--timeout] <command>",
 
         .option_docs = .{
@@ -34,17 +34,23 @@ const Options = struct {
     };
 };
 
+pub const Commands = union(enum) {
+    port: command.port,
+    @"port.detect": command.port.detect,
+    @"port.list": command.port.list,
+    @"port.ping": command.port.ping,
+    config: command.config,
+    @"config.get": command.config.get,
+    @"config.set": command.config.set,
+};
+
 pub fn main() !void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
     const allocator = arena.allocator();
     const options = args.parseWithVerbForCurrentProcess(
         Options,
-        union(enum) {
-            @"port.detect": command.port.detect,
-            @"port.list": command.port.list,
-            @"port.ping": command.port.ping,
-        },
+        Commands,
         allocator,
         .print,
     ) catch return;
