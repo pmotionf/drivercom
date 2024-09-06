@@ -64,6 +64,37 @@ pub fn main() !void {
         }
     }
 
+    if (port_name) |name| {
+        if (!help and options.verb != null) {
+            var port_iterator = try serial.list();
+            defer port_iterator.deinit();
+
+            while (try port_iterator.next()) |_port| {
+                if (comptime builtin.os.tag == .linux) {
+                    if (_port.display_name.len < "/dev/ttyUSBX".len) {
+                        continue;
+                    }
+                    if (!std.mem.eql(
+                        u8,
+                        "/dev/ttyUSB",
+                        _port.display_name[0.."/dev/ttyUSB".len],
+                    )) {
+                        continue;
+                    }
+                }
+                if (!std.mem.eql(u8, name, _port.display_name)) {
+                    continue;
+                }
+                port = try std.fs.cwd().openFile(_port.file_name, .{
+                    .mode = .read_write,
+                });
+                break;
+            } else {
+                std.log.err("No COM port found with name: {s}\n", .{name});
+            }
+        }
+    }
+
     if (options.verb) |verb| switch (verb) {
         inline else => |cmd| try cmd.execute(),
     } else {
