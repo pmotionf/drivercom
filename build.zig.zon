@@ -10,8 +10,8 @@
             .lazy = true,
         },
         .args = .{
-            .url = "https://github.com/mochalins/zig-args/archive/4961380.tar.gz",
-            .hash = "122039d7e5afb28fa190e7ccf5b09e3da17059c4af680b7017f20694140e8870d195",
+            .url = "https://github.com/mochalins/zig-args/archive/8aa1a57.tar.gz",
+            .hash = "122098c4dac1fe09c33ad4f0ffca362a3731096d5245e53b1c6b533867ce2582a7bd",
             .lazy = true,
         },
     },
