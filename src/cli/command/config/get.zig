@@ -1,7 +1,7 @@
 pub const id = @import("get/id.zig");
 
 const std = @import("std");
-const cli = @import("root");
+const cli = @import("../../../cli.zig");
 const args = @import("args");
 
 file: ?[]const u8 = null,

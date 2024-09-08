@@ -3,7 +3,7 @@ pub const list = @import("port/list.zig");
 pub const ping = @import("port/ping.zig");
 
 const std = @import("std");
-const cli = @import("root");
+const cli = @import("../../cli.zig");
 
 pub fn help() !void {
     const stdout = std.io.getStdOut().writer();

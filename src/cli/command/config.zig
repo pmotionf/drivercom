@@ -2,7 +2,7 @@ pub const get = @import("config/get.zig");
 pub const set = @import("config/set.zig");
 
 const std = @import("std");
-const cli = @import("root");
+const cli = @import("../../cli.zig");
 
 pub fn help() !void {
     const stdout = std.io.getStdOut().writer();
