@@ -14,6 +14,11 @@
             .hash = "122098c4dac1fe09c33ad4f0ffca362a3731096d5245e53b1c6b533867ce2582a7bd",
             .lazy = true,
         },
+        .yaml = .{
+            .url = "https://github.com/kubkon/zig-yaml/archive/a551d00.tar.gz",
+            .hash = "12208398e1393f83a39d03f3ef4893607650b6227dc7f1eee3db4d163fbc2c0c37ca",
+            .lazy = true,
+        },
     },
 
     .paths = .{

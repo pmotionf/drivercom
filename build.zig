@@ -71,6 +71,7 @@ pub fn build(b: *std.Build) void {
         var imports = [_]Import{
             .{ .name = "serial" },
             .{ .name = "args" },
+            .{ .name = "yaml" },
         };
         for (&imports) |*import| {
             import.dependency = b.lazyDependency(
@@ -105,7 +106,7 @@ pub fn build(b: *std.Build) void {
                 run_cmd.addArgs(args);
             }
 
-            const run_step = b.step("run", "Run the app");
+            const run_step = b.step("run", "Run the CLI utility");
             run_step.dependOn(&run_cmd.step);
         }
 

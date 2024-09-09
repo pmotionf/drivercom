@@ -7,17 +7,18 @@ id: u16,
 station_id: u16,
 
 flags: packed struct(u16) {
-    home_sensor: bool,
+    home_sensor: u1,
     has_neighbor: packed struct(u2) {
-        backward: bool,
-        forward: bool,
+        backward: u1,
+        forward: u1,
     },
     uses_axis: packed struct(u2) {
-        axis2: bool,
-        axis3: bool,
+        axis2: u1,
+        axis3: u1,
     },
-    calibration_completed: bool,
-    rockwell_magnet: bool,
+    calibration_completed: u1,
+    rockwell_magnet: u1,
+    _7: u9 = 0,
 },
 
 magnet: struct {
