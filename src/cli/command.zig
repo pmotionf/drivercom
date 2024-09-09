@@ -6,9 +6,9 @@ const drivercon = @import("drivercon");
 const serial = @import("serial");
 const cli = @import("../cli.zig");
 
-pub fn sendMessage(p: std.fs.File, msg: *const drivercon.Message) !void {
-    const writer = p.writer();
-    const reader = p.reader();
+pub fn sendMessage(port_: std.fs.File, msg: *const drivercon.Message) !void {
+    const writer = port_.writer();
+    const reader = port_.reader();
 
     var retry: usize = 0;
     while (retry < cli.retry) {
@@ -21,12 +21,12 @@ pub fn sendMessage(p: std.fs.File, msg: *const drivercon.Message) !void {
                 rsp.sequence != msg.sequence or
                 rsp.bcc != rsp.getBcc())
             {
-                try serial.flushSerialPort(p, true, true);
+                try serial.flushSerialPort(port_, true, true);
                 continue;
             }
             break;
         } else {
-            std.log.err("driver response timed out", .{});
+            std.log.err("driver response timed out: {}", .{msg.kind});
             retry += 1;
         }
         break;
@@ -36,19 +36,19 @@ pub fn sendMessage(p: std.fs.File, msg: *const drivercon.Message) !void {
     }
 }
 
-pub fn readMessage(p: std.fs.File) !drivercon.Message {
-    const reader = p.reader();
-    const writer = p.writer();
+pub fn readMessage(port_: std.fs.File) !drivercon.Message {
+    const reader = port_.reader();
+    const writer = port_.writer();
     while (true) {
         const req = try reader.readStruct(drivercon.Message);
         if (req.getBcc() == req.bcc) {
             var rsp = req;
             rsp.kind = .response;
-            rsp.setBcc();
+            rsp.bcc = rsp.getBcc();
             try writer.writeAll(std.mem.asBytes(&rsp));
             return req;
         } else {
-            try serial.flushSerialPort(p, true, false);
+            try serial.flushSerialPort(port_, true, false);
         }
     }
 }

@@ -66,15 +66,8 @@ pub fn execute(_: @This()) !void {
 
         var connection_made: bool = false;
 
-        var init_message: drivercon.Message = .{
-            .kind = .ping,
-            .sequence = 0,
-            .payload = .{ .u32 = .{ random_connection_seed, 0 } },
-            .cycle = 0,
-            .bcc = undefined,
-        };
-        init_message.setBcc();
-        writer.writeAll(std.mem.asBytes(&init_message)) catch {
+        const msg = drivercon.Message.init(.ping, 0, random_connection_seed);
+        writer.writeAll(std.mem.asBytes(&msg)) catch {
             continue;
         };
 
@@ -90,7 +83,7 @@ pub fn execute(_: @This()) !void {
         );
         if (response.kind == .response and
             response.bcc == response.getBcc() and
-            response.payload.u32[0] == random_connection_seed)
+            response.payload(.ping) == random_connection_seed)
         {
             connection_made = true;
         }

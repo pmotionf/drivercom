@@ -26,25 +26,22 @@ pub fn execute(_: @This()) !void {
         try help();
         return;
     }
-    if (cli.port == null) {
+    const port = cli.port orelse {
         std.log.err("COM port must be provided", .{});
         return;
-    }
-
-    var msg: drivercon.Message = .{
-        .kind = .get_id_station,
     };
-    msg.setBcc();
 
+    const msg = drivercon.Message.init(.get_id_station, 0, {});
     while (true) {
-        try command.sendMessage(cli.port.?, &msg);
-        const req = try command.readMessage(cli.port.?);
+        try command.sendMessage(port, &msg);
+        const req = try command.readMessage(port);
         if (req.kind == .set_id_station and req.sequence == 1) {
-            const stdout = std.io.getStdOut().writer();
+            const payload = req.payload(.set_id_station);
 
+            const stdout = std.io.getStdOut().writer();
             try stdout.print(
                 "Driver ID: {}\nCC-Link Station ID: {}\n",
-                .{ req.payload.u16[0], req.payload.u16[1] },
+                .{ payload.id, payload.station },
             );
             break;
         }

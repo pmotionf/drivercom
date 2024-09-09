@@ -25,10 +25,10 @@ pub fn execute(_: @This()) !void {
         try help();
         return;
     }
-    if (cli.port == null) {
+    const port = cli.port orelse {
         std.log.err("COM port must be provided", .{});
         return;
-    }
+    };
 
     if (cli.positionals.len != 2) {
         std.log.err("Driver ID and CC-Link Station ID must be provided", .{});
@@ -38,19 +38,13 @@ pub fn execute(_: @This()) !void {
     const driver_id = try std.fmt.parseUnsigned(u16, cli.positionals[0], 10);
     const station_id = try std.fmt.parseUnsigned(u16, cli.positionals[1], 10);
 
-    var msg: drivercon.Message = .{
-        .kind = .set_id_station,
-        .payload = .{ .u16 = .{ driver_id, station_id, 0, 0 } },
-    };
-    msg.setBcc();
+    var msg = drivercon.Message.init(
+        .set_id_station,
+        0,
+        .{ .id = driver_id, .station = station_id },
+    );
+    try command.sendMessage(port, &msg);
 
-    try command.sendMessage(cli.port.?, &msg);
-
-    msg = .{
-        .kind = .save_config,
-        .sequence = 1,
-    };
-    msg.setBcc();
-
-    try command.sendMessage(cli.port.?, &msg);
+    msg = drivercon.Message.init(.save_config, 1, {});
+    try command.sendMessage(port, &msg);
 }

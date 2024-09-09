@@ -1,25 +1,14 @@
 //! This module represents a PMF Smart Driver's configuration.
 
+pub const MAX_AXES = 3;
+
 /// Driver ID.
 id: u16,
 
 /// Driver's CC-Link Station ID.
 station_id: u16,
 
-flags: packed struct(u16) {
-    home_sensor: u1,
-    has_neighbor: packed struct(u2) {
-        backward: u1,
-        forward: u1,
-    },
-    uses_axis: packed struct(u2) {
-        axis2: u1,
-        axis3: u1,
-    },
-    calibration_completed: u1,
-    rockwell_magnet: u1,
-    _7: u9 = 0,
-},
+flags: SystemFlags,
 
 magnet: struct {
     /// Magnet pole pair pitch in meters.
@@ -39,11 +28,11 @@ motor_length: f32,
 
 calibrated_home_position: f32,
 
-system_axes: u32,
+total_axes: u32,
 
 warmup_voltage_reference: f32,
 
-calibrated_magnet_length: struct {
+calibration_magnet_length: struct {
     backward: f32,
     forward: f32,
 },
@@ -96,8 +85,22 @@ pub const Axis = struct {
 };
 
 pub const HallSensor = struct {
-    magnet_length: struct {
+    calibrated_magnet_length: struct {
         backward: f32,
         forward: f32,
     },
+};
+
+pub const SystemFlags = packed struct {
+    home_sensor: u1,
+    has_neighbor: packed struct(u2) {
+        backward: u1,
+        forward: u1,
+    },
+    uses_axis: packed struct(u2) {
+        axis2: u1,
+        axis3: u1,
+    },
+    calibration_completed: u1,
+    rockwell_magnet: u1,
 };

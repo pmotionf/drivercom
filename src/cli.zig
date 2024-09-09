@@ -121,6 +121,7 @@ pub fn main() !void {
                 port = try std.fs.cwd().openFile(_port.file_name, .{
                     .mode = .read_write,
                 });
+                serial.flushSerialPort(port.?, true, true) catch {};
                 break;
             } else {
                 std.log.err("No COM port found with name: {s}\n", .{name});
