@@ -9,6 +9,8 @@ const command = @import("cli/command.zig");
 pub var port: ?std.fs.File = null;
 pub var help: bool = false;
 pub var timeout: usize = 100;
+pub var retry: usize = 3;
+pub var positionals: [][]const u8 = &.{};
 
 var ec = args.ErrorCollection.init(std.heap.page_allocator);
 
@@ -17,21 +19,24 @@ pub const Options = struct {
     /// Serial communication reponse timeout in milliseconds.
     timeout: usize = 100,
     help: bool = false,
+    retry: usize = 3,
 
     pub const shorthands = .{
         .p = "port",
         .t = "timeout",
         .h = "help",
+        .r = "retry",
     };
 
     pub const meta = .{
         .full_text = "PMF Smart Driver connection utility.",
-        .usage_summary = "[--port] [--timeout] <command>",
+        .usage_summary = "[--port] [--timeout] [--retry] <command>",
 
         .option_docs = .{
             .help = "command usage guidance",
             .port = "COM port to use for driver connection",
             .timeout = "timeout for message response",
+            .retry = "number of message retries before failure",
         },
     };
 };
@@ -43,7 +48,9 @@ pub const Commands = union(enum) {
     @"port.ping": command.port.ping,
     config: command.config,
     @"config.get": command.config.get,
+    @"config.get.id": command.config.get.id,
     @"config.set": command.config.set,
+    @"config.set.id": command.config.set.id,
 };
 
 pub fn main() !void {
@@ -120,6 +127,15 @@ pub fn main() !void {
             }
         }
     }
+    defer {
+        if (port) |p| {
+            serial.flushSerialPort(p, true, true) catch {};
+            p.close();
+            port = null;
+        }
+    }
+
+    positionals = options.positionals;
 
     if (options.verb) |verb| switch (verb) {
         inline else => |cmd| try cmd.execute(),
