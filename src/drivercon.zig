@@ -1,5 +1,7 @@
 const std = @import("std");
 
+pub const Config = @import("Config.zig");
+
 pub const Message = extern struct {
     kind: Kind,
     sequence: u16 = 0,
