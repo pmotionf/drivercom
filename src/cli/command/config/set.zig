@@ -378,4 +378,8 @@ pub fn execute(self: @This()) !void {
         );
         try command.sendMessage(&msg);
     }
+
+    sequence += 1;
+    msg = drivercon.Message.init(.save_config, sequence, {});
+    try command.sendMessage(port, &msg);
 }
