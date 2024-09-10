@@ -51,6 +51,9 @@ pub const Commands = union(enum) {
     @"config.get.id": command.config.get.id,
     @"config.set": command.config.set,
     @"config.set.id": command.config.set.id,
+    @"config.set.gain.current": command.config.set.gain.current,
+    @"config.set.gain.velocity": command.config.set.gain.velocity,
+    @"config.set.gain.position": command.config.set.gain.position,
 };
 
 pub fn main() !void {

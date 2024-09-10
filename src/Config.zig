@@ -1,4 +1,6 @@
 //! This module represents a PMF Smart Driver's configuration.
+const std = @import("std");
+const drivercon = @import("drivercon.zig");
 
 pub const MAX_AXES = 3;
 
@@ -49,24 +51,43 @@ axes: [3]Axis,
 
 hall_sensors: [6]HallSensor,
 
+pub const CurrentGain = struct {
+    /// Current P-gain. By default, inductance * Wcc.
+    p: f32,
+    /// Current I-gain. By default, resistance * Wcc.
+    i: f32,
+    /// Wcc denominator. Wcc = 2pi * (15000 / denominator).
+    denominator: u32,
+};
+
+pub const VelocityGain = struct {
+    /// Speed P-gain. By default, inertia * Wsc / torque constant.
+    p: f32,
+    /// Speed I-gain. By default, Wpi * p.
+    i: f32,
+    /// Wsc denominator. Wsc = Wcc / denominator.
+    denominator: u32,
+    /// Wpi denominator. Wpi = Wsc / denominator_pi.
+    denominator_pi: u32,
+
+    // radius = magnet pole pair pitch / 2pi
+    // inertia = vehicle mass * radius * radius
+    // torque constant = radius * force constant
+};
+
+pub const PositionGain = struct {
+    /// Position P-gain. By default, Wpc.
+    p: f32,
+    /// Wpc denominator. Wpc = Wsc / denominator.
+    denominator: u32,
+};
+
 pub const Axis = struct {
     max_current: f32,
     continuous_current: f32,
-    current_gain: struct {
-        p: f32,
-        i: f32,
-        denominator: u32,
-    },
-    velocity_gain: struct {
-        p: f32,
-        i: f32,
-        denominator: u32,
-        denominator_pi: u32,
-    },
-    position_gain: struct {
-        p: f32,
-        denominator: u32,
-    },
+    current_gain: CurrentGain,
+    velocity_gain: VelocityGain,
+    position_gain: PositionGain,
     in_position_threshold: f32,
     base_position: f32,
     back_sensor_off: struct {
@@ -78,8 +99,11 @@ pub const Axis = struct {
         section_count: i16,
     },
 
+    /// Resistance.
     rs: f32,
+    /// Inductance.
     ls: f32,
+    /// Force constant.
     kf: f32,
     kbm: f32,
 };
@@ -104,3 +128,70 @@ pub const SystemFlags = packed struct {
     calibration_completed: u1,
     rockwell_magnet: u1,
 };
+
+pub fn calcCurrentGain(
+    self: *const @This(),
+    axis_index: usize,
+    denominator: u32,
+) CurrentGain {
+    std.debug.assert(axis_index < MAX_AXES);
+    const axis = self.axes[axis_index];
+
+    const wcc = drivercon.gain.current.wcc(denominator);
+    return .{
+        .denominator = denominator,
+        .p = @floatCast(
+            drivercon.gain.current.p(axis.ls, wcc),
+        ),
+        .i = @floatCast(
+            drivercon.gain.current.i(axis.rs, wcc),
+        ),
+    };
+}
+
+pub fn calcVelocityGain(
+    self: *const @This(),
+    axis_index: usize,
+    denominator: u32,
+    denominator_pi: u32,
+) VelocityGain {
+    std.debug.assert(axis_index < MAX_AXES);
+    const axis = self.axes[axis_index];
+
+    const wcc = drivercon.gain.current.wcc(axis.current_gain.denominator);
+    const radius = drivercon.gain.velocity.radius(self.magnet.pitch);
+    const inertia = drivercon.gain.velocity.inertia(self.vehicle_mass, radius);
+    const torque_constant =
+        drivercon.gain.velocity.torqueConstant(axis.kf, radius);
+    const wsc = drivercon.gain.velocity.wsc(denominator, wcc);
+    const wpi = drivercon.gain.velocity.wpi(denominator_pi, wsc);
+    const p = drivercon.gain.velocity.p(inertia, torque_constant, wsc);
+
+    return .{
+        .p = @floatCast(p),
+        .i = @floatCast(drivercon.gain.velocity.i(p, wpi)),
+        .denominator = denominator,
+        .denominator_pi = denominator_pi,
+    };
+}
+
+pub fn calcPositionGain(
+    self: *const @This(),
+    axis_index: usize,
+    denominator: u32,
+) PositionGain {
+    std.debug.assert(axis_index < MAX_AXES);
+    const axis = self.axes[axis_index];
+
+    const wcc = drivercon.gain.current.wcc(axis.current_gain.denominator);
+    const wsc =
+        drivercon.gain.velocity.wsc(axis.velocity_gain.denominator, wcc);
+
+    const wpc = drivercon.gain.position.wpc(denominator, wsc);
+    const p = drivercon.gain.position.p(wpc);
+
+    return .{
+        .p = @floatCast(p),
+        .denominator = denominator,
+    };
+}

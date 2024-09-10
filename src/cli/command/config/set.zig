@@ -1,4 +1,5 @@
 pub const id = @import("set/id.zig");
+pub const gain = @import("set/gain.zig");
 
 const std = @import("std");
 const cli = @import("../../../cli.zig");
@@ -15,7 +16,7 @@ pub const shorthands = .{
 
 pub const meta = .{
     .full_text = "Set PMF Smart Driver configuration.",
-    .usage_summary = "<--file>",
+    .usage_summary = "[--file]",
 
     .option_docs = .{
         .file = "set driver configuration from file",
