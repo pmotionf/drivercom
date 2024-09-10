@@ -172,13 +172,13 @@ pub const Message = extern struct {
         get_calibrated_magnet_length_backward: u16,
         set_calibrated_magnet_length_backward: extern struct {
             sensor: u16,
-            _: u16,
+            _: u16 = 0,
             length: f32,
         },
         get_calibrated_magnet_length_forward: u16,
         set_calibrated_magnet_length_forward: extern struct {
             sensor: u16,
-            _: u16,
+            _: u16 = 0,
             length: f32,
         },
         u8: [8]u8,

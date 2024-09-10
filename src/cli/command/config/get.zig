@@ -315,7 +315,9 @@ pub fn execute(self: @This()) !void {
             sequence += 1;
             try command.sendMessage(port, &msg);
             const req = try command.readMessage(port);
-            if (req.kind == .set_velocity_gain_p and req.sequence == sequence) {
+            if (req.kind == .set_velocity_gain_p and
+                req.sequence == sequence)
+            {
                 const payload = req.payload(.set_velocity_gain_p);
                 if (payload.axis != i) continue;
                 sequence += 1;
@@ -333,7 +335,9 @@ pub fn execute(self: @This()) !void {
             sequence += 1;
             try command.sendMessage(port, &msg);
             const req = try command.readMessage(port);
-            if (req.kind == .set_velocity_gain_i and req.sequence == sequence) {
+            if (req.kind == .set_velocity_gain_i and
+                req.sequence == sequence)
+            {
                 const payload = req.payload(.set_velocity_gain_i);
                 if (payload.axis != i) continue;
                 sequence += 1;
@@ -377,7 +381,8 @@ pub fn execute(self: @This()) !void {
                 const payload = req.payload(.set_velocity_gain_denominator_pi);
                 if (payload.axis != i) continue;
                 sequence += 1;
-                config.axes[i].velocity_gain.denominator_pi = payload.denominator;
+                config.axes[i].velocity_gain.denominator_pi =
+                    payload.denominator;
                 break;
             }
         }

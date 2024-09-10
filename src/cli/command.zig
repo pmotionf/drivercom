@@ -13,6 +13,10 @@ pub fn sendMessage(port_: std.fs.File, msg: *const drivercon.Message) !void {
     var retry: usize = 0;
     while (retry < cli.retry) {
         try writer.writeAll(std.mem.asBytes(msg));
+        std.log.debug("Wrote message {s}: {any}", .{
+            @tagName(msg.kind),
+            std.mem.asBytes(msg),
+        });
         var timer = try std.time.Timer.start();
         while (timer.read() < std.time.ns_per_us * cli.timeout) {
             var rsp = try reader.readStruct(drivercon.Message);
@@ -34,6 +38,7 @@ pub fn sendMessage(port_: std.fs.File, msg: *const drivercon.Message) !void {
         std.log.err("all retries failed", .{});
         return;
     }
+    std.log.debug("Received response for {s}", .{@tagName(msg.kind)});
 }
 
 pub fn readMessage(port_: std.fs.File) !drivercon.Message {

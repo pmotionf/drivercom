@@ -28,7 +28,7 @@ motor_length: f32,
 
 calibrated_home_position: f32,
 
-total_axes: u32,
+total_axes: u16,
 
 warmup_voltage_reference: f32,
 
