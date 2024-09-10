@@ -8,9 +8,14 @@ pub const Message = extern struct {
     _payload: extern union {
         response: void,
         ping: u32,
+        save_config: void,
+        firmware_version: extern struct {
+            major: u16 = 0,
+            minor: u16 = 0,
+            patch: u16 = 0,
+        },
         start_sequence: void,
         end_sequence: void,
-        save_config: void,
         get_id_station: void,
         set_id_station: extern struct {
             id: u16,
@@ -191,8 +196,9 @@ pub const Message = extern struct {
         response = 0x1,
         ping = 0x2,
         save_config = 0x3,
-        start_sequence = 0x4,
-        end_sequence = 0x5,
+        firmware_version = 0x4,
+        start_sequence = 0x5,
+        end_sequence = 0x6,
 
         get_id_station = 0x10,
         set_id_station = 0x11,

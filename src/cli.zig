@@ -42,6 +42,7 @@ pub const Options = struct {
 };
 
 pub const Commands = union(enum) {
+    firmware: command.firmware,
     port: command.port,
     @"port.detect": command.port.detect,
     @"port.list": command.port.list,

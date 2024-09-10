@@ -1,5 +1,6 @@
 pub const port = @import("command/port.zig");
 pub const config = @import("command/config.zig");
+pub const firmware = @import("command/firmware.zig");
 
 const std = @import("std");
 const drivercon = @import("drivercon");
