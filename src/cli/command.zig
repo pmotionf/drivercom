@@ -2,15 +2,24 @@ pub const port = @import("command/port.zig");
 pub const config = @import("command/config.zig");
 pub const firmware = @import("command/firmware.zig");
 
+const builtin = @import("builtin");
 const std = @import("std");
 const drivercon = @import("drivercon");
 const serial = @import("serial");
 const cli = @import("../cli.zig");
 
+const connection = switch (builtin.os.tag) {
+    .windows => @import("connection/windows.zig"),
+    else => void,
+};
+
 pub fn sendMessage(msg: *const drivercon.Message) !void {
     std.debug.assert(cli.port != null);
 
-    const writer = cli.port.?.writer();
+    const writer = if (comptime builtin.os.tag == .windows)
+        connection.pollableWriter(cli.port.?)
+    else
+        cli.port.?.writer();
 
     var retry: usize = 0;
     while (retry < cli.retry) {
@@ -21,11 +30,15 @@ pub fn sendMessage(msg: *const drivercon.Message) !void {
         });
 
         var timer = try std.time.Timer.start();
+        var readable: usize = 0;
         while (timer.read() < std.time.ns_per_ms * cli.timeout) {
             if (try cli.poller.pollTimeout(0)) {
-                if (cli.fifo.readableLength() < 16) {
+                const readable_length = cli.fifo.readableLength();
+                if (readable_length >= 16) break;
+                if (readable_length > readable) {
+                    readable = readable_length;
                     timer.reset();
-                } else break;
+                }
             }
         } else {
             std.log.err("driver response timed out: {}", .{msg.kind});
@@ -61,11 +74,15 @@ pub fn readMessage() !drivercon.Message {
     const writer = cli.port.?.writer();
 
     var timer = try std.time.Timer.start();
+    var readable: usize = 0;
     while (timer.read() < std.time.ns_per_ms * cli.timeout) {
         if (try cli.poller.pollTimeout(0)) {
-            if (cli.fifo.readableLength() < 16) {
+            const readable_length = cli.fifo.readableLength();
+            if (readable_length >= 16) break;
+            if (readable_length > readable) {
+                readable = readable_length;
                 timer.reset();
-            } else break;
+            }
         }
     } else {
         std.log.err("wait for driver message timed out", .{});

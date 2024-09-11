@@ -5,6 +5,11 @@ const drivercon = @import("drivercon");
 const serial = @import("serial");
 const cli = @import("../../../cli.zig");
 
+const connection = switch (builtin.os.tag) {
+    .windows => @import("../../connection/windows.zig"),
+    else => void,
+};
+
 pub fn execute(_: @This()) !void {
     if (cli.port != null) {
         std.log.err("`--port` should not be specified for `port.detect`", .{});
@@ -39,11 +44,16 @@ pub fn execute(_: @This()) !void {
         attempted_connections += 1;
 
         // Attempt connection.
-        var port = std.fs.cwd().openFile(_port.file_name, .{
-            .mode = .read_write,
-        }) catch {
-            continue;
-        };
+        var port = if (comptime builtin.os.tag == .windows)
+            connection.openPollableFile(std.fs.cwd(), _port.file_name) catch {
+                continue;
+            }
+        else
+            std.fs.cwd().openFile(_port.file_name, .{
+                .mode = .read_write,
+            }) catch {
+                continue;
+            };
         defer {
             serial.flushSerialPort(port, true, true) catch {};
             port.close();
@@ -67,7 +77,10 @@ pub fn execute(_: @This()) !void {
         defer poller.deinit();
         var fifo = poller.fifo(.f);
 
-        var writer = port.writer();
+        const writer = if (comptime builtin.os.tag == .windows)
+            connection.pollableWriter(port)
+        else
+            port.writer();
 
         var connection_made: bool = false;
 
@@ -77,11 +90,15 @@ pub fn execute(_: @This()) !void {
         };
 
         var timer = try std.time.Timer.start();
+        var readable: usize = 0;
         while (timer.read() < std.time.ns_per_ms * cli.timeout) {
             if (try poller.pollTimeout(0)) {
-                if (fifo.readableLength() < 16) {
+                const readable_length = fifo.readableLength();
+                if (readable_length >= 16) break;
+                if (readable_length > readable) {
+                    readable = readable_length;
                     timer.reset();
-                } else break;
+                }
             }
         } else {
             std.log.err("driver response timed out: {}", .{msg.kind});

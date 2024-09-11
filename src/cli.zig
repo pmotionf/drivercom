@@ -6,6 +6,11 @@ const drivercon = @import("drivercon");
 const serial = @import("serial");
 const command = @import("cli/command.zig");
 
+const connection = switch (builtin.os.tag) {
+    .windows => @import("cli/connection/windows.zig"),
+    else => void,
+};
+
 const StreamEnum = enum { f };
 
 pub var port: ?std.fs.File = null;
@@ -126,18 +131,23 @@ pub fn main() !void {
                 if (!std.mem.eql(u8, name, _port.display_name)) {
                     continue;
                 }
-                port = try std.fs.cwd().openFile(_port.file_name, .{
-                    .mode = .read_write,
-                });
-                serial.configureSerialPort(port.?, .{
+                port = if (comptime builtin.os.tag == .windows)
+                    try connection.openPollableFile(std.fs.cwd(), _port.file_name)
+                else
+                    try std.fs.cwd().openFile(_port.file_name, .{
+                        .mode = .read_write,
+                    });
+                errdefer {
+                    serial.flushSerialPort(port.?, true, true) catch {};
+                    port.?.close();
+                }
+                try serial.configureSerialPort(port.?, .{
                     .handshake = .none,
                     .baud_rate = 230400,
                     .parity = .none,
                     .word_size = .eight,
                     .stop_bits = .one,
-                }) catch {
-                    continue;
-                };
+                });
                 serial.flushSerialPort(port.?, true, true) catch {};
 
                 poller = std.io.poll(allocator, StreamEnum, .{ .f = port.? });
