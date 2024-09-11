@@ -26,14 +26,14 @@ pub fn execute(_: @This()) !void {
         try help();
         return;
     }
-    const port = cli.port orelse {
+    if (cli.port == null) {
         std.log.err("COM port must be provided", .{});
         return;
-    };
+    }
 
     const msg = drivercon.Message.init(.firmware_version, 0, .{});
-    try command.sendMessage(port, &msg);
-    const req = try command.readMessage(port);
+    try command.sendMessage(&msg);
+    const req = try command.readMessage();
     if (req.kind == .firmware_version and req.sequence == 1) {
         const payload = req.payload(.firmware_version);
 
@@ -44,6 +44,6 @@ pub fn execute(_: @This()) !void {
         );
     } else {
         std.log.err("received invalid response: {any}", .{req});
-        try serial.flushSerialPort(port, true, true);
+        return error.CommunicationFailure;
     }
 }

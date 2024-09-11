@@ -94,14 +94,14 @@ pub fn execute(self: @This()) !void {
     try file.seekTo(0);
     try yaml.stringify(allocator, config, file.writer());
 
-    if (cli.port) |port| {
+    if (cli.port) |_| {
         var sequence: u16 = 0;
         var msg = drivercon.Message.init(
             .set_velocity_gain_p,
             sequence,
             .{ .axis = axis_index, .p = axis.velocity_gain.p },
         );
-        try command.sendMessage(port, &msg);
+        try command.sendMessage(&msg);
 
         sequence += 1;
         msg = drivercon.Message.init(
@@ -109,7 +109,7 @@ pub fn execute(self: @This()) !void {
             sequence,
             .{ .axis = axis_index, .i = axis.velocity_gain.i },
         );
-        try command.sendMessage(port, &msg);
+        try command.sendMessage(&msg);
 
         sequence += 1;
         msg = drivercon.Message.init(
@@ -120,7 +120,7 @@ pub fn execute(self: @This()) !void {
                 .denominator = axis.velocity_gain.denominator,
             },
         );
-        try command.sendMessage(port, &msg);
+        try command.sendMessage(&msg);
 
         sequence += 1;
         msg = drivercon.Message.init(
@@ -131,7 +131,7 @@ pub fn execute(self: @This()) !void {
                 .denominator = axis.velocity_gain.denominator_pi,
             },
         );
-        try command.sendMessage(port, &msg);
+        try command.sendMessage(&msg);
 
         sequence += 1;
         msg = drivercon.Message.init(
@@ -139,7 +139,7 @@ pub fn execute(self: @This()) !void {
             sequence,
             .{ .axis = axis_index, .p = axis.position_gain.p },
         );
-        try command.sendMessage(port, &msg);
+        try command.sendMessage(&msg);
 
         sequence += 1;
         msg = drivercon.Message.init(
@@ -150,6 +150,6 @@ pub fn execute(self: @This()) !void {
                 .denominator = axis.position_gain.denominator,
             },
         );
-        try command.sendMessage(port, &msg);
+        try command.sendMessage(&msg);
     }
 }

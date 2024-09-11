@@ -36,75 +36,83 @@ pub fn execute(self: @This()) !void {
         try help();
         return;
     }
-    const port = cli.port orelse {
+    if (cli.port == null) {
         std.log.err("COM port must be provided", .{});
         return;
-    };
+    }
 
     const stdout = std.io.getStdOut().writer();
     var config: drivercon.Config = std.mem.zeroes(drivercon.Config);
 
     var sequence: u16 = 0;
 
-    while (true) {
+    {
         const msg = drivercon.Message.init(.get_id_station, sequence, {});
         sequence += 1;
-        try command.sendMessage(port, &msg);
-        const req = try command.readMessage(port);
+        try command.sendMessage(&msg);
+        const req = try command.readMessage();
         if (req.kind == .set_id_station and req.sequence == sequence) {
             sequence += 1;
             const payload = req.payload(.set_id_station);
             config.id = payload.id;
             config.station_id = payload.station;
-            break;
+        } else {
+            std.log.err("received invalid response: {any}", .{req});
+            return error.CommunicationFailure;
         }
     }
 
-    while (true) {
+    {
         const msg = drivercon.Message.init(.get_system_flags, sequence, {});
         sequence += 1;
-        try command.sendMessage(port, &msg);
-        const req = try command.readMessage(port);
+        try command.sendMessage(&msg);
+        const req = try command.readMessage();
         if (req.kind == .set_system_flags and req.sequence == sequence) {
             sequence += 1;
             const payload = req.payload(.set_system_flags);
             config.flags = payload.flags;
-            break;
+        } else {
+            std.log.err("received invalid response: {any}", .{req});
+            return error.CommunicationFailure;
         }
     }
 
-    while (true) {
+    {
         const msg = drivercon.Message.init(.get_magnet, sequence, {});
         sequence += 1;
-        try command.sendMessage(port, &msg);
-        const req = try command.readMessage(port);
+        try command.sendMessage(&msg);
+        const req = try command.readMessage();
         if (req.kind == .set_magnet and req.sequence == sequence) {
             sequence += 1;
             const payload = req.payload(.set_magnet);
             config.magnet.pitch = payload.pitch;
             config.magnet.length = payload.length;
-            break;
+        } else {
+            std.log.err("received invalid response: {any}", .{req});
+            return error.CommunicationFailure;
         }
     }
 
-    while (true) {
+    {
         const msg = drivercon.Message.init(.get_vehicle_mass, sequence, {});
         sequence += 1;
-        try command.sendMessage(port, &msg);
-        const req = try command.readMessage(port);
+        try command.sendMessage(&msg);
+        const req = try command.readMessage();
         if (req.kind == .set_vehicle_mass and req.sequence == sequence) {
             sequence += 1;
             const payload = req.payload(.set_vehicle_mass);
             config.vehicle_mass = payload;
-            break;
+        } else {
+            std.log.err("received invalid response: {any}", .{req});
+            return error.CommunicationFailure;
         }
     }
 
     while (true) {
         const msg = drivercon.Message.init(.get_angle_offset, sequence, {});
         sequence += 1;
-        try command.sendMessage(port, &msg);
-        const req = try command.readMessage(port);
+        try command.sendMessage(&msg);
+        const req = try command.readMessage();
         if (req.kind == .set_angle_offset and req.sequence == sequence) {
             sequence += 1;
             const payload = req.payload(.set_angle_offset);
@@ -116,8 +124,8 @@ pub fn execute(self: @This()) !void {
     while (true) {
         const msg = drivercon.Message.init(.get_axis_length, sequence, {});
         sequence += 1;
-        try command.sendMessage(port, &msg);
-        const req = try command.readMessage(port);
+        try command.sendMessage(&msg);
+        const req = try command.readMessage();
         if (req.kind == .set_axis_length and req.sequence == sequence) {
             sequence += 1;
             const payload = req.payload(.set_axis_length);
@@ -130,8 +138,8 @@ pub fn execute(self: @This()) !void {
     while (true) {
         const msg = drivercon.Message.init(.get_calibrated_home, sequence, {});
         sequence += 1;
-        try command.sendMessage(port, &msg);
-        const req = try command.readMessage(port);
+        try command.sendMessage(&msg);
+        const req = try command.readMessage();
         if (req.kind == .set_calibrated_home and req.sequence == sequence) {
             sequence += 1;
             const payload = req.payload(.set_calibrated_home);
@@ -143,8 +151,8 @@ pub fn execute(self: @This()) !void {
     while (true) {
         const msg = drivercon.Message.init(.get_total_axes, sequence, {});
         sequence += 1;
-        try command.sendMessage(port, &msg);
-        const req = try command.readMessage(port);
+        try command.sendMessage(&msg);
+        const req = try command.readMessage();
         if (req.kind == .set_total_axes and req.sequence == sequence) {
             sequence += 1;
             const payload = req.payload(.set_total_axes);
@@ -156,8 +164,8 @@ pub fn execute(self: @This()) !void {
     while (true) {
         const msg = drivercon.Message.init(.get_warmup_voltage, sequence, {});
         sequence += 1;
-        try command.sendMessage(port, &msg);
-        const req = try command.readMessage(port);
+        try command.sendMessage(&msg);
+        const req = try command.readMessage();
         if (req.kind == .set_warmup_voltage and req.sequence == sequence) {
             sequence += 1;
             const payload = req.payload(.set_warmup_voltage);
@@ -173,8 +181,8 @@ pub fn execute(self: @This()) !void {
             {},
         );
         sequence += 1;
-        try command.sendMessage(port, &msg);
-        const req = try command.readMessage(port);
+        try command.sendMessage(&msg);
+        const req = try command.readMessage();
         if (req.kind == .set_calibration_magnet_length and
             req.sequence == sequence)
         {
@@ -189,8 +197,8 @@ pub fn execute(self: @This()) !void {
     while (true) {
         const msg = drivercon.Message.init(.get_voltage_target, sequence, {});
         sequence += 1;
-        try command.sendMessage(port, &msg);
-        const req = try command.readMessage(port);
+        try command.sendMessage(&msg);
+        const req = try command.readMessage();
         if (req.kind == .set_voltage_target and req.sequence == sequence) {
             sequence += 1;
             const payload = req.payload(.set_voltage_target);
@@ -202,8 +210,8 @@ pub fn execute(self: @This()) !void {
     while (true) {
         const msg = drivercon.Message.init(.get_voltage_limits, sequence, {});
         sequence += 1;
-        try command.sendMessage(port, &msg);
-        const req = try command.readMessage(port);
+        try command.sendMessage(&msg);
+        const req = try command.readMessage();
         if (req.kind == .set_voltage_limits and req.sequence == sequence) {
             sequence += 1;
             const payload = req.payload(.set_voltage_limits);
@@ -219,8 +227,8 @@ pub fn execute(self: @This()) !void {
         while (true) {
             const msg = drivercon.Message.init(.get_max_current, sequence, i);
             sequence += 1;
-            try command.sendMessage(port, &msg);
-            const req = try command.readMessage(port);
+            try command.sendMessage(&msg);
+            const req = try command.readMessage();
             if (req.kind == .set_max_current and req.sequence == sequence) {
                 const payload = req.payload(.set_max_current);
                 if (payload.axis != i) continue;
@@ -237,8 +245,8 @@ pub fn execute(self: @This()) !void {
                 i,
             );
             sequence += 1;
-            try command.sendMessage(port, &msg);
-            const req = try command.readMessage(port);
+            try command.sendMessage(&msg);
+            const req = try command.readMessage();
             if (req.kind == .set_continuous_current and
                 req.sequence == sequence)
             {
@@ -257,8 +265,8 @@ pub fn execute(self: @This()) !void {
                 i,
             );
             sequence += 1;
-            try command.sendMessage(port, &msg);
-            const req = try command.readMessage(port);
+            try command.sendMessage(&msg);
+            const req = try command.readMessage();
             if (req.kind == .set_current_gain_p and req.sequence == sequence) {
                 const payload = req.payload(.set_current_gain_p);
                 if (payload.axis != i) continue;
@@ -275,8 +283,8 @@ pub fn execute(self: @This()) !void {
                 i,
             );
             sequence += 1;
-            try command.sendMessage(port, &msg);
-            const req = try command.readMessage(port);
+            try command.sendMessage(&msg);
+            const req = try command.readMessage();
             if (req.kind == .set_current_gain_i and req.sequence == sequence) {
                 const payload = req.payload(.set_current_gain_i);
                 if (payload.axis != i) continue;
@@ -293,8 +301,8 @@ pub fn execute(self: @This()) !void {
                 i,
             );
             sequence += 1;
-            try command.sendMessage(port, &msg);
-            const req = try command.readMessage(port);
+            try command.sendMessage(&msg);
+            const req = try command.readMessage();
             if (req.kind == .set_current_gain_denominator and
                 req.sequence == sequence)
             {
@@ -313,8 +321,8 @@ pub fn execute(self: @This()) !void {
                 i,
             );
             sequence += 1;
-            try command.sendMessage(port, &msg);
-            const req = try command.readMessage(port);
+            try command.sendMessage(&msg);
+            const req = try command.readMessage();
             if (req.kind == .set_velocity_gain_p and
                 req.sequence == sequence)
             {
@@ -333,8 +341,8 @@ pub fn execute(self: @This()) !void {
                 i,
             );
             sequence += 1;
-            try command.sendMessage(port, &msg);
-            const req = try command.readMessage(port);
+            try command.sendMessage(&msg);
+            const req = try command.readMessage();
             if (req.kind == .set_velocity_gain_i and
                 req.sequence == sequence)
             {
@@ -353,8 +361,8 @@ pub fn execute(self: @This()) !void {
                 i,
             );
             sequence += 1;
-            try command.sendMessage(port, &msg);
-            const req = try command.readMessage(port);
+            try command.sendMessage(&msg);
+            const req = try command.readMessage();
             if (req.kind == .set_velocity_gain_denominator and
                 req.sequence == sequence)
             {
@@ -373,8 +381,8 @@ pub fn execute(self: @This()) !void {
                 i,
             );
             sequence += 1;
-            try command.sendMessage(port, &msg);
-            const req = try command.readMessage(port);
+            try command.sendMessage(&msg);
+            const req = try command.readMessage();
             if (req.kind == .set_velocity_gain_denominator_pi and
                 req.sequence == sequence)
             {
@@ -394,8 +402,8 @@ pub fn execute(self: @This()) !void {
                 i,
             );
             sequence += 1;
-            try command.sendMessage(port, &msg);
-            const req = try command.readMessage(port);
+            try command.sendMessage(&msg);
+            const req = try command.readMessage();
             if (req.kind == .set_position_gain_p and
                 req.sequence == sequence)
             {
@@ -414,8 +422,8 @@ pub fn execute(self: @This()) !void {
                 i,
             );
             sequence += 1;
-            try command.sendMessage(port, &msg);
-            const req = try command.readMessage(port);
+            try command.sendMessage(&msg);
+            const req = try command.readMessage();
             if (req.kind == .set_position_gain_denominator and
                 req.sequence == sequence)
             {
@@ -434,8 +442,8 @@ pub fn execute(self: @This()) !void {
                 i,
             );
             sequence += 1;
-            try command.sendMessage(port, &msg);
-            const req = try command.readMessage(port);
+            try command.sendMessage(&msg);
+            const req = try command.readMessage();
             if (req.kind == .set_in_position_threshold and
                 req.sequence == sequence)
             {
@@ -454,8 +462,8 @@ pub fn execute(self: @This()) !void {
                 i,
             );
             sequence += 1;
-            try command.sendMessage(port, &msg);
-            const req = try command.readMessage(port);
+            try command.sendMessage(&msg);
+            const req = try command.readMessage();
             if (req.kind == .set_base_position and req.sequence == sequence) {
                 const payload = req.payload(.set_base_position);
                 if (payload.axis != i) continue;
@@ -472,8 +480,8 @@ pub fn execute(self: @This()) !void {
                 i,
             );
             sequence += 1;
-            try command.sendMessage(port, &msg);
-            const req = try command.readMessage(port);
+            try command.sendMessage(&msg);
+            const req = try command.readMessage();
             if (req.kind == .set_back_sensor_off and
                 req.sequence == sequence)
             {
@@ -494,8 +502,8 @@ pub fn execute(self: @This()) !void {
                 i,
             );
             sequence += 1;
-            try command.sendMessage(port, &msg);
-            const req = try command.readMessage(port);
+            try command.sendMessage(&msg);
+            const req = try command.readMessage();
             if (req.kind == .set_front_sensor_off and
                 req.sequence == sequence)
             {
@@ -512,8 +520,8 @@ pub fn execute(self: @This()) !void {
         while (true) {
             const msg = drivercon.Message.init(.get_rs, sequence, i);
             sequence += 1;
-            try command.sendMessage(port, &msg);
-            const req = try command.readMessage(port);
+            try command.sendMessage(&msg);
+            const req = try command.readMessage();
             if (req.kind == .set_rs and req.sequence == sequence) {
                 const payload = req.payload(.set_rs);
                 if (payload.axis != i) continue;
@@ -526,8 +534,8 @@ pub fn execute(self: @This()) !void {
         while (true) {
             const msg = drivercon.Message.init(.get_ls, sequence, i);
             sequence += 1;
-            try command.sendMessage(port, &msg);
-            const req = try command.readMessage(port);
+            try command.sendMessage(&msg);
+            const req = try command.readMessage();
             if (req.kind == .set_ls and req.sequence == sequence) {
                 const payload = req.payload(.set_ls);
                 if (payload.axis != i) continue;
@@ -540,8 +548,8 @@ pub fn execute(self: @This()) !void {
         while (true) {
             const msg = drivercon.Message.init(.get_kf, sequence, i);
             sequence += 1;
-            try command.sendMessage(port, &msg);
-            const req = try command.readMessage(port);
+            try command.sendMessage(&msg);
+            const req = try command.readMessage();
             if (req.kind == .set_kf and req.sequence == sequence) {
                 const payload = req.payload(.set_kf);
                 if (payload.axis != i) continue;
@@ -554,8 +562,8 @@ pub fn execute(self: @This()) !void {
         while (true) {
             const msg = drivercon.Message.init(.get_kbm, sequence, i);
             sequence += 1;
-            try command.sendMessage(port, &msg);
-            const req = try command.readMessage(port);
+            try command.sendMessage(&msg);
+            const req = try command.readMessage();
             if (req.kind == .set_kbm and req.sequence == sequence) {
                 const payload = req.payload(.set_kbm);
                 if (payload.axis != i) continue;
@@ -576,8 +584,8 @@ pub fn execute(self: @This()) !void {
                 i,
             );
             sequence += 1;
-            try command.sendMessage(port, &msg);
-            const req = try command.readMessage(port);
+            try command.sendMessage(&msg);
+            const req = try command.readMessage();
             if (req.kind == .set_calibrated_magnet_length_backward and
                 req.sequence == sequence)
             {
@@ -599,8 +607,8 @@ pub fn execute(self: @This()) !void {
                 i,
             );
             sequence += 1;
-            try command.sendMessage(port, &msg);
-            const req = try command.readMessage(port);
+            try command.sendMessage(&msg);
+            const req = try command.readMessage();
             if (req.kind == .set_calibrated_magnet_length_forward and
                 req.sequence == sequence)
             {

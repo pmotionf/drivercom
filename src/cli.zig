@@ -6,7 +6,11 @@ const drivercon = @import("drivercon");
 const serial = @import("serial");
 const command = @import("cli/command.zig");
 
+const StreamEnum = enum { f };
+
 pub var port: ?std.fs.File = null;
+pub var poller: std.io.Poller(StreamEnum) = undefined;
+pub var fifo: *std.io.PollFifo = undefined;
 pub var help: bool = false;
 pub var timeout: usize = 100;
 pub var retry: usize = 3;
@@ -126,6 +130,8 @@ pub fn main() !void {
                     .mode = .read_write,
                 });
                 serial.flushSerialPort(port.?, true, true) catch {};
+                poller = std.io.poll(allocator, StreamEnum, .{ .f = port.? });
+                fifo = poller.fifo(.f);
                 break;
             } else {
                 std.log.err("No COM port found with name: {s}\n", .{name});
@@ -134,6 +140,7 @@ pub fn main() !void {
     }
     defer {
         if (port) |p| {
+            poller.deinit();
             serial.flushSerialPort(p, true, true) catch {};
             p.close();
             port = null;

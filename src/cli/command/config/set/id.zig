@@ -71,15 +71,15 @@ pub fn execute(self: @This()) !void {
         try yaml.stringify(allocator, config, file.writer());
     }
 
-    if (cli.port) |port| {
+    if (cli.port) |_| {
         var msg = drivercon.Message.init(
             .set_id_station,
             0,
             .{ .id = driver_id, .station = station_id },
         );
-        try command.sendMessage(port, &msg);
+        try command.sendMessage(&msg);
 
         msg = drivercon.Message.init(.save_config, 1, {});
-        try command.sendMessage(port, &msg);
+        try command.sendMessage(&msg);
     }
 }

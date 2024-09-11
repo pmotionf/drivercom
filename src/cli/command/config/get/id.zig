@@ -26,15 +26,15 @@ pub fn execute(_: @This()) !void {
         try help();
         return;
     }
-    const port = cli.port orelse {
+    if (cli.port == null) {
         std.log.err("COM port must be provided", .{});
         return;
-    };
+    }
 
     const msg = drivercon.Message.init(.get_id_station, 0, {});
     while (true) {
-        try command.sendMessage(port, &msg);
-        const req = try command.readMessage(port);
+        try command.sendMessage(&msg);
+        const req = try command.readMessage();
         if (req.kind == .set_id_station and req.sequence == 1) {
             const payload = req.payload(.set_id_station);
 
