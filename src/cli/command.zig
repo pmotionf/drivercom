@@ -22,10 +22,10 @@ pub fn sendMessage(msg: *const drivercon.Message) !void {
 
         var timer = try std.time.Timer.start();
         while (timer.read() < std.time.ns_per_ms * cli.timeout) {
-            if (try cli.poller.pollTimeout(0) and
-                cli.fifo.readableLength() >= 16)
-            {
-                break;
+            if (try cli.poller.pollTimeout(0)) {
+                if (cli.fifo.readableLength() < 16) {
+                    timer.reset();
+                } else break;
             }
         } else {
             std.log.err("driver response timed out: {}", .{msg.kind});
@@ -62,10 +62,10 @@ pub fn readMessage() !drivercon.Message {
 
     var timer = try std.time.Timer.start();
     while (timer.read() < std.time.ns_per_ms * cli.timeout) {
-        if (try cli.poller.pollTimeout(0) and
-            cli.fifo.readableLength() >= 16)
-        {
-            break;
+        if (try cli.poller.pollTimeout(0)) {
+            if (cli.fifo.readableLength() < 16) {
+                timer.reset();
+            } else break;
         }
     } else {
         std.log.err("wait for driver message timed out", .{});
