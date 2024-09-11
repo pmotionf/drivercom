@@ -58,11 +58,16 @@ pub fn execute(_: @This()) !void {
         }) catch {
             continue;
         };
-
         serial.flushSerialPort(port, true, true) catch {};
 
+        var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+        defer arena.deinit();
+        const allocator = arena.allocator();
+        var poller = std.io.poll(allocator, enum { f }, .{ .f = port });
+        defer poller.deinit();
+        var fifo = poller.fifo(.f);
+
         var writer = port.writer();
-        var reader = port.reader();
 
         var connection_made: bool = false;
 
@@ -71,19 +76,26 @@ pub fn execute(_: @This()) !void {
             continue;
         };
 
-        var buffer: [16]u8 = undefined;
-        const read_size = reader.readAll(&buffer) catch {
-            continue;
-        };
-        if (read_size != 16) {
+        var timer = try std.time.Timer.start();
+        while (timer.read() < std.time.ns_per_ms * cli.timeout) {
+            if (try poller.pollTimeout(0)) {
+                if (fifo.readableLength() < 16) {
+                    timer.reset();
+                } else break;
+            }
+        } else {
+            std.log.err("driver response timed out: {}", .{msg.kind});
+            try serial.flushSerialPort(port, true, true);
             continue;
         }
-        const response: *const drivercon.Message = @alignCast(
-            std.mem.bytesAsValue(drivercon.Message, &buffer),
-        );
-        if (response.kind == .response and
-            response.bcc == response.getBcc() and
-            response.payload(.ping) == random_connection_seed)
+
+        var rsp: drivercon.Message = undefined;
+        const read_size = fifo.read(std.mem.asBytes(&rsp));
+        std.debug.assert(read_size == 16);
+
+        if (rsp.kind == .response and
+            rsp.bcc == rsp.getBcc() and
+            rsp.payload(.ping) == random_connection_seed)
         {
             connection_made = true;
         }

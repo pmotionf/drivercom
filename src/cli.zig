@@ -129,7 +129,17 @@ pub fn main() !void {
                 port = try std.fs.cwd().openFile(_port.file_name, .{
                     .mode = .read_write,
                 });
+                serial.configureSerialPort(port.?, .{
+                    .handshake = .none,
+                    .baud_rate = 230400,
+                    .parity = .none,
+                    .word_size = .eight,
+                    .stop_bits = .one,
+                }) catch {
+                    continue;
+                };
                 serial.flushSerialPort(port.?, true, true) catch {};
+
                 poller = std.io.poll(allocator, StreamEnum, .{ .f = port.? });
                 fifo = poller.fifo(.f);
                 break;
