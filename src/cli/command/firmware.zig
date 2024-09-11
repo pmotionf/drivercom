@@ -32,18 +32,18 @@ pub fn execute(_: @This()) !void {
     };
 
     const msg = drivercon.Message.init(.firmware_version, 0, .{});
-    while (true) {
-        try command.sendMessage(port, &msg);
-        const req = try command.readMessage(port);
-        if (req.kind == .firmware_version and req.sequence == 1) {
-            const payload = req.payload(.firmware_version);
+    try command.sendMessage(port, &msg);
+    const req = try command.readMessage(port);
+    if (req.kind == .firmware_version and req.sequence == 1) {
+        const payload = req.payload(.firmware_version);
 
-            const stdout = std.io.getStdOut().writer();
-            try stdout.print(
-                "Driver firmware version: {}.{}.{}\n",
-                .{ payload.major, payload.minor, payload.patch },
-            );
-            break;
-        }
+        const stdout = std.io.getStdOut().writer();
+        try stdout.print(
+            "Driver firmware version: {}.{}.{}\n",
+            .{ payload.major, payload.minor, payload.patch },
+        );
+    } else {
+        std.log.err("received invalid response: {any}", .{req});
+        try serial.flushSerialPort(port, true, true);
     }
 }
