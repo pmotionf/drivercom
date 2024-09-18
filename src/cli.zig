@@ -3,19 +3,12 @@ const std = @import("std");
 
 const args = @import("args");
 const drivercon = @import("drivercon");
-const serial = @import("serial");
+const serialport = @import("serialport");
 const command = @import("cli/command.zig");
-
-const connection = switch (builtin.os.tag) {
-    .windows => @import("cli/connection/windows.zig"),
-    else => void,
-};
 
 const StreamEnum = enum { f };
 
-pub var port: ?std.fs.File = null;
-pub var poller: std.io.Poller(StreamEnum) = undefined;
-pub var fifo: *std.io.PollFifo = undefined;
+pub var port: ?serialport.Port = null;
 pub var help: bool = false;
 pub var timeout: usize = 100;
 pub var retry: usize = 3;
@@ -97,7 +90,7 @@ pub fn main() !void {
         return;
     };
 
-    var port_name: ?[]const u8 = null;
+    var port_path: ?[]const u8 = null;
     inline for (std.meta.fields(@TypeOf(options.options))) |fld| {
         if (comptime std.mem.eql(u8, "help", fld.name)) {
             help = @field(options.options, fld.name);
@@ -106,62 +99,44 @@ pub fn main() !void {
             timeout = @field(options.options, fld.name);
         }
         if (comptime std.mem.eql(u8, "port", fld.name)) {
-            port_name = @field(options.options, fld.name);
+            port_path = @field(options.options, fld.name);
         }
     }
 
-    if (port_name) |name| {
+    if (port_path) |path| {
         if (!help and options.verb != null) {
-            var port_iterator = try serial.list();
+            var port_iterator = try serialport.iterate();
             defer port_iterator.deinit();
 
             while (try port_iterator.next()) |_port| {
-                if (comptime builtin.os.tag == .linux) {
-                    if (_port.display_name.len < "/dev/ttyUSBX".len) {
-                        continue;
-                    }
-                    if (!std.mem.eql(
-                        u8,
-                        "/dev/ttyUSB",
-                        _port.display_name[0.."/dev/ttyUSB".len],
-                    )) {
-                        continue;
-                    }
-                }
-                if (!std.mem.eql(u8, name, _port.display_name)) {
+                if (!std.mem.eql(u8, path, _port.path)) {
                     continue;
                 }
-                port = if (comptime builtin.os.tag == .windows)
-                    try connection.openPollableFile(std.fs.cwd(), _port.file_name)
-                else
-                    try std.fs.cwd().openFile(_port.file_name, .{
-                        .mode = .read_write,
-                    });
+
+                port = try _port.open();
                 errdefer {
-                    serial.flushSerialPort(port.?, true, true) catch {};
+                    port.?.flush(.{ .input = true, .output = true }) catch {};
                     port.?.close();
+                    port = null;
                 }
-                try serial.configureSerialPort(port.?, .{
+
+                try port.?.configure(.{
                     .handshake = .none,
-                    .baud_rate = 230400,
+                    .baud_rate = .B230400,
                     .parity = .none,
                     .word_size = .eight,
                     .stop_bits = .one,
                 });
-                serial.flushSerialPort(port.?, true, true) catch {};
-
-                poller = std.io.poll(allocator, StreamEnum, .{ .f = port.? });
-                fifo = poller.fifo(.f);
+                port.?.flush(.{ .input = true, .output = true }) catch {};
                 break;
             } else {
-                std.log.err("No COM port found with name: {s}\n", .{name});
+                std.log.err("No COM port found with path: {s}\n", .{path});
             }
         }
     }
     defer {
-        if (port) |p| {
-            poller.deinit();
-            serial.flushSerialPort(p, true, true) catch {};
+        if (port) |*p| {
+            p.flush(.{ .input = true, .output = true }) catch {};
             p.close();
             port = null;
         }

@@ -69,7 +69,7 @@ pub fn build(b: *std.Build) void {
 
     if (cli) {
         var imports = [_]Import{
-            .{ .name = "serial" },
+            .{ .name = "serialport" },
             .{ .name = "args" },
             .{ .name = "yaml" },
         };

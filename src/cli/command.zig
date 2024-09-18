@@ -5,21 +5,14 @@ pub const firmware = @import("command/firmware.zig");
 const builtin = @import("builtin");
 const std = @import("std");
 const drivercon = @import("drivercon");
-const serial = @import("serial");
+const serialport = @import("serialport");
 const cli = @import("../cli.zig");
-
-const connection = switch (builtin.os.tag) {
-    .windows => @import("connection/windows.zig"),
-    else => void,
-};
 
 pub fn sendMessage(msg: *const drivercon.Message) !void {
     std.debug.assert(cli.port != null);
 
-    const writer = if (comptime builtin.os.tag == .windows)
-        connection.pollableWriter(cli.port.?)
-    else
-        cli.port.?.writer();
+    const writer = cli.port.?.writer();
+    const reader = cli.port.?.reader();
 
     var retry: usize = 0;
     while (retry < cli.retry) {
@@ -30,33 +23,30 @@ pub fn sendMessage(msg: *const drivercon.Message) !void {
         });
 
         var timer = try std.time.Timer.start();
-        var readable: usize = 0;
+        var read_buffer: [16]u8 = undefined;
+        var read_size: usize = 0;
         while (timer.read() < std.time.ns_per_ms * cli.timeout) {
-            if (try cli.poller.pollTimeout(0)) {
-                const readable_length = cli.fifo.readableLength();
-                if (readable_length >= 16) break;
-                if (readable_length > readable) {
-                    readable = readable_length;
-                    timer.reset();
-                }
+            if (try cli.port.?.poll()) {
+                read_size += try reader.read(read_buffer[read_size..]);
+                if (read_size == 16) break;
+                timer.reset();
             }
         } else {
             std.log.err("driver response timed out: {}", .{msg.kind});
-            try serial.flushSerialPort(cli.port.?, true, true);
+            try cli.port.?.flush(.{ .input = true, .output = true });
             retry += 1;
             continue;
         }
-
-        var rsp: drivercon.Message = undefined;
-        const read_size = cli.fifo.read(std.mem.asBytes(&rsp));
         std.debug.assert(read_size == 16);
+
+        var rsp = std.mem.bytesToValue(drivercon.Message, &read_buffer);
 
         if (rsp.kind != .response or
             rsp.sequence != msg.sequence or
             rsp.bcc != rsp.getBcc())
         {
             std.log.err("received invalid response: {any}", .{rsp});
-            try serial.flushSerialPort(cli.port.?, true, true);
+            try cli.port.?.flush(.{ .input = true, .output = true });
             retry += 1;
             continue;
         }
@@ -72,25 +62,24 @@ pub fn readMessage() !drivercon.Message {
     std.debug.assert(cli.port != null);
 
     const writer = cli.port.?.writer();
+    const reader = cli.port.?.reader();
 
     var timer = try std.time.Timer.start();
-    var readable: usize = 0;
+    var read_buffer: [16]u8 = undefined;
+    var read_size: usize = 0;
     while (timer.read() < std.time.ns_per_ms * cli.timeout) {
-        if (try cli.poller.pollTimeout(0)) {
-            const readable_length = cli.fifo.readableLength();
-            if (readable_length >= 16) break;
-            if (readable_length > readable) {
-                readable = readable_length;
-                timer.reset();
-            }
+        if (try cli.port.?.poll()) {
+            read_size += try reader.read(read_buffer[read_size..]);
+            if (read_size == 16) break;
+            timer.reset();
         }
     } else {
         std.log.err("wait for driver message timed out", .{});
         return error.CommunicationFailure;
     }
-    var req: drivercon.Message = undefined;
-    const read_size = cli.fifo.read(std.mem.asBytes(&req));
     std.debug.assert(read_size == 16);
+
+    var req = std.mem.bytesToValue(drivercon.Message, &read_buffer);
 
     if (req.getBcc() == req.bcc) {
         var rsp = req;
@@ -99,7 +88,7 @@ pub fn readMessage() !drivercon.Message {
         try writer.writeAll(std.mem.asBytes(&rsp));
         return req;
     } else {
-        try serial.flushSerialPort(cli.port.?, true, false);
+        try cli.port.?.flush(.{ .input = true });
         std.log.err("corrupt driver message read", .{});
         return error.CommunicationFailure;
     }

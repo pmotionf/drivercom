@@ -4,9 +4,9 @@
     .minimum_zig_version = "0.14.0-dev.1392+37df6ba86",
 
     .dependencies = .{
-        .serial = .{
-            .url = "https://github.com/mochalins/serial/archive/a952d8b.tar.gz",
-            .hash = "12205e634eedafca1d9275bab13b0b549dbc8a941136e9ed14564ea4f65126dd88a0",
+        .serialport = .{
+            .url = "https://github.com/mochalins/serialport/archive/f500bff.tar.gz",
+            .hash = "1220ff4a85378da1ab4d8aa5def540882e410c6e8299f54e841235f0060368ff5784",
             .lazy = true,
         },
         .args = .{

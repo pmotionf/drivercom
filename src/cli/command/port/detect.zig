@@ -2,13 +2,8 @@ const builtin = @import("builtin");
 const std = @import("std");
 
 const drivercon = @import("drivercon");
-const serial = @import("serial");
+const serialport = @import("serialport");
 const cli = @import("../../../cli.zig");
-
-const connection = switch (builtin.os.tag) {
-    .windows => @import("../../connection/windows.zig"),
-    else => void,
-};
 
 pub fn execute(_: @This()) !void {
     if (cli.port != null) {
@@ -16,7 +11,7 @@ pub fn execute(_: @This()) !void {
         return;
     }
 
-    var port_iterator = try serial.list();
+    var port_iterator = try serialport.iterate();
     defer port_iterator.deinit();
 
     var random = std.Random.DefaultPrng.init(0);
@@ -25,62 +20,32 @@ pub fn execute(_: @This()) !void {
     var attempted_connections: usize = 0;
 
     while (try port_iterator.next()) |_port| {
-        if (comptime builtin.os.tag == .linux) {
-            if (_port.display_name.len < "/dev/ttyUSBX".len) {
-                continue;
-            }
-            if (!std.mem.eql(
-                u8,
-                "/dev/ttyUSB",
-                _port.display_name[0.."/dev/ttyUSB".len],
-            )) {
-                continue;
-            }
-        }
         std.log.info(
-            "Attempting connection with COM port: {s}",
-            .{_port.display_name},
+            "Attempting connection with COM port: {s} ({s})",
+            .{ _port.path, _port.name },
         );
         attempted_connections += 1;
 
         // Attempt connection.
-        var port = if (comptime builtin.os.tag == .windows)
-            connection.openPollableFile(std.fs.cwd(), _port.file_name) catch {
-                continue;
-            }
-        else
-            std.fs.cwd().openFile(_port.file_name, .{
-                .mode = .read_write,
-            }) catch {
-                continue;
-            };
+        var port = _port.open() catch continue;
         defer {
-            serial.flushSerialPort(port, true, true) catch {};
+            defer port.flush(.{ .input = true, .output = true }) catch {};
             port.close();
         }
 
-        serial.configureSerialPort(port, .{
+        port.configure(.{
             .handshake = .none,
-            .baud_rate = 230400,
+            .baud_rate = .B230400,
             .parity = .none,
             .word_size = .eight,
             .stop_bits = .one,
         }) catch {
             continue;
         };
-        serial.flushSerialPort(port, true, true) catch {};
+        port.flush(.{ .input = true, .output = true }) catch {};
 
-        var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-        defer arena.deinit();
-        const allocator = arena.allocator();
-        var poller = std.io.poll(allocator, enum { f }, .{ .f = port });
-        defer poller.deinit();
-        var fifo = poller.fifo(.f);
-
-        const writer = if (comptime builtin.os.tag == .windows)
-            connection.pollableWriter(port)
-        else
-            port.writer();
+        const writer = port.writer();
+        const reader = port.reader();
 
         var connection_made: bool = false;
 
@@ -90,25 +55,22 @@ pub fn execute(_: @This()) !void {
         };
 
         var timer = try std.time.Timer.start();
-        var readable: usize = 0;
+        var read_buffer: [16]u8 = undefined;
+        var read_size: usize = 0;
         while (timer.read() < std.time.ns_per_ms * cli.timeout) {
-            if (try poller.pollTimeout(0)) {
-                const readable_length = fifo.readableLength();
-                if (readable_length >= 16) break;
-                if (readable_length > readable) {
-                    readable = readable_length;
-                    timer.reset();
-                }
+            if (try port.poll()) {
+                read_size += try reader.read(read_buffer[read_size..]);
+                if (read_size == 16) break;
+                timer.reset();
             }
         } else {
             std.log.err("driver response timed out: {}", .{msg.kind});
-            try serial.flushSerialPort(port, true, true);
+            try port.flush(.{ .input = true, .output = true });
             continue;
         }
-
-        var rsp: drivercon.Message = undefined;
-        const read_size = fifo.read(std.mem.asBytes(&rsp));
         std.debug.assert(read_size == 16);
+
+        var rsp = std.mem.bytesToValue(drivercon.Message, &read_buffer);
 
         if (rsp.kind == .response and
             rsp.bcc == rsp.getBcc() and
@@ -119,7 +81,10 @@ pub fn execute(_: @This()) !void {
 
         if (connection_made) {
             const stdout = std.io.getStdOut().writer();
-            try stdout.print("\nConnection found: {s}\n", .{_port.display_name});
+            try stdout.print(
+                "\nConnection found: {s} ({s})\n",
+                .{ _port.path, _port.name },
+            );
             return;
         }
     }
