@@ -29,7 +29,7 @@ pub fn execute(_: @This()) !void {
         // Attempt connection.
         var port = _port.open() catch continue;
         defer {
-            defer port.flush(.{ .input = true, .output = true }) catch {};
+            port.flush(.{ .input = true, .output = true }) catch {};
             port.close();
         }
 
@@ -45,7 +45,9 @@ pub fn execute(_: @This()) !void {
         }) catch {
             continue;
         };
-        port.flush(.{ .input = true, .output = true }) catch {};
+        port.flush(.{ .input = true, .output = true }) catch {
+            continue;
+        };
 
         const writer = port.writer();
         const reader = port.reader();
