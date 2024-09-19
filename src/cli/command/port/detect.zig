@@ -50,25 +50,30 @@ pub fn execute(_: @This()) !void {
         var connection_made: bool = false;
 
         const msg = drivercon.Message.init(.ping, 0, random_connection_seed);
-        writer.writeAll(std.mem.asBytes(&msg)) catch {
-            continue;
-        };
+        var retry: usize = 0;
 
-        var timer = try std.time.Timer.start();
         var read_buffer: [16]u8 = undefined;
-        var read_size: usize = 0;
-        while (timer.read() < std.time.ns_per_ms * cli.timeout) {
-            if (try port.poll()) {
-                read_size += try reader.read(read_buffer[read_size..]);
-                if (read_size == 16) break;
-                timer.reset();
+        retry_loop: while (retry < 3) {
+            writer.writeAll(std.mem.asBytes(&msg)) catch {
+                continue;
+            };
+
+            var timer = try std.time.Timer.start();
+            var read_size: usize = 0;
+            while (timer.read() < std.time.ns_per_ms * cli.timeout) {
+                if (try port.poll()) {
+                    read_size += try reader.read(read_buffer[read_size..]);
+                    if (read_size == 16) break :retry_loop;
+                    timer.reset();
+                }
+            } else {
+                std.log.err("driver response timed out: {}", .{msg.kind});
+                try port.flush(.{ .input = true, .output = true });
+                retry += 1;
+                continue;
             }
-        } else {
-            std.log.err("driver response timed out: {}", .{msg.kind});
-            try port.flush(.{ .input = true, .output = true });
-            continue;
-        }
-        std.debug.assert(read_size == 16);
+            std.debug.assert(read_size == 16);
+        } else continue;
 
         var rsp = std.mem.bytesToValue(drivercon.Message, &read_buffer);
 
