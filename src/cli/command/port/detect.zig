@@ -48,6 +48,7 @@ pub fn execute(_: @This()) !void {
         port.flush(.{ .input = true, .output = true }) catch {
             continue;
         };
+        std.debug.assert(try port.poll() == false);
 
         const writer = port.writer();
         const reader = port.reader();

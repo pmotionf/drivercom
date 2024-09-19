@@ -131,6 +131,7 @@ pub fn main() !void {
                     .stop_bits = .one,
                 });
                 port.?.flush(.{ .input = true, .output = true }) catch {};
+                std.debug.assert(try port.?.poll() == false);
                 break;
             } else {
                 std.log.err("No COM port found with path: {s}\n", .{path});

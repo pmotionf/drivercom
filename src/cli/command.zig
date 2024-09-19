@@ -45,7 +45,7 @@ pub fn sendMessage(msg: *const drivercon.Message) !void {
             rsp.sequence != msg.sequence or
             rsp.bcc != rsp.getBcc())
         {
-            std.log.err("received invalid response: {any}", .{rsp});
+            std.log.err("received invalid message receipt confirmation: {any}", .{rsp});
             try cli.port.?.flush(.{ .input = true, .output = true });
             retry += 1;
             continue;

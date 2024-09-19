@@ -5,8 +5,8 @@
 
     .dependencies = .{
         .serialport = .{
-            .url = "https://github.com/mochalins/serialport/archive/15589f7.tar.gz",
-            .hash = "1220f2342242cc199538d991538da22219f60104d475ceb2e0330bdc4e6e377cb15f",
+            .url = "https://github.com/mochalins/serialport/archive/37aa6d7.tar.gz",
+            .hash = "122044840245ac121d6b3b605282091a4ad8581c990a1256f6af13bf2cab109a9740",
             .lazy = true,
         },
         .args = .{
