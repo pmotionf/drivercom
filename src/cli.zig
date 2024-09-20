@@ -36,7 +36,7 @@ pub const Options = struct {
 
         .option_docs = .{
             .help = "command usage guidance",
-            .port = "COM port to use for driver connection",
+            .port = "COM port (name or path) to use for driver connection",
             .timeout = "timeout for message response",
             .retry = "number of message retries before failure",
         },
@@ -90,7 +90,7 @@ pub fn main() !void {
         return;
     };
 
-    var port_path: ?[]const u8 = null;
+    var _port_str: ?[]const u8 = null;
     inline for (std.meta.fields(@TypeOf(options.options))) |fld| {
         if (comptime std.mem.eql(u8, "help", fld.name)) {
             help = @field(options.options, fld.name);
@@ -99,17 +99,19 @@ pub fn main() !void {
             timeout = @field(options.options, fld.name);
         }
         if (comptime std.mem.eql(u8, "port", fld.name)) {
-            port_path = @field(options.options, fld.name);
+            _port_str = @field(options.options, fld.name);
         }
     }
 
-    if (port_path) |path| {
+    if (_port_str) |port_str| {
         if (!help and options.verb != null) {
             var port_iterator = try serialport.iterate();
             defer port_iterator.deinit();
 
             while (try port_iterator.next()) |_port| {
-                if (!std.mem.eql(u8, path, _port.path)) {
+                if (!std.mem.eql(u8, port_str, _port.path) and
+                    !std.mem.eql(u8, port_str, _port.name))
+                {
                     continue;
                 }
 
@@ -134,7 +136,10 @@ pub fn main() !void {
                 std.debug.assert(try port.?.poll() == false);
                 break;
             } else {
-                std.log.err("No COM port found with path: {s}\n", .{path});
+                std.log.err(
+                    "No COM port found with name/path: {s}\n",
+                    .{port_str},
+                );
             }
         }
     }
