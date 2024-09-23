@@ -34,14 +34,10 @@ pub fn execute(_: @This()) !void {
         }
 
         port.configure(.{
-            .handshake = .none,
             .baud_rate = if (comptime builtin.os.tag == .windows)
                 @enumFromInt(230400)
             else
                 .B230400,
-            .parity = .none,
-            .word_size = .eight,
-            .stop_bits = .one,
         }) catch {
             continue;
         };
