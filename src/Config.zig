@@ -1,6 +1,6 @@
 //! This module represents a PMF Smart Driver's configuration.
 const std = @import("std");
-const drivercon = @import("drivercon.zig");
+const drivercom = @import("drivercom.zig");
 
 pub const MAX_AXES = 3;
 
@@ -137,14 +137,14 @@ pub fn calcCurrentGain(
     std.debug.assert(axis_index < MAX_AXES);
     const axis = self.axes[axis_index];
 
-    const wcc = drivercon.gain.current.wcc(denominator);
+    const wcc = drivercom.gain.current.wcc(denominator);
     return .{
         .denominator = denominator,
         .p = @floatCast(
-            drivercon.gain.current.p(axis.ls, wcc),
+            drivercom.gain.current.p(axis.ls, wcc),
         ),
         .i = @floatCast(
-            drivercon.gain.current.i(axis.rs, wcc),
+            drivercom.gain.current.i(axis.rs, wcc),
         ),
     };
 }
@@ -158,18 +158,18 @@ pub fn calcVelocityGain(
     std.debug.assert(axis_index < MAX_AXES);
     const axis = self.axes[axis_index];
 
-    const wcc = drivercon.gain.current.wcc(axis.current_gain.denominator);
-    const radius = drivercon.gain.velocity.radius(self.magnet.pitch);
-    const inertia = drivercon.gain.velocity.inertia(self.vehicle_mass, radius);
+    const wcc = drivercom.gain.current.wcc(axis.current_gain.denominator);
+    const radius = drivercom.gain.velocity.radius(self.magnet.pitch);
+    const inertia = drivercom.gain.velocity.inertia(self.vehicle_mass, radius);
     const torque_constant =
-        drivercon.gain.velocity.torqueConstant(axis.kf, radius);
-    const wsc = drivercon.gain.velocity.wsc(denominator, wcc);
-    const wpi = drivercon.gain.velocity.wpi(denominator_pi, wsc);
-    const p = drivercon.gain.velocity.p(inertia, torque_constant, wsc);
+        drivercom.gain.velocity.torqueConstant(axis.kf, radius);
+    const wsc = drivercom.gain.velocity.wsc(denominator, wcc);
+    const wpi = drivercom.gain.velocity.wpi(denominator_pi, wsc);
+    const p = drivercom.gain.velocity.p(inertia, torque_constant, wsc);
 
     return .{
         .p = @floatCast(p),
-        .i = @floatCast(drivercon.gain.velocity.i(p, wpi)),
+        .i = @floatCast(drivercom.gain.velocity.i(p, wpi)),
         .denominator = denominator,
         .denominator_pi = denominator_pi,
     };
@@ -183,12 +183,12 @@ pub fn calcPositionGain(
     std.debug.assert(axis_index < MAX_AXES);
     const axis = self.axes[axis_index];
 
-    const wcc = drivercon.gain.current.wcc(axis.current_gain.denominator);
+    const wcc = drivercom.gain.current.wcc(axis.current_gain.denominator);
     const wsc =
-        drivercon.gain.velocity.wsc(axis.velocity_gain.denominator, wcc);
+        drivercom.gain.velocity.wsc(axis.velocity_gain.denominator, wcc);
 
-    const wpc = drivercon.gain.position.wpc(denominator, wsc);
-    const p = drivercon.gain.position.p(wpc);
+    const wpc = drivercom.gain.position.wpc(denominator, wsc);
+    const p = drivercom.gain.position.p(wpc);
 
     return .{
         .p = @floatCast(p),

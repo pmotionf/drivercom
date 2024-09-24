@@ -5,7 +5,7 @@ const std = @import("std");
 const cli = @import("../../../cli.zig");
 const command = @import("../../command.zig");
 const args = @import("args");
-const drivercon = @import("drivercon");
+const drivercom = @import("drivercom");
 const yaml = @import("yaml");
 
 file: ?[]const u8 = null,
@@ -27,7 +27,7 @@ pub fn help(_: @This()) !void {
     const stdout = std.io.getStdOut().writer();
     try args.printHelp(
         @This(),
-        "drivercon [--port] [--timeout] config.set",
+        "drivercom [--port] [--timeout] config.set",
         stdout,
     );
 }
@@ -55,10 +55,10 @@ pub fn execute(self: @This()) !void {
         file_str,
     );
     defer untyped.deinit();
-    const config = try untyped.parse(drivercon.Config);
+    const config = try untyped.parse(drivercom.Config);
 
     var sequence: u16 = 0;
-    var msg = drivercon.Message.init(
+    var msg = drivercom.Message.init(
         .set_id_station,
         sequence,
         .{ .id = config.id, .station = config.station_id },
@@ -66,7 +66,7 @@ pub fn execute(self: @This()) !void {
     try command.sendMessage(&msg);
 
     sequence += 1;
-    msg = drivercon.Message.init(
+    msg = drivercom.Message.init(
         .set_system_flags,
         sequence,
         .{ .flags = config.flags },
@@ -74,7 +74,7 @@ pub fn execute(self: @This()) !void {
     try command.sendMessage(&msg);
 
     sequence += 1;
-    msg = drivercon.Message.init(
+    msg = drivercom.Message.init(
         .set_magnet,
         sequence,
         .{ .pitch = config.magnet.pitch, .length = config.magnet.length },
@@ -82,7 +82,7 @@ pub fn execute(self: @This()) !void {
     try command.sendMessage(&msg);
 
     sequence += 1;
-    msg = drivercon.Message.init(
+    msg = drivercom.Message.init(
         .set_vehicle_mass,
         sequence,
         config.vehicle_mass,
@@ -90,7 +90,7 @@ pub fn execute(self: @This()) !void {
     try command.sendMessage(&msg);
 
     sequence += 1;
-    msg = drivercon.Message.init(
+    msg = drivercom.Message.init(
         .set_angle_offset,
         sequence,
         config.mechanical_angle_offset,
@@ -98,7 +98,7 @@ pub fn execute(self: @This()) !void {
     try command.sendMessage(&msg);
 
     sequence += 1;
-    msg = drivercon.Message.init(
+    msg = drivercom.Message.init(
         .set_angle_offset,
         sequence,
         config.mechanical_angle_offset,
@@ -106,7 +106,7 @@ pub fn execute(self: @This()) !void {
     try command.sendMessage(&msg);
 
     sequence += 1;
-    msg = drivercon.Message.init(
+    msg = drivercom.Message.init(
         .set_axis_length,
         sequence,
         .{
@@ -117,7 +117,7 @@ pub fn execute(self: @This()) !void {
     try command.sendMessage(&msg);
 
     sequence += 1;
-    msg = drivercon.Message.init(
+    msg = drivercom.Message.init(
         .set_calibrated_home,
         sequence,
         config.calibrated_home_position,
@@ -125,7 +125,7 @@ pub fn execute(self: @This()) !void {
     try command.sendMessage(&msg);
 
     sequence += 1;
-    msg = drivercon.Message.init(
+    msg = drivercom.Message.init(
         .set_total_axes,
         sequence,
         config.total_axes,
@@ -133,7 +133,7 @@ pub fn execute(self: @This()) !void {
     try command.sendMessage(&msg);
 
     sequence += 1;
-    msg = drivercon.Message.init(
+    msg = drivercom.Message.init(
         .set_warmup_voltage,
         sequence,
         config.warmup_voltage_reference,
@@ -141,7 +141,7 @@ pub fn execute(self: @This()) !void {
     try command.sendMessage(&msg);
 
     sequence += 1;
-    msg = drivercon.Message.init(
+    msg = drivercom.Message.init(
         .set_calibration_magnet_length,
         sequence,
         .{
@@ -152,7 +152,7 @@ pub fn execute(self: @This()) !void {
     try command.sendMessage(&msg);
 
     sequence += 1;
-    msg = drivercon.Message.init(
+    msg = drivercom.Message.init(
         .set_voltage_target,
         sequence,
         config.vdc.target,
@@ -160,7 +160,7 @@ pub fn execute(self: @This()) !void {
     try command.sendMessage(&msg);
 
     sequence += 1;
-    msg = drivercon.Message.init(
+    msg = drivercom.Message.init(
         .set_voltage_limits,
         sequence,
         .{
@@ -170,11 +170,11 @@ pub fn execute(self: @This()) !void {
     );
     try command.sendMessage(&msg);
 
-    for (0..drivercon.Config.MAX_AXES) |_i| {
+    for (0..drivercom.Config.MAX_AXES) |_i| {
         const i: u16 = @intCast(_i);
 
         sequence += 1;
-        msg = drivercon.Message.init(
+        msg = drivercom.Message.init(
             .set_max_current,
             sequence,
             .{ .axis = i, .current = config.axes[i].max_current },
@@ -182,7 +182,7 @@ pub fn execute(self: @This()) !void {
         try command.sendMessage(&msg);
 
         sequence += 1;
-        msg = drivercon.Message.init(
+        msg = drivercom.Message.init(
             .set_continuous_current,
             sequence,
             .{
@@ -193,7 +193,7 @@ pub fn execute(self: @This()) !void {
         try command.sendMessage(&msg);
 
         sequence += 1;
-        msg = drivercon.Message.init(
+        msg = drivercom.Message.init(
             .set_current_gain_p,
             sequence,
             .{ .axis = i, .p = config.axes[i].current_gain.p },
@@ -201,7 +201,7 @@ pub fn execute(self: @This()) !void {
         try command.sendMessage(&msg);
 
         sequence += 1;
-        msg = drivercon.Message.init(
+        msg = drivercom.Message.init(
             .set_current_gain_i,
             sequence,
             .{ .axis = i, .i = config.axes[i].current_gain.i },
@@ -209,7 +209,7 @@ pub fn execute(self: @This()) !void {
         try command.sendMessage(&msg);
 
         sequence += 1;
-        msg = drivercon.Message.init(
+        msg = drivercom.Message.init(
             .set_current_gain_denominator,
             sequence,
             .{
@@ -220,7 +220,7 @@ pub fn execute(self: @This()) !void {
         try command.sendMessage(&msg);
 
         sequence += 1;
-        msg = drivercon.Message.init(
+        msg = drivercom.Message.init(
             .set_velocity_gain_p,
             sequence,
             .{ .axis = i, .p = config.axes[i].velocity_gain.p },
@@ -228,7 +228,7 @@ pub fn execute(self: @This()) !void {
         try command.sendMessage(&msg);
 
         sequence += 1;
-        msg = drivercon.Message.init(
+        msg = drivercom.Message.init(
             .set_velocity_gain_i,
             sequence,
             .{ .axis = i, .i = config.axes[i].velocity_gain.i },
@@ -236,7 +236,7 @@ pub fn execute(self: @This()) !void {
         try command.sendMessage(&msg);
 
         sequence += 1;
-        msg = drivercon.Message.init(
+        msg = drivercom.Message.init(
             .set_velocity_gain_denominator,
             sequence,
             .{
@@ -247,7 +247,7 @@ pub fn execute(self: @This()) !void {
         try command.sendMessage(&msg);
 
         sequence += 1;
-        msg = drivercon.Message.init(
+        msg = drivercom.Message.init(
             .set_velocity_gain_denominator_pi,
             sequence,
             .{
@@ -258,7 +258,7 @@ pub fn execute(self: @This()) !void {
         try command.sendMessage(&msg);
 
         sequence += 1;
-        msg = drivercon.Message.init(
+        msg = drivercom.Message.init(
             .set_position_gain_p,
             sequence,
             .{ .axis = i, .p = config.axes[i].position_gain.p },
@@ -266,7 +266,7 @@ pub fn execute(self: @This()) !void {
         try command.sendMessage(&msg);
 
         sequence += 1;
-        msg = drivercon.Message.init(
+        msg = drivercom.Message.init(
             .set_position_gain_denominator,
             sequence,
             .{
@@ -277,7 +277,7 @@ pub fn execute(self: @This()) !void {
         try command.sendMessage(&msg);
 
         sequence += 1;
-        msg = drivercon.Message.init(
+        msg = drivercom.Message.init(
             .set_in_position_threshold,
             sequence,
             .{ .axis = i, .threshold = config.axes[i].in_position_threshold },
@@ -285,7 +285,7 @@ pub fn execute(self: @This()) !void {
         try command.sendMessage(&msg);
 
         sequence += 1;
-        msg = drivercon.Message.init(
+        msg = drivercom.Message.init(
             .set_base_position,
             sequence,
             .{ .axis = i, .position = config.axes[i].base_position },
@@ -293,7 +293,7 @@ pub fn execute(self: @This()) !void {
         try command.sendMessage(&msg);
 
         sequence += 1;
-        msg = drivercon.Message.init(
+        msg = drivercom.Message.init(
             .set_back_sensor_off,
             sequence,
             .{
@@ -305,7 +305,7 @@ pub fn execute(self: @This()) !void {
         try command.sendMessage(&msg);
 
         sequence += 1;
-        msg = drivercon.Message.init(
+        msg = drivercom.Message.init(
             .set_front_sensor_off,
             sequence,
             .{
@@ -317,7 +317,7 @@ pub fn execute(self: @This()) !void {
         try command.sendMessage(&msg);
 
         sequence += 1;
-        msg = drivercon.Message.init(
+        msg = drivercom.Message.init(
             .set_rs,
             sequence,
             .{ .axis = i, .rs = config.axes[i].rs },
@@ -325,7 +325,7 @@ pub fn execute(self: @This()) !void {
         try command.sendMessage(&msg);
 
         sequence += 1;
-        msg = drivercon.Message.init(
+        msg = drivercom.Message.init(
             .set_ls,
             sequence,
             .{ .axis = i, .ls = config.axes[i].ls },
@@ -333,7 +333,7 @@ pub fn execute(self: @This()) !void {
         try command.sendMessage(&msg);
 
         sequence += 1;
-        msg = drivercon.Message.init(
+        msg = drivercom.Message.init(
             .set_kf,
             sequence,
             .{ .axis = i, .kf = config.axes[i].kf },
@@ -341,7 +341,7 @@ pub fn execute(self: @This()) !void {
         try command.sendMessage(&msg);
 
         sequence += 1;
-        msg = drivercon.Message.init(
+        msg = drivercom.Message.init(
             .set_kbm,
             sequence,
             .{ .axis = i, .kbm = config.axes[i].kbm },
@@ -349,11 +349,11 @@ pub fn execute(self: @This()) !void {
         try command.sendMessage(&msg);
     }
 
-    for (0..drivercon.Config.MAX_AXES * 2) |_i| {
+    for (0..drivercom.Config.MAX_AXES * 2) |_i| {
         const i: u16 = @intCast(_i);
 
         sequence += 1;
-        msg = drivercon.Message.init(
+        msg = drivercom.Message.init(
             .set_calibrated_magnet_length_backward,
             sequence,
             .{
@@ -364,7 +364,7 @@ pub fn execute(self: @This()) !void {
         try command.sendMessage(&msg);
 
         sequence += 1;
-        msg = drivercon.Message.init(
+        msg = drivercom.Message.init(
             .set_calibrated_magnet_length_forward,
             sequence,
             .{
@@ -376,6 +376,6 @@ pub fn execute(self: @This()) !void {
     }
 
     sequence += 1;
-    msg = drivercon.Message.init(.save_config, sequence, {});
+    msg = drivercom.Message.init(.save_config, sequence, {});
     try command.sendMessage(&msg);
 }

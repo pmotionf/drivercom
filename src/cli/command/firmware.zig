@@ -2,7 +2,7 @@ const std = @import("std");
 const command = @import("../command.zig");
 const cli = @import("../../cli.zig");
 const args = @import("args");
-const drivercon = @import("drivercon");
+const drivercom = @import("drivercom");
 const serial = @import("serial");
 
 pub const meta = .{
@@ -16,7 +16,7 @@ pub fn help(_: @This()) !void {
     const stdout = std.io.getStdOut().writer();
     try args.printHelp(
         @This(),
-        "drivercon [--port] [--timeout] firmware",
+        "drivercom [--port] [--timeout] firmware",
         stdout,
     );
 }
@@ -27,7 +27,7 @@ pub fn execute(_: @This()) !void {
         return;
     }
 
-    const msg = drivercon.Message.init(.firmware_version, 0, .{});
+    const msg = drivercom.Message.init(.firmware_version, 0, .{});
     try command.sendMessage(&msg);
     const req = try command.readMessage();
     if (req.kind == .firmware_version and req.sequence == 1) {

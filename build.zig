@@ -22,14 +22,14 @@ pub fn build(b: *std.Build) void {
 
     const test_step = b.step("test", "Run unit tests");
 
-    const mod = b.addModule("drivercon", .{
-        .root_source_file = b.path("src/drivercon.zig"),
+    const mod = b.addModule("drivercom", .{
+        .root_source_file = b.path("src/drivercom.zig"),
         .target = target,
         .optimize = optimize,
     });
 
     const mod_unit_tests = b.addTest(.{
-        .root_source_file = b.path("src/drivercon.zig"),
+        .root_source_file = b.path("src/drivercom.zig"),
         .target = target,
         .optimize = optimize,
     });
@@ -40,17 +40,17 @@ pub fn build(b: *std.Build) void {
         // Library Artifact
         {
             const lib = if (l == .static) b.addStaticLibrary(.{
-                .name = "drivercon",
+                .name = "drivercom",
                 .root_source_file = b.path("src/library.zig"),
                 .target = target,
                 .optimize = optimize,
             }) else b.addSharedLibrary(.{
-                .name = "drivercon",
+                .name = "drivercom",
                 .root_source_file = b.path("src/library.zig"),
                 .target = target,
                 .optimize = optimize,
             });
-            lib.root_module.addImport("drivercon", mod);
+            lib.root_module.addImport("drivercom", mod);
             b.installArtifact(lib);
         }
 
@@ -61,7 +61,7 @@ pub fn build(b: *std.Build) void {
                 .target = target,
                 .optimize = optimize,
             });
-            lib_unit_tests.root_module.addImport("drivercon", mod);
+            lib_unit_tests.root_module.addImport("drivercom", mod);
             const run_lib_unit_tests = b.addRunArtifact(lib_unit_tests);
             test_step.dependOn(&run_lib_unit_tests.step);
         }
@@ -83,12 +83,12 @@ pub fn build(b: *std.Build) void {
         // CLI Executable
         {
             const exe = b.addExecutable(.{
-                .name = "drivercon",
+                .name = "drivercom",
                 .root_source_file = b.path("src/cli.zig"),
                 .target = target,
                 .optimize = optimize,
             });
-            exe.root_module.addImport("drivercon", mod);
+            exe.root_module.addImport("drivercom", mod);
             for (imports) |import| {
                 if (import.dependency) |i| {
                     exe.root_module.addImport(
@@ -117,7 +117,7 @@ pub fn build(b: *std.Build) void {
                 .target = target,
                 .optimize = optimize,
             });
-            exe_unit_tests.root_module.addImport("drivercon", mod);
+            exe_unit_tests.root_module.addImport("drivercom", mod);
             for (imports) |import| {
                 if (import.dependency) |i| {
                     exe_unit_tests.root_module.addImport(

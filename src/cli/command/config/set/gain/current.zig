@@ -2,7 +2,7 @@ const std = @import("std");
 const command = @import("../../../../command.zig");
 const cli = @import("../../../../../cli.zig");
 const args = @import("args");
-const drivercon = @import("drivercon");
+const drivercom = @import("drivercom");
 const yaml = @import("yaml");
 
 file: ?[]const u8 = null,
@@ -24,7 +24,7 @@ pub fn help(_: @This()) !void {
     const stdout = std.io.getStdOut().writer();
     try args.printHelp(
         @This(),
-        "drivercon [--port] [--timeout] config.set.gain.current",
+        "drivercom [--port] [--timeout] config.set.gain.current",
         stdout,
     );
 }
@@ -43,10 +43,10 @@ pub fn execute(self: @This()) !void {
     const axis_id = try std.fmt.parseUnsigned(u16, cli.positionals[0], 10);
     const denominator = try std.fmt.parseUnsigned(u32, cli.positionals[1], 10);
 
-    if (axis_id == 0 or axis_id > drivercon.Config.MAX_AXES) {
+    if (axis_id == 0 or axis_id > drivercom.Config.MAX_AXES) {
         std.log.err(
             "axis must be valid between 1 and {}",
-            .{drivercon.Config.MAX_AXES},
+            .{drivercom.Config.MAX_AXES},
         );
         return;
     }
@@ -67,7 +67,7 @@ pub fn execute(self: @This()) !void {
         file_str,
     );
     defer untyped.deinit();
-    var config = try untyped.parse(drivercon.Config);
+    var config = try untyped.parse(drivercom.Config);
 
     const axis = &config.axes[axis_index];
 
@@ -87,7 +87,7 @@ pub fn execute(self: @This()) !void {
 
     if (cli.port) |_| {
         var sequence: u16 = 0;
-        var msg = drivercon.Message.init(
+        var msg = drivercom.Message.init(
             .set_current_gain_p,
             sequence,
             .{ .axis = axis_index, .p = axis.current_gain.p },
@@ -95,7 +95,7 @@ pub fn execute(self: @This()) !void {
         try command.sendMessage(&msg);
 
         sequence += 1;
-        msg = drivercon.Message.init(
+        msg = drivercom.Message.init(
             .set_current_gain_i,
             sequence,
             .{ .axis = axis_index, .i = axis.current_gain.i },
@@ -103,7 +103,7 @@ pub fn execute(self: @This()) !void {
         try command.sendMessage(&msg);
 
         sequence += 1;
-        msg = drivercon.Message.init(
+        msg = drivercom.Message.init(
             .set_current_gain_denominator,
             sequence,
             .{
@@ -114,7 +114,7 @@ pub fn execute(self: @This()) !void {
         try command.sendMessage(&msg);
 
         sequence += 1;
-        msg = drivercon.Message.init(
+        msg = drivercom.Message.init(
             .set_velocity_gain_p,
             sequence,
             .{ .axis = axis_index, .p = axis.velocity_gain.p },
@@ -122,7 +122,7 @@ pub fn execute(self: @This()) !void {
         try command.sendMessage(&msg);
 
         sequence += 1;
-        msg = drivercon.Message.init(
+        msg = drivercom.Message.init(
             .set_velocity_gain_i,
             sequence,
             .{ .axis = axis_index, .i = axis.velocity_gain.i },
@@ -130,7 +130,7 @@ pub fn execute(self: @This()) !void {
         try command.sendMessage(&msg);
 
         sequence += 1;
-        msg = drivercon.Message.init(
+        msg = drivercom.Message.init(
             .set_velocity_gain_denominator,
             sequence,
             .{
@@ -141,7 +141,7 @@ pub fn execute(self: @This()) !void {
         try command.sendMessage(&msg);
 
         sequence += 1;
-        msg = drivercon.Message.init(
+        msg = drivercom.Message.init(
             .set_velocity_gain_denominator_pi,
             sequence,
             .{
@@ -152,7 +152,7 @@ pub fn execute(self: @This()) !void {
         try command.sendMessage(&msg);
 
         sequence += 1;
-        msg = drivercon.Message.init(
+        msg = drivercom.Message.init(
             .set_position_gain_p,
             sequence,
             .{ .axis = axis_index, .p = axis.position_gain.p },
@@ -160,7 +160,7 @@ pub fn execute(self: @This()) !void {
         try command.sendMessage(&msg);
 
         sequence += 1;
-        msg = drivercon.Message.init(
+        msg = drivercom.Message.init(
             .set_position_gain_denominator,
             sequence,
             .{
@@ -171,7 +171,7 @@ pub fn execute(self: @This()) !void {
         try command.sendMessage(&msg);
 
         sequence += 1;
-        msg = drivercon.Message.init(.save_config, sequence, {});
+        msg = drivercom.Message.init(.save_config, sequence, {});
         try command.sendMessage(&msg);
     }
 }

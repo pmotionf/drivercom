@@ -4,11 +4,11 @@ pub const firmware = @import("command/firmware.zig");
 
 const builtin = @import("builtin");
 const std = @import("std");
-const drivercon = @import("drivercon");
+const drivercom = @import("drivercom");
 const serialport = @import("serialport");
 const cli = @import("../cli.zig");
 
-pub fn sendMessage(msg: *const drivercon.Message) !void {
+pub fn sendMessage(msg: *const drivercom.Message) !void {
     std.debug.assert(cli.port != null);
 
     const writer = cli.port.?.writer();
@@ -39,7 +39,7 @@ pub fn sendMessage(msg: *const drivercon.Message) !void {
         }
         std.debug.assert(read_size == 16);
 
-        var rsp = std.mem.bytesToValue(drivercon.Message, &read_buffer);
+        var rsp = std.mem.bytesToValue(drivercom.Message, &read_buffer);
 
         if (rsp.kind != .response or
             rsp.sequence != msg.sequence or
@@ -61,7 +61,7 @@ pub fn sendMessage(msg: *const drivercon.Message) !void {
     std.log.debug("Received response for {s}", .{@tagName(msg.kind)});
 }
 
-pub fn readMessage() !drivercon.Message {
+pub fn readMessage() !drivercom.Message {
     std.debug.assert(cli.port != null);
 
     const writer = cli.port.?.writer();
@@ -82,7 +82,7 @@ pub fn readMessage() !drivercon.Message {
     }
     std.debug.assert(read_size == 16);
 
-    var req = std.mem.bytesToValue(drivercon.Message, &read_buffer);
+    var req = std.mem.bytesToValue(drivercom.Message, &read_buffer);
 
     if (req.getBcc() == req.bcc) {
         var rsp = req;

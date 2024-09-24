@@ -2,7 +2,7 @@ const builtin = @import("builtin");
 const std = @import("std");
 
 const args = @import("args");
-const drivercon = @import("drivercon");
+const drivercom = @import("drivercom");
 const serialport = @import("serialport");
 const cli = @import("../../../cli.zig");
 
@@ -15,7 +15,7 @@ pub fn help(_: @This()) !void {
     const stdout = std.io.getStdOut().writer();
     try args.printHelp(
         @This(),
-        "drivercon [--port] [--timeout] config.set",
+        "drivercom [--port] [--timeout] config.set",
         stdout,
     );
 }
@@ -66,7 +66,7 @@ pub fn execute(_: @This()) !void {
 
         var connection_made: bool = false;
 
-        const msg = drivercon.Message.init(.ping, 0, random_connection_seed);
+        const msg = drivercom.Message.init(.ping, 0, random_connection_seed);
         var retry: usize = 0;
 
         var read_buffer: [16]u8 = undefined;
@@ -92,7 +92,7 @@ pub fn execute(_: @This()) !void {
             std.debug.assert(read_size == 16);
         } else continue;
 
-        var rsp = std.mem.bytesToValue(drivercon.Message, &read_buffer);
+        var rsp = std.mem.bytesToValue(drivercom.Message, &read_buffer);
 
         if (rsp.kind == .response and
             rsp.bcc == rsp.getBcc() and

@@ -14,7 +14,7 @@ pub fn help(_: @This()) !void {
     const stdout = std.io.getStdOut().writer();
     try args.printHelp(
         @This(),
-        "drivercon [--port] [--timeout] config.set",
+        "drivercom [--port] [--timeout] config.set",
         stdout,
     );
 }

@@ -4,7 +4,7 @@ const std = @import("std");
 const cli = @import("../../../cli.zig");
 const command = @import("../../command.zig");
 const args = @import("args");
-const drivercon = @import("drivercon");
+const drivercom = @import("drivercom");
 const yaml = @import("yaml");
 
 file: ?[]const u8 = null,
@@ -26,7 +26,7 @@ pub fn help(_: @This()) !void {
     const stdout = std.io.getStdOut().writer();
     try args.printHelp(
         @This(),
-        "drivercon [--port] [--timeout] config.get",
+        "drivercom [--port] [--timeout] config.get",
         stdout,
     );
 }
@@ -38,12 +38,12 @@ pub fn execute(self: @This()) !void {
     }
 
     const stdout = std.io.getStdOut().writer();
-    var config: drivercon.Config = std.mem.zeroes(drivercon.Config);
+    var config: drivercom.Config = std.mem.zeroes(drivercom.Config);
 
     var sequence: u16 = 0;
 
     {
-        const msg = drivercon.Message.init(.get_id_station, sequence, {});
+        const msg = drivercom.Message.init(.get_id_station, sequence, {});
         sequence += 1;
         try command.sendMessage(&msg);
         const req = try command.readMessage();
@@ -59,7 +59,7 @@ pub fn execute(self: @This()) !void {
     }
 
     {
-        const msg = drivercon.Message.init(.get_system_flags, sequence, {});
+        const msg = drivercom.Message.init(.get_system_flags, sequence, {});
         sequence += 1;
         try command.sendMessage(&msg);
         const req = try command.readMessage();
@@ -74,7 +74,7 @@ pub fn execute(self: @This()) !void {
     }
 
     {
-        const msg = drivercon.Message.init(.get_magnet, sequence, {});
+        const msg = drivercom.Message.init(.get_magnet, sequence, {});
         sequence += 1;
         try command.sendMessage(&msg);
         const req = try command.readMessage();
@@ -90,7 +90,7 @@ pub fn execute(self: @This()) !void {
     }
 
     {
-        const msg = drivercon.Message.init(.get_vehicle_mass, sequence, {});
+        const msg = drivercom.Message.init(.get_vehicle_mass, sequence, {});
         sequence += 1;
         try command.sendMessage(&msg);
         const req = try command.readMessage();
@@ -105,7 +105,7 @@ pub fn execute(self: @This()) !void {
     }
 
     while (true) {
-        const msg = drivercon.Message.init(.get_angle_offset, sequence, {});
+        const msg = drivercom.Message.init(.get_angle_offset, sequence, {});
         sequence += 1;
         try command.sendMessage(&msg);
         const req = try command.readMessage();
@@ -118,7 +118,7 @@ pub fn execute(self: @This()) !void {
     }
 
     while (true) {
-        const msg = drivercon.Message.init(.get_axis_length, sequence, {});
+        const msg = drivercom.Message.init(.get_axis_length, sequence, {});
         sequence += 1;
         try command.sendMessage(&msg);
         const req = try command.readMessage();
@@ -132,7 +132,7 @@ pub fn execute(self: @This()) !void {
     }
 
     while (true) {
-        const msg = drivercon.Message.init(.get_calibrated_home, sequence, {});
+        const msg = drivercom.Message.init(.get_calibrated_home, sequence, {});
         sequence += 1;
         try command.sendMessage(&msg);
         const req = try command.readMessage();
@@ -145,7 +145,7 @@ pub fn execute(self: @This()) !void {
     }
 
     while (true) {
-        const msg = drivercon.Message.init(.get_total_axes, sequence, {});
+        const msg = drivercom.Message.init(.get_total_axes, sequence, {});
         sequence += 1;
         try command.sendMessage(&msg);
         const req = try command.readMessage();
@@ -158,7 +158,7 @@ pub fn execute(self: @This()) !void {
     }
 
     while (true) {
-        const msg = drivercon.Message.init(.get_warmup_voltage, sequence, {});
+        const msg = drivercom.Message.init(.get_warmup_voltage, sequence, {});
         sequence += 1;
         try command.sendMessage(&msg);
         const req = try command.readMessage();
@@ -171,7 +171,7 @@ pub fn execute(self: @This()) !void {
     }
 
     while (true) {
-        const msg = drivercon.Message.init(
+        const msg = drivercom.Message.init(
             .get_calibration_magnet_length,
             sequence,
             {},
@@ -191,7 +191,7 @@ pub fn execute(self: @This()) !void {
     }
 
     while (true) {
-        const msg = drivercon.Message.init(.get_voltage_target, sequence, {});
+        const msg = drivercom.Message.init(.get_voltage_target, sequence, {});
         sequence += 1;
         try command.sendMessage(&msg);
         const req = try command.readMessage();
@@ -204,7 +204,7 @@ pub fn execute(self: @This()) !void {
     }
 
     while (true) {
-        const msg = drivercon.Message.init(.get_voltage_limits, sequence, {});
+        const msg = drivercom.Message.init(.get_voltage_limits, sequence, {});
         sequence += 1;
         try command.sendMessage(&msg);
         const req = try command.readMessage();
@@ -217,11 +217,11 @@ pub fn execute(self: @This()) !void {
         }
     }
 
-    for (0..drivercon.Config.MAX_AXES) |_i| {
+    for (0..drivercom.Config.MAX_AXES) |_i| {
         const i: u16 = @intCast(_i);
 
         while (true) {
-            const msg = drivercon.Message.init(.get_max_current, sequence, i);
+            const msg = drivercom.Message.init(.get_max_current, sequence, i);
             sequence += 1;
             try command.sendMessage(&msg);
             const req = try command.readMessage();
@@ -235,7 +235,7 @@ pub fn execute(self: @This()) !void {
         }
 
         while (true) {
-            const msg = drivercon.Message.init(
+            const msg = drivercom.Message.init(
                 .get_continuous_current,
                 sequence,
                 i,
@@ -255,7 +255,7 @@ pub fn execute(self: @This()) !void {
         }
 
         while (true) {
-            const msg = drivercon.Message.init(
+            const msg = drivercom.Message.init(
                 .get_current_gain_p,
                 sequence,
                 i,
@@ -273,7 +273,7 @@ pub fn execute(self: @This()) !void {
         }
 
         while (true) {
-            const msg = drivercon.Message.init(
+            const msg = drivercom.Message.init(
                 .get_current_gain_i,
                 sequence,
                 i,
@@ -291,7 +291,7 @@ pub fn execute(self: @This()) !void {
         }
 
         while (true) {
-            const msg = drivercon.Message.init(
+            const msg = drivercom.Message.init(
                 .get_current_gain_denominator,
                 sequence,
                 i,
@@ -311,7 +311,7 @@ pub fn execute(self: @This()) !void {
         }
 
         while (true) {
-            const msg = drivercon.Message.init(
+            const msg = drivercom.Message.init(
                 .get_velocity_gain_p,
                 sequence,
                 i,
@@ -331,7 +331,7 @@ pub fn execute(self: @This()) !void {
         }
 
         while (true) {
-            const msg = drivercon.Message.init(
+            const msg = drivercom.Message.init(
                 .get_velocity_gain_i,
                 sequence,
                 i,
@@ -351,7 +351,7 @@ pub fn execute(self: @This()) !void {
         }
 
         while (true) {
-            const msg = drivercon.Message.init(
+            const msg = drivercom.Message.init(
                 .get_velocity_gain_denominator,
                 sequence,
                 i,
@@ -371,7 +371,7 @@ pub fn execute(self: @This()) !void {
         }
 
         while (true) {
-            const msg = drivercon.Message.init(
+            const msg = drivercom.Message.init(
                 .get_velocity_gain_denominator_pi,
                 sequence,
                 i,
@@ -392,7 +392,7 @@ pub fn execute(self: @This()) !void {
         }
 
         while (true) {
-            const msg = drivercon.Message.init(
+            const msg = drivercom.Message.init(
                 .get_position_gain_p,
                 sequence,
                 i,
@@ -412,7 +412,7 @@ pub fn execute(self: @This()) !void {
         }
 
         while (true) {
-            const msg = drivercon.Message.init(
+            const msg = drivercom.Message.init(
                 .get_position_gain_denominator,
                 sequence,
                 i,
@@ -432,7 +432,7 @@ pub fn execute(self: @This()) !void {
         }
 
         while (true) {
-            const msg = drivercon.Message.init(
+            const msg = drivercom.Message.init(
                 .get_in_position_threshold,
                 sequence,
                 i,
@@ -452,7 +452,7 @@ pub fn execute(self: @This()) !void {
         }
 
         while (true) {
-            const msg = drivercon.Message.init(
+            const msg = drivercom.Message.init(
                 .get_base_position,
                 sequence,
                 i,
@@ -470,7 +470,7 @@ pub fn execute(self: @This()) !void {
         }
 
         while (true) {
-            const msg = drivercon.Message.init(
+            const msg = drivercom.Message.init(
                 .get_back_sensor_off,
                 sequence,
                 i,
@@ -492,7 +492,7 @@ pub fn execute(self: @This()) !void {
         }
 
         while (true) {
-            const msg = drivercon.Message.init(
+            const msg = drivercom.Message.init(
                 .get_front_sensor_off,
                 sequence,
                 i,
@@ -514,7 +514,7 @@ pub fn execute(self: @This()) !void {
         }
 
         while (true) {
-            const msg = drivercon.Message.init(.get_rs, sequence, i);
+            const msg = drivercom.Message.init(.get_rs, sequence, i);
             sequence += 1;
             try command.sendMessage(&msg);
             const req = try command.readMessage();
@@ -528,7 +528,7 @@ pub fn execute(self: @This()) !void {
         }
 
         while (true) {
-            const msg = drivercon.Message.init(.get_ls, sequence, i);
+            const msg = drivercom.Message.init(.get_ls, sequence, i);
             sequence += 1;
             try command.sendMessage(&msg);
             const req = try command.readMessage();
@@ -542,7 +542,7 @@ pub fn execute(self: @This()) !void {
         }
 
         while (true) {
-            const msg = drivercon.Message.init(.get_kf, sequence, i);
+            const msg = drivercom.Message.init(.get_kf, sequence, i);
             sequence += 1;
             try command.sendMessage(&msg);
             const req = try command.readMessage();
@@ -556,7 +556,7 @@ pub fn execute(self: @This()) !void {
         }
 
         while (true) {
-            const msg = drivercon.Message.init(.get_kbm, sequence, i);
+            const msg = drivercom.Message.init(.get_kbm, sequence, i);
             sequence += 1;
             try command.sendMessage(&msg);
             const req = try command.readMessage();
@@ -570,11 +570,11 @@ pub fn execute(self: @This()) !void {
         }
     }
 
-    for (0..drivercon.Config.MAX_AXES * 2) |_i| {
+    for (0..drivercom.Config.MAX_AXES * 2) |_i| {
         const i: u16 = @intCast(_i);
 
         while (true) {
-            const msg = drivercon.Message.init(
+            const msg = drivercom.Message.init(
                 .get_calibrated_magnet_length_backward,
                 sequence,
                 i,
@@ -597,7 +597,7 @@ pub fn execute(self: @This()) !void {
         }
 
         while (true) {
-            const msg = drivercon.Message.init(
+            const msg = drivercom.Message.init(
                 .get_calibrated_magnet_length_forward,
                 sequence,
                 i,

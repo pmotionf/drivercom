@@ -2,7 +2,7 @@ const std = @import("std");
 const command = @import("../../../command.zig");
 const cli = @import("../../../../cli.zig");
 const args = @import("args");
-const drivercon = @import("drivercon");
+const drivercom = @import("drivercom");
 const yaml = @import("yaml");
 
 file: ?[]const u8 = null,
@@ -24,7 +24,7 @@ pub fn help(_: @This()) !void {
     const stdout = std.io.getStdOut().writer();
     try args.printHelp(
         @This(),
-        "drivercon [--port] [--timeout] config.set.id",
+        "drivercom [--port] [--timeout] config.set.id",
         stdout,
     );
 }
@@ -58,7 +58,7 @@ pub fn execute(self: @This()) !void {
             file_str,
         );
         defer untyped.deinit();
-        var config = try untyped.parse(drivercon.Config);
+        var config = try untyped.parse(drivercom.Config);
 
         config.id = driver_id;
         config.station_id = station_id;
@@ -68,14 +68,14 @@ pub fn execute(self: @This()) !void {
     }
 
     if (cli.port) |_| {
-        var msg = drivercon.Message.init(
+        var msg = drivercom.Message.init(
             .set_id_station,
             0,
             .{ .id = driver_id, .station = station_id },
         );
         try command.sendMessage(&msg);
 
-        msg = drivercon.Message.init(.save_config, 1, {});
+        msg = drivercom.Message.init(.save_config, 1, {});
         try command.sendMessage(&msg);
     }
 }

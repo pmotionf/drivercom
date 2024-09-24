@@ -2,7 +2,7 @@ const builtin = @import("builtin");
 const std = @import("std");
 
 const args = @import("args");
-const drivercon = @import("drivercon");
+const drivercom = @import("drivercom");
 const serialport = @import("serialport");
 const command = @import("cli/command.zig");
 
@@ -184,7 +184,7 @@ pub fn main() !void {
             }
             break;
         }
-        try args.printHelp(Options, "drivercon", stdout);
+        try args.printHelp(Options, "drivercom", stdout);
         return;
     };
 
@@ -281,7 +281,7 @@ pub fn main() !void {
             }
         },
     } else {
-        try args.printHelp(Options, "drivercon", stdout);
+        try args.printHelp(Options, "drivercom", stdout);
         try stdout.writeAll("\nCommands:\n");
         try printCommandsListLegend();
         try printCommands(command, "", 0);

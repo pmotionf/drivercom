@@ -1,12 +1,12 @@
-# drivercon
+# drivercom
 
-> PMF Smart Driver RS232 Serial Connection Library.
+> PMF Smart Driver RS232 Serial Communications Library.
 
 ## Building
 
 ### Library
 
-To build `drivercon` as a static or dynamic C library, the `library` option
+To build `drivercom` as a static or dynamic C library, the `library` option
 must be specified.
 
 ```console
