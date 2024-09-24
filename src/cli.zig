@@ -150,7 +150,7 @@ pub const Options = struct {
         .option_docs = .{
             .help = "command usage guidance",
             .commands = "list (sub)commands",
-            .port = "COM port (name or path) to use for driver connection",
+            .port = "serial port (name or path) to use for driver connection",
             .timeout = "timeout for message response",
             .retry = "number of message retries before failure",
         },
@@ -236,7 +236,7 @@ pub fn main() !void {
                 break;
             } else {
                 std.log.err(
-                    "No COM port found with name/path: {s}\n",
+                    "No serial port found with name/path: {s}\n",
                     .{port_str},
                 );
             }

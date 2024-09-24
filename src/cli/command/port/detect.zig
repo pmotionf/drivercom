@@ -36,7 +36,7 @@ pub fn execute(_: @This()) !void {
 
     while (try port_iterator.next()) |_port| {
         std.log.info(
-            "Attempting connection with COM port: {s} ({s})",
+            "Attempting connection with serial port: {s} ({s})",
             .{ _port.path, _port.name },
         );
         attempted_connections += 1;
@@ -112,7 +112,7 @@ pub fn execute(_: @This()) !void {
     }
     const stderr = std.io.getStdErr().writer();
     try stderr.print(
-        "{s}No PMF Smart Driver COM port detected.\n",
+        "{s}No PMF Smart Driver serial port detected.\n",
         .{if (attempted_connections > 0) "\n" else ""},
     );
 }

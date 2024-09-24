@@ -23,7 +23,7 @@ pub fn help(_: @This()) !void {
 
 pub fn execute(_: @This()) !void {
     if (cli.port == null) {
-        std.log.err("COM port must be provided", .{});
+        std.log.err("serial port must be provided", .{});
         return;
     }
 
