@@ -206,40 +206,39 @@ pub fn main() !void {
         }
     }
 
-    if (_port_str) |port_str| {
-        if (!help and options.verb != null) {
-            var port_iterator = try serialport.iterate();
-            defer port_iterator.deinit();
+    if (_port_str) |port_str| b: {
+        if (help or options.verb == null) break :b;
+        var port_iterator = try serialport.iterate();
+        defer port_iterator.deinit();
 
-            while (try port_iterator.next()) |_port| {
-                if (!std.mem.eql(u8, port_str, _port.path) and
-                    !std.mem.eql(u8, port_str, _port.name))
-                {
-                    continue;
-                }
-
-                port = try _port.open();
-                errdefer {
-                    port.?.flush(.{ .input = true, .output = true }) catch {};
-                    port.?.close();
-                    port = null;
-                }
-
-                try port.?.configure(.{
-                    .baud_rate = if (comptime builtin.os.tag == .windows)
-                        @enumFromInt(230400)
-                    else
-                        .B230400,
-                });
-                port.?.flush(.{ .input = true, .output = true }) catch {};
-                std.debug.assert(try port.?.poll() == false);
-                break;
-            } else {
-                std.log.err(
-                    "No serial port found with name/path: {s}\n",
-                    .{port_str},
-                );
+        while (try port_iterator.next()) |_port| {
+            if (!std.mem.eql(u8, port_str, _port.path) and
+                !std.mem.eql(u8, port_str, _port.name))
+            {
+                continue;
             }
+
+            port = try _port.open();
+            errdefer {
+                port.?.flush(.{ .input = true, .output = true }) catch {};
+                port.?.close();
+                port = null;
+            }
+
+            try port.?.configure(.{
+                .baud_rate = if (comptime builtin.target.os.tag == .windows)
+                    @enumFromInt(230400)
+                else
+                    .B230400,
+            });
+            port.?.flush(.{ .input = true, .output = true }) catch {};
+            std.debug.assert(try port.?.poll() == false);
+            break;
+        } else {
+            std.log.err(
+                "No serial port found with name/path: {s}\n",
+                .{port_str},
+            );
         }
     }
     defer {

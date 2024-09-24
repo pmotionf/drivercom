@@ -35,6 +35,10 @@ pub fn execute(_: @This()) !void {
     var attempted_connections: usize = 0;
 
     while (try port_iterator.next()) |_port| {
+        if (comptime builtin.target.os.tag == .linux) {
+            if (_port.path.len < 12) continue;
+            if (!std.mem.eql(u8, "USB", _port.path[8..11])) continue;
+        }
         std.log.info(
             "Attempting connection with serial port: {s} ({s})",
             .{ _port.path, _port.name },
@@ -49,7 +53,7 @@ pub fn execute(_: @This()) !void {
         }
 
         port.configure(.{
-            .baud_rate = if (comptime builtin.os.tag == .windows)
+            .baud_rate = if (comptime builtin.target.os.tag == .windows)
                 @enumFromInt(230400)
             else
                 .B230400,
