@@ -23,7 +23,7 @@ pub const meta = .{
     },
 };
 
-pub fn help() !void {
+pub fn help(_: @This()) !void {
     const stdout = std.io.getStdOut().writer();
     try args.printHelp(
         @This(),
@@ -33,10 +33,6 @@ pub fn help() !void {
 }
 
 pub fn execute(self: @This()) !void {
-    if (cli.help) {
-        try help();
-        return;
-    }
     if (cli.port == null) {
         std.log.err("COM port must be provided", .{});
         return;

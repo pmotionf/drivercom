@@ -7,7 +7,6 @@ const serialport = @import("serialport");
 const command = @import("cli/command.zig");
 
 pub var port: ?serialport.Port = null;
-pub var help: bool = false;
 pub var timeout: usize = 100;
 pub var retry: usize = 3;
 pub var positionals: [][]const u8 = &.{};
@@ -191,6 +190,7 @@ pub fn main() !void {
 
     var commands_list: bool = false;
     var _port_str: ?[]const u8 = null;
+    var help: bool = false;
     inline for (std.meta.fields(@TypeOf(options.options))) |fld| {
         if (comptime std.mem.eql(u8, "help", fld.name)) {
             help = @field(options.options, fld.name);
@@ -255,7 +255,11 @@ pub fn main() !void {
     if (options.verb) |verb| switch (verb) {
         inline else => |cmd| {
             if (@hasDecl(@TypeOf(cmd), "execute") and !commands_list) {
-                try cmd.execute();
+                if (help) {
+                    try cmd.help();
+                } else {
+                    try cmd.execute();
+                }
             } else {
                 // This is just a command category: print sub-commands.
                 try printCommandsListLegend();

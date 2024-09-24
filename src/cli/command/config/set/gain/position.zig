@@ -20,7 +20,7 @@ pub const meta = .{
     },
 };
 
-pub fn help() !void {
+pub fn help(_: @This()) !void {
     const stdout = std.io.getStdOut().writer();
     try args.printHelp(
         @This(),
@@ -30,11 +30,6 @@ pub fn help() !void {
 }
 
 pub fn execute(self: @This()) !void {
-    if (cli.help) {
-        try help();
-        return;
-    }
-
     const name = self.file orelse {
         std.log.err("file must be provided", .{});
         return;

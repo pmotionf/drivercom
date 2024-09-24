@@ -1,7 +1,23 @@
 const builtin = @import("builtin");
 const std = @import("std");
+
+const args = @import("args");
 const serialport = @import("serialport");
 const cli = @import("../../../cli.zig");
+
+pub const meta = .{
+    .full_text = "List all system serial ports.",
+    .usage_summary = "",
+};
+
+pub fn help(_: @This()) !void {
+    const stdout = std.io.getStdOut().writer();
+    try args.printHelp(
+        @This(),
+        "drivercon [--port] [--timeout] config.set",
+        stdout,
+    );
+}
 
 pub fn execute(_: @This()) !void {
     if (cli.port != null) {
