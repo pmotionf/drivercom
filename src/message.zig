@@ -1,6 +1,7 @@
 const std = @import("std");
 
 const Config = @import("Config.zig");
+const Log = @import("Log.zig");
 
 pub const Message = extern struct {
     kind: Kind,
@@ -186,6 +187,63 @@ pub const Message = extern struct {
             _: u16 = 0,
             length: f32,
         },
+        log_start: void,
+        log_stop: void,
+        log_status: extern struct {
+            status: packed struct(u32) {
+                value: Log.Status,
+                _: u30 = 0,
+            },
+            cycles_completed: u32,
+        },
+        log_get_cycles: void,
+        log_set_cycles: u32,
+        log_get_conf: void,
+        log_set_conf: Log.Config,
+        log_add_conf: Log.Config,
+        log_remove_conf: Log.Config,
+        log_get_axis: bool,
+        log_set_axis: packed struct(u16) {
+            axis1: bool,
+            axis2: bool,
+            axis3: bool,
+            _: u13 = 0,
+        },
+        log_get_start: void,
+        log_set_start: extern struct {
+            first: packed struct(u16) {
+                vehicle: u12,
+                _: u1 = 0,
+                start: Log.Start,
+            },
+            second: packed struct(u16) {
+                vehicle: u12,
+                hall_sensor_2: bool = false,
+                hall_sensor_1: bool = false,
+                start_condition_and: bool = false,
+                start_condition_or: bool = false,
+            },
+            third: packed struct(u16) {
+                vehicle: u12,
+                _: u2 = 0,
+                hall_sensor_4: bool = false,
+                hall_sensor_3: bool = false,
+            },
+            fourth: packed struct(u16) {
+                vehicle: u12,
+                _: u2 = 0,
+                hall_sensor_6: bool = false,
+                hall_sensor_5: bool = false,
+            },
+        },
+        log_get: extern struct {
+            cycle: u32,
+            axis: u16,
+            tag: packed struct(u16) {
+                value: Log.Tag,
+                _: u11 = 0,
+            },
+        },
         u8: [8]u8,
     } = .{ .u8 = .{0} ** 8 },
     cycle: u16 = 0,
@@ -270,6 +328,21 @@ pub const Message = extern struct {
         set_calibrated_magnet_length_backward = 0x61,
         get_calibrated_magnet_length_forward = 0x62,
         set_calibrated_magnet_length_forward = 0x63,
+
+        log_start = 0x100,
+        log_stop = 0x101,
+        log_status = 0x102,
+        log_get_cycles = 0x103,
+        log_set_cycles = 0x104,
+        log_get_conf = 0x105,
+        log_set_conf = 0x106,
+        log_add_conf = 0x107,
+        log_remove_conf = 0x108,
+        log_get_axis = 0x109,
+        log_set_axis = 0x10A,
+        log_get_start = 0x10B,
+        log_set_start = 0x10C,
+        log_get = 0x10D,
         _,
 
         pub fn Payload(self: Kind) type {

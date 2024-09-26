@@ -1,6 +1,7 @@
 const std = @import("std");
 
 pub const Config = @import("Config.zig");
+pub const Log = @import("Log.zig");
 pub const Message = @import("message.zig").Message;
 
 pub const gain = struct {
