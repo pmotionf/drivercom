@@ -65,7 +65,6 @@ pub fn sendMessage(msg: *const drivercom.Message) !void {
 pub fn readMessage() !drivercom.Message {
     std.debug.assert(cli.port != null);
 
-    const writer = cli.port.?.writer();
     const reader = cli.port.?.reader();
 
     var timer = try std.time.Timer.start();
@@ -86,10 +85,6 @@ pub fn readMessage() !drivercom.Message {
     var req = std.mem.bytesToValue(drivercom.Message, &read_buffer);
 
     if (req.getBcc() == req.bcc) {
-        var rsp = req;
-        rsp.kind = .response;
-        rsp.bcc = rsp.getBcc();
-        try writer.writeAll(std.mem.asBytes(&rsp));
         return req;
     } else {
         try cli.port.?.flush(.{ .input = true });

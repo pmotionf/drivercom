@@ -6,7 +6,12 @@ const Log = @import("Log.zig");
 pub const Message = extern struct {
     kind: Kind,
     sequence: u16,
-    _payload: extern union {
+    _payload: Payload = .{ .u8 = .{0} ** 8 },
+    cycle: u16 = 0,
+    _120: u8 = 0,
+    bcc: u8 = undefined,
+
+    pub const Payload = extern union {
         response: void,
         ping: u32,
         save_config: void,
@@ -245,120 +250,58 @@ pub const Message = extern struct {
             },
         },
         u8: [8]u8,
-    } = .{ .u8 = .{0} ** 8 },
-    cycle: u16 = 0,
-    _120: u8 = 0,
-    bcc: u8 = undefined,
+    };
 
-    pub const Kind = enum(u16) {
-        response = 0x1,
-        ping = 0x2,
-        save_config = 0x3,
-        firmware_version = 0x4,
-        start_sequence = 0x5,
-        end_sequence = 0x6,
+    pub const Kind = b: {
+        var result: std.builtin.Type.Enum = .{
+            .tag_type = u16,
+            .fields = &.{},
+            .decls = &.{},
+            .is_exhaustive = false,
+        };
 
-        get_id_station = 0x10,
-        set_id_station = 0x11,
-        get_system_flags = 0x12,
-        set_system_flags = 0x13,
-        get_magnet = 0x14,
-        set_magnet = 0x15,
-        get_vehicle_mass = 0x16,
-        set_vehicle_mass = 0x17,
-        get_angle_offset = 0x18,
-        set_angle_offset = 0x19,
-        get_axis_length = 0x1A,
-        set_axis_length = 0x1B,
-        get_calibrated_home = 0x1C,
-        set_calibrated_home = 0x1D,
-        get_total_axes = 0x1E,
-        set_total_axes = 0x1F,
-        get_warmup_voltage = 0x20,
-        set_warmup_voltage = 0x21,
-        get_calibration_magnet_length = 0x22,
-        set_calibration_magnet_length = 0x23,
-        get_voltage_target = 0x24,
-        set_voltage_target = 0x25,
-        get_voltage_limits = 0x26,
-        set_voltage_limits = 0x27,
-
-        // Per-axis messages.
-        get_max_current = 0x30,
-        set_max_current = 0x31,
-        get_continuous_current = 0x32,
-        set_continuous_current = 0x33,
-        get_current_gain_p = 0x34,
-        set_current_gain_p = 0x35,
-        get_current_gain_i = 0x36,
-        set_current_gain_i = 0x37,
-        get_current_gain_denominator = 0x38,
-        set_current_gain_denominator = 0x39,
-        get_velocity_gain_p = 0x3A,
-        set_velocity_gain_p = 0x3B,
-        get_velocity_gain_i = 0x3C,
-        set_velocity_gain_i = 0x3D,
-        get_velocity_gain_denominator = 0x3E,
-        set_velocity_gain_denominator = 0x3F,
-        get_velocity_gain_denominator_pi = 0x40,
-        set_velocity_gain_denominator_pi = 0x41,
-        get_position_gain_p = 0x42,
-        set_position_gain_p = 0x43,
-        get_position_gain_denominator = 0x44,
-        set_position_gain_denominator = 0x45,
-        get_in_position_threshold = 0x46,
-        set_in_position_threshold = 0x47,
-        get_base_position = 0x48,
-        set_base_position = 0x49,
-        get_back_sensor_off = 0x4A,
-        set_back_sensor_off = 0x4B,
-        get_front_sensor_off = 0x4C,
-        set_front_sensor_off = 0x4D,
-        get_rs = 0x4E,
-        set_rs = 0x4F,
-        get_ls = 0x50,
-        set_ls = 0x51,
-        get_kf = 0x52,
-        set_kf = 0x53,
-        get_kbm = 0x54,
-        set_kbm = 0x55,
-
-        // Per-hall-sensor messages.
-        get_calibrated_magnet_length_backward = 0x60,
-        set_calibrated_magnet_length_backward = 0x61,
-        get_calibrated_magnet_length_forward = 0x62,
-        set_calibrated_magnet_length_forward = 0x63,
-
-        log_start = 0x100,
-        log_stop = 0x101,
-        log_status = 0x102,
-        log_get_cycles = 0x103,
-        log_set_cycles = 0x104,
-        log_get_conf = 0x105,
-        log_set_conf = 0x106,
-        log_add_conf = 0x107,
-        log_remove_conf = 0x108,
-        log_get_axis = 0x109,
-        log_set_axis = 0x10A,
-        log_get_start = 0x10B,
-        log_set_start = 0x10C,
-        log_get = 0x10D,
-        _,
-
-        pub fn Payload(self: Kind) type {
-            return switch (self) {
-                inline else => b: {
-                    const msg: Message = undefined;
-                    break :b @TypeOf(@field(msg._payload, @tagName(self)));
+        const ti = @typeInfo(Payload).@"union";
+        var val: u16 = 1;
+        for (ti.fields) |field| {
+            if (std.mem.eql(u8, "u8", field.name)) continue;
+            if (std.mem.eql(u8, "get_id_station", field.name)) {
+                val = 0x10;
+            } else if (std.mem.eql(u8, "get_max_current", field.name)) {
+                val = 0x30;
+            } else if (std.mem.eql(
+                u8,
+                "get_calibrated_magnet_length_backward",
+                field.name,
+            )) {
+                val = 0x60;
+            } else if (std.mem.eql(u8, "log_start", field.name)) {
+                val = 0x100;
+            }
+            result.fields = result.fields ++ .{
+                std.builtin.Type.EnumField{
+                    .name = field.name,
+                    .value = val,
                 },
             };
+            val += 1;
         }
+
+        break :b @Type(.{ .@"enum" = result });
     };
+
+    fn PayloadType(comptime kind: Kind) type {
+        return switch (kind) {
+            inline else => b: {
+                const msg: Message = undefined;
+                break :b @TypeOf(@field(msg._payload, @tagName(kind)));
+            },
+        };
+    }
 
     pub fn init(
         comptime kind: Kind,
         sequence: u16,
-        p: kind.Payload(),
+        p: PayloadType(kind),
     ) Message {
         return switch (kind) {
             inline else => b: {
@@ -373,7 +316,10 @@ pub const Message = extern struct {
         };
     }
 
-    pub fn payload(self: *const Message, comptime kind: Kind) kind.Payload() {
+    pub fn payload(
+        self: *const Message,
+        comptime kind: Kind,
+    ) PayloadType(kind) {
         return switch (kind) {
             inline else => @field(self._payload, @tagName(kind)),
         };
