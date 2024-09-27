@@ -5,7 +5,7 @@ config: Config,
 axes: [3]bool = .{false} ** 3,
 start: struct {
     kind: Start = .immediate,
-    combinator: Start.Combinator = .@"and",
+    combinator: Start.Combinator = .@"or",
     hall_sensors: [6]bool = .{false} ** 6,
     vehicles: [4]u12 = .{0} ** 4,
 } = .{},
