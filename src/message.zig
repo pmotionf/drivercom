@@ -202,7 +202,7 @@ pub const Message = extern struct {
         log_set_conf: Log.Config,
         log_add_conf: Log.Config,
         log_remove_conf: Log.Config,
-        log_get_axis: bool,
+        log_get_axis: void,
         log_set_axis: packed struct(u16) {
             axis1: bool,
             axis2: bool,

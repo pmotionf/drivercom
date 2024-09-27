@@ -2,11 +2,13 @@ const std = @import("std");
 
 cycles: u32,
 config: Config,
+axes: [3]bool = .{false} ** 3,
 start: struct {
     kind: Start = .immediate,
+    combinator: Start.Combinator = .@"and",
     hall_sensors: [6]bool = .{false} ** 6,
     vehicles: [4]u12 = .{0} ** 4,
-},
+} = .{},
 
 pub const Status = enum(u2) {
     stopped = 0,
@@ -35,9 +37,9 @@ pub const Tag: type = b: {
 };
 
 pub const Config = packed struct(u32) {
-    cycle: bool,
-    cycle_time: bool,
-    vdc: bool,
+    cycle: bool = false,
+    cycle_time: bool = false,
+    vdc: bool = false,
     _: u29 = 0,
 };
 
@@ -47,4 +49,6 @@ pub const Start = enum(u3) {
     sensor_off = 2,
     vehicle_present = 3,
     vehicle_absent = 4,
+
+    pub const Combinator = enum(u1) { @"and", @"or" };
 };

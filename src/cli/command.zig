@@ -1,6 +1,7 @@
+pub const firmware = @import("command/firmware.zig");
 pub const port = @import("command/port.zig");
 pub const config = @import("command/config.zig");
-pub const firmware = @import("command/firmware.zig");
+pub const log = @import("command/log.zig");
 
 const builtin = @import("builtin");
 const std = @import("std");

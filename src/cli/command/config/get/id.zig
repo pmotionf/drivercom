@@ -31,7 +31,7 @@ pub fn execute(_: @This()) !void {
     while (true) {
         try command.sendMessage(&msg);
         const req = try command.readMessage();
-        if (req.kind == .set_id_station and req.sequence == 1) {
+        if (req.kind == .set_id_station and req.sequence == 0) {
             const payload = req.payload(.set_id_station);
 
             const stdout = std.io.getStdOut().writer();

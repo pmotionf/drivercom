@@ -41,10 +41,8 @@ pub fn execute(self: @This()) !void {
     var config: drivercom.Config = std.mem.zeroes(drivercom.Config);
 
     var sequence: u16 = 0;
-
     {
         const msg = drivercom.Message.init(.get_id_station, sequence, {});
-        sequence += 1;
         try command.sendMessage(&msg);
         const req = try command.readMessage();
         if (req.kind == .set_id_station and req.sequence == sequence) {
@@ -60,7 +58,6 @@ pub fn execute(self: @This()) !void {
 
     {
         const msg = drivercom.Message.init(.get_system_flags, sequence, {});
-        sequence += 1;
         try command.sendMessage(&msg);
         const req = try command.readMessage();
         if (req.kind == .set_system_flags and req.sequence == sequence) {
@@ -75,7 +72,6 @@ pub fn execute(self: @This()) !void {
 
     {
         const msg = drivercom.Message.init(.get_magnet, sequence, {});
-        sequence += 1;
         try command.sendMessage(&msg);
         const req = try command.readMessage();
         if (req.kind == .set_magnet and req.sequence == sequence) {
@@ -91,7 +87,6 @@ pub fn execute(self: @This()) !void {
 
     {
         const msg = drivercom.Message.init(.get_vehicle_mass, sequence, {});
-        sequence += 1;
         try command.sendMessage(&msg);
         const req = try command.readMessage();
         if (req.kind == .set_vehicle_mass and req.sequence == sequence) {
@@ -106,7 +101,6 @@ pub fn execute(self: @This()) !void {
 
     while (true) {
         const msg = drivercom.Message.init(.get_angle_offset, sequence, {});
-        sequence += 1;
         try command.sendMessage(&msg);
         const req = try command.readMessage();
         if (req.kind == .set_angle_offset and req.sequence == sequence) {
@@ -119,7 +113,6 @@ pub fn execute(self: @This()) !void {
 
     while (true) {
         const msg = drivercom.Message.init(.get_axis_length, sequence, {});
-        sequence += 1;
         try command.sendMessage(&msg);
         const req = try command.readMessage();
         if (req.kind == .set_axis_length and req.sequence == sequence) {
@@ -133,7 +126,6 @@ pub fn execute(self: @This()) !void {
 
     while (true) {
         const msg = drivercom.Message.init(.get_calibrated_home, sequence, {});
-        sequence += 1;
         try command.sendMessage(&msg);
         const req = try command.readMessage();
         if (req.kind == .set_calibrated_home and req.sequence == sequence) {
@@ -146,7 +138,6 @@ pub fn execute(self: @This()) !void {
 
     while (true) {
         const msg = drivercom.Message.init(.get_total_axes, sequence, {});
-        sequence += 1;
         try command.sendMessage(&msg);
         const req = try command.readMessage();
         if (req.kind == .set_total_axes and req.sequence == sequence) {
@@ -159,7 +150,6 @@ pub fn execute(self: @This()) !void {
 
     while (true) {
         const msg = drivercom.Message.init(.get_warmup_voltage, sequence, {});
-        sequence += 1;
         try command.sendMessage(&msg);
         const req = try command.readMessage();
         if (req.kind == .set_warmup_voltage and req.sequence == sequence) {
@@ -176,7 +166,6 @@ pub fn execute(self: @This()) !void {
             sequence,
             {},
         );
-        sequence += 1;
         try command.sendMessage(&msg);
         const req = try command.readMessage();
         if (req.kind == .set_calibration_magnet_length and
@@ -192,7 +181,6 @@ pub fn execute(self: @This()) !void {
 
     while (true) {
         const msg = drivercom.Message.init(.get_voltage_target, sequence, {});
-        sequence += 1;
         try command.sendMessage(&msg);
         const req = try command.readMessage();
         if (req.kind == .set_voltage_target and req.sequence == sequence) {
@@ -205,7 +193,6 @@ pub fn execute(self: @This()) !void {
 
     while (true) {
         const msg = drivercom.Message.init(.get_voltage_limits, sequence, {});
-        sequence += 1;
         try command.sendMessage(&msg);
         const req = try command.readMessage();
         if (req.kind == .set_voltage_limits and req.sequence == sequence) {
@@ -222,7 +209,6 @@ pub fn execute(self: @This()) !void {
 
         while (true) {
             const msg = drivercom.Message.init(.get_max_current, sequence, i);
-            sequence += 1;
             try command.sendMessage(&msg);
             const req = try command.readMessage();
             if (req.kind == .set_max_current and req.sequence == sequence) {
@@ -240,7 +226,6 @@ pub fn execute(self: @This()) !void {
                 sequence,
                 i,
             );
-            sequence += 1;
             try command.sendMessage(&msg);
             const req = try command.readMessage();
             if (req.kind == .set_continuous_current and
@@ -260,7 +245,6 @@ pub fn execute(self: @This()) !void {
                 sequence,
                 i,
             );
-            sequence += 1;
             try command.sendMessage(&msg);
             const req = try command.readMessage();
             if (req.kind == .set_current_gain_p and req.sequence == sequence) {
@@ -278,7 +262,6 @@ pub fn execute(self: @This()) !void {
                 sequence,
                 i,
             );
-            sequence += 1;
             try command.sendMessage(&msg);
             const req = try command.readMessage();
             if (req.kind == .set_current_gain_i and req.sequence == sequence) {
@@ -296,7 +279,6 @@ pub fn execute(self: @This()) !void {
                 sequence,
                 i,
             );
-            sequence += 1;
             try command.sendMessage(&msg);
             const req = try command.readMessage();
             if (req.kind == .set_current_gain_denominator and
@@ -316,7 +298,6 @@ pub fn execute(self: @This()) !void {
                 sequence,
                 i,
             );
-            sequence += 1;
             try command.sendMessage(&msg);
             const req = try command.readMessage();
             if (req.kind == .set_velocity_gain_p and
@@ -336,7 +317,6 @@ pub fn execute(self: @This()) !void {
                 sequence,
                 i,
             );
-            sequence += 1;
             try command.sendMessage(&msg);
             const req = try command.readMessage();
             if (req.kind == .set_velocity_gain_i and
@@ -356,7 +336,6 @@ pub fn execute(self: @This()) !void {
                 sequence,
                 i,
             );
-            sequence += 1;
             try command.sendMessage(&msg);
             const req = try command.readMessage();
             if (req.kind == .set_velocity_gain_denominator and
@@ -376,7 +355,6 @@ pub fn execute(self: @This()) !void {
                 sequence,
                 i,
             );
-            sequence += 1;
             try command.sendMessage(&msg);
             const req = try command.readMessage();
             if (req.kind == .set_velocity_gain_denominator_pi and
@@ -397,7 +375,6 @@ pub fn execute(self: @This()) !void {
                 sequence,
                 i,
             );
-            sequence += 1;
             try command.sendMessage(&msg);
             const req = try command.readMessage();
             if (req.kind == .set_position_gain_p and
@@ -417,7 +394,6 @@ pub fn execute(self: @This()) !void {
                 sequence,
                 i,
             );
-            sequence += 1;
             try command.sendMessage(&msg);
             const req = try command.readMessage();
             if (req.kind == .set_position_gain_denominator and
@@ -437,7 +413,6 @@ pub fn execute(self: @This()) !void {
                 sequence,
                 i,
             );
-            sequence += 1;
             try command.sendMessage(&msg);
             const req = try command.readMessage();
             if (req.kind == .set_in_position_threshold and
@@ -457,7 +432,6 @@ pub fn execute(self: @This()) !void {
                 sequence,
                 i,
             );
-            sequence += 1;
             try command.sendMessage(&msg);
             const req = try command.readMessage();
             if (req.kind == .set_base_position and req.sequence == sequence) {
@@ -475,7 +449,6 @@ pub fn execute(self: @This()) !void {
                 sequence,
                 i,
             );
-            sequence += 1;
             try command.sendMessage(&msg);
             const req = try command.readMessage();
             if (req.kind == .set_back_sensor_off and
@@ -497,7 +470,6 @@ pub fn execute(self: @This()) !void {
                 sequence,
                 i,
             );
-            sequence += 1;
             try command.sendMessage(&msg);
             const req = try command.readMessage();
             if (req.kind == .set_front_sensor_off and
@@ -515,7 +487,6 @@ pub fn execute(self: @This()) !void {
 
         while (true) {
             const msg = drivercom.Message.init(.get_rs, sequence, i);
-            sequence += 1;
             try command.sendMessage(&msg);
             const req = try command.readMessage();
             if (req.kind == .set_rs and req.sequence == sequence) {
@@ -529,7 +500,6 @@ pub fn execute(self: @This()) !void {
 
         while (true) {
             const msg = drivercom.Message.init(.get_ls, sequence, i);
-            sequence += 1;
             try command.sendMessage(&msg);
             const req = try command.readMessage();
             if (req.kind == .set_ls and req.sequence == sequence) {
@@ -543,7 +513,6 @@ pub fn execute(self: @This()) !void {
 
         while (true) {
             const msg = drivercom.Message.init(.get_kf, sequence, i);
-            sequence += 1;
             try command.sendMessage(&msg);
             const req = try command.readMessage();
             if (req.kind == .set_kf and req.sequence == sequence) {
@@ -557,7 +526,6 @@ pub fn execute(self: @This()) !void {
 
         while (true) {
             const msg = drivercom.Message.init(.get_kbm, sequence, i);
-            sequence += 1;
             try command.sendMessage(&msg);
             const req = try command.readMessage();
             if (req.kind == .set_kbm and req.sequence == sequence) {
@@ -579,7 +547,6 @@ pub fn execute(self: @This()) !void {
                 sequence,
                 i,
             );
-            sequence += 1;
             try command.sendMessage(&msg);
             const req = try command.readMessage();
             if (req.kind == .set_calibrated_magnet_length_backward and
@@ -602,7 +569,6 @@ pub fn execute(self: @This()) !void {
                 sequence,
                 i,
             );
-            sequence += 1;
             try command.sendMessage(&msg);
             const req = try command.readMessage();
             if (req.kind == .set_calibrated_magnet_length_forward and

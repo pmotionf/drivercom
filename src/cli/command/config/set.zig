@@ -38,7 +38,7 @@ pub fn execute(self: @This()) !void {
         return;
     }
 
-    var file = try std.fs.cwd().openFile(self.file orelse {
+    const file = try std.fs.cwd().openFile(self.file orelse {
         std.log.err("file must be provided", .{});
         return;
     }, .{});

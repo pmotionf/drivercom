@@ -30,7 +30,7 @@ pub fn execute(_: @This()) !void {
     const msg = drivercom.Message.init(.firmware_version, 0, .{});
     try command.sendMessage(&msg);
     const req = try command.readMessage();
-    if (req.kind == .firmware_version and req.sequence == 1) {
+    if (req.kind == .firmware_version and req.sequence == 0) {
         const payload = req.payload(.firmware_version);
 
         const stdout = std.io.getStdOut().writer();
