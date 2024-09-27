@@ -5,7 +5,7 @@ const args = @import("args");
 const drivercom = @import("drivercom");
 
 pub const meta = .{
-    .full_text = "Stop PMF Smart Driver logging.",
+    .full_text = "Stop driver logging.",
     .usage_summary = "",
 };
 

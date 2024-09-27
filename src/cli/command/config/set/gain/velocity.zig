@@ -12,7 +12,7 @@ pub const shorthands = .{
 };
 
 pub const meta = .{
-    .full_text = "Set PMF Smart Driver velocity gain.",
+    .full_text = "Set driver velocity gain.",
     .usage_summary = "[--file] <axis> <denominator> <denominator_pi>",
 
     .option_docs = .{

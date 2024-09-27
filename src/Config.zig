@@ -1,4 +1,4 @@
-//! This module represents a PMF Smart Driver's configuration.
+//! This module represents driver's configuration.
 const std = @import("std");
 const drivercom = @import("drivercom.zig");
 

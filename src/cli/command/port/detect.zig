@@ -7,7 +7,7 @@ const serialport = @import("serialport");
 const cli = @import("../../../cli.zig");
 
 pub const meta = .{
-    .full_text = "Detect connected PMF Smart Driver serial port.",
+    .full_text = "Detect connected driver serial port.",
     .usage_summary = "",
 };
 
@@ -116,7 +116,7 @@ pub fn execute(_: @This()) !void {
     }
     const stderr = std.io.getStdErr().writer();
     try stderr.print(
-        "{s}No PMF Smart Driver serial port detected.\n",
+        "{s}No driver serial port detected.\n",
         .{if (attempted_connections > 0) "\n" else ""},
     );
 }

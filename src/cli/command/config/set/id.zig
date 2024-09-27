@@ -12,7 +12,7 @@ pub const shorthands = .{
 };
 
 pub const meta = .{
-    .full_text = "Set PMF Smart Driver ID and CC-Link Station ID.",
+    .full_text = "Set Driver ID and CC-Link Station ID.",
     .usage_summary = "[--file] <Driver ID> <CC-Link Station ID>",
 
     .option_docs = .{

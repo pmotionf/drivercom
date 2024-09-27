@@ -11,7 +11,7 @@ pub const shorthands = .{
 };
 
 pub const meta = .{
-    .full_text = "Retrieve PMF Smart Driver logs.",
+    .full_text = "Retrieve driver logs.",
     .usage_summary = "[--file]",
 
     .option_docs = .{

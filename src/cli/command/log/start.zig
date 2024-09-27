@@ -5,7 +5,7 @@ const args = @import("args");
 const drivercom = @import("drivercom");
 
 pub const meta = .{
-    .full_text = "Start PMF Smart Driver log recording.",
+    .full_text = "Start driver logging.",
     .usage_summary = "",
 };
 

@@ -12,7 +12,7 @@ pub const shorthands = .{
 };
 
 pub const meta = .{
-    .full_text = "Set PMF Smart Driver current gain.",
+    .full_text = "Set driver current gain.",
     .usage_summary = "[--file] <axis> <denominator>",
 
     .option_docs = .{

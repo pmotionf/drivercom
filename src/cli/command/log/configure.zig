@@ -12,7 +12,7 @@ pub const shorthands = .{
 };
 
 pub const meta = .{
-    .full_text = "Configure PMF Smart Driver logging behavior.",
+    .full_text = "Configure driver logging parameters.",
     .usage_summary = "[--file]",
 
     .option_docs = .{

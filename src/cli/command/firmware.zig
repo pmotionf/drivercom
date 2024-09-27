@@ -6,7 +6,7 @@ const drivercom = @import("drivercom");
 const serial = @import("serial");
 
 pub const meta = .{
-    .full_text = "Retrieve PMF Smart Driver firmware version.",
+    .full_text = "Retrieve driver firmware version.",
     .usage_summary = "",
 
     .option_docs = .{},

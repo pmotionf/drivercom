@@ -1,4 +1,5 @@
 pub const id = @import("get/id.zig");
+pub const neighbor = @import("get/neighbor.zig");
 
 const std = @import("std");
 const cli = @import("../../../cli.zig");
@@ -14,7 +15,7 @@ pub const shorthands = .{
 };
 
 pub const meta = .{
-    .full_text = "Retrieve PMF Smart Driver configuration.",
+    .full_text = "Retrieve driver configuration.",
     .usage_summary = "[--file]",
 
     .option_docs = .{
