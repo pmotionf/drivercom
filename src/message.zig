@@ -214,6 +214,18 @@ pub const Message = extern struct {
             axis3: bool,
             _: u13 = 0,
         },
+        log_get_vehicles: void,
+        log_set_vehicles: [4]u16,
+        log_get_sensors: void,
+        log_set_sensors: packed struct(u16) {
+            sensor1: bool,
+            sensor2: bool,
+            sensor3: bool,
+            sensor4: bool,
+            sensor5: bool,
+            sensor6: bool,
+            _: u10 = 0,
+        },
         log_get_start: void,
         log_set_start: extern struct {
             first: packed struct(u16) {
@@ -243,7 +255,8 @@ pub const Message = extern struct {
         },
         log_get: extern struct {
             cycle: u32,
-            axis: u16,
+            /// Axis ID, hall sensor ID, or vehicle ID depending on tag.
+            id: u16,
             tag: packed struct(u16) {
                 value: Log.Tag,
                 _: u11 = 0,

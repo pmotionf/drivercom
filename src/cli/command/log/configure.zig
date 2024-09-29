@@ -91,6 +91,34 @@ pub fn execute(self: @This()) !void {
     try command.sendMessage(&msg);
 
     sequence += 1;
+    msg = drivercom.Message.init(
+        .log_set_vehicles,
+        sequence,
+        .{
+            params.vehicles[0],
+            params.vehicles[1],
+            params.vehicles[2],
+            params.vehicles[3],
+        },
+    );
+    try command.sendMessage(&msg);
+
+    sequence += 1;
+    msg = drivercom.Message.init(
+        .log_set_sensors,
+        sequence,
+        .{
+            .sensor1 = params.hall_sensors[0],
+            .sensor2 = params.hall_sensors[1],
+            .sensor3 = params.hall_sensors[2],
+            .sensor4 = params.hall_sensors[3],
+            .sensor5 = params.hall_sensors[4],
+            .sensor6 = params.hall_sensors[5],
+        },
+    );
+    try command.sendMessage(&msg);
+
+    sequence += 1;
     msg = drivercom.Message.init(.log_set_start, sequence, .{
         .first = .{
             .vehicle = params.start.vehicles[0],
