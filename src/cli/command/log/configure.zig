@@ -40,14 +40,6 @@ pub fn execute(self: @This()) !void {
     }, .{});
     defer file.close();
 
-    const test_config: drivercom.Log = undefined;
-    var temp_file = try std.fs.cwd().createFile("template.json", .{});
-    try std.json.stringify(
-        test_config,
-        .{ .whitespace = .indent_4 },
-        temp_file.writer(),
-    );
-
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
     const allocator = arena.allocator();
