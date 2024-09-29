@@ -351,6 +351,60 @@ pub fn execute(self: @This()) !void {
             }
         }
 
+        if (params.config.axis.current_d) {
+            for (params.axes, 1..) |axis, id| {
+                if (!axis) continue;
+                sequence += 1;
+                msg = drivercom.Message.init(.log_get, sequence, .{
+                    .cycle = @intCast(i),
+                    .id = @intCast(id),
+                    .tag = .{
+                        .value = .axis_current_d,
+                    },
+                });
+                retry: while (true) {
+                    try command.sendMessage(&msg);
+                    const req = try command.readMessage();
+                    if (req.kind == .log_get and req.sequence == sequence) {
+                        const payload = req.payload(.log_get);
+                        const current: f32 = @bitCast(payload.cycle);
+                        if (file) |f| {
+                            try f.writer().print("{},", .{current});
+                        }
+                        try stdout.print("{},", .{current});
+                        break :retry;
+                    }
+                }
+            }
+        }
+
+        if (params.config.axis.current_q) {
+            for (params.axes, 1..) |axis, id| {
+                if (!axis) continue;
+                sequence += 1;
+                msg = drivercom.Message.init(.log_get, sequence, .{
+                    .cycle = @intCast(i),
+                    .id = @intCast(id),
+                    .tag = .{
+                        .value = .axis_current_q,
+                    },
+                });
+                retry: while (true) {
+                    try command.sendMessage(&msg);
+                    const req = try command.readMessage();
+                    if (req.kind == .log_get and req.sequence == sequence) {
+                        const payload = req.payload(.log_get);
+                        const current: f32 = @bitCast(payload.cycle);
+                        if (file) |f| {
+                            try f.writer().print("{},", .{current});
+                        }
+                        try stdout.print("{},", .{current});
+                        break :retry;
+                    }
+                }
+            }
+        }
+
         try stdout.writeAll("\n");
         if (file) |f| {
             try f.writeAll("\n");

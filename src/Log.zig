@@ -79,7 +79,13 @@ pub const Config = packed struct(u32) {
         unwrapped_angle: bool = false,
         distance: bool = false,
     } = .{},
-    _: u25 = 0,
+
+    // Axis log.
+    axis: packed struct {
+        current_d: bool = false,
+        current_q: bool = false,
+    } = .{},
+    _: u23 = 0,
 };
 
 pub const Start = enum(u3) {
