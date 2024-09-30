@@ -44,14 +44,14 @@ pub fn execute(self: @This()) !void {
     var msg = drivercom.Message.init(
         .log_status,
         sequence,
-        .{ .status = .{ .value = .stopped }, .cycles_completed = 0 },
+        .{ .status = .stopped, .cycles_completed = 0 },
     );
     while (true) {
         try command.sendMessage(&msg);
         const req = try command.readMessage();
         if (req.kind == .log_status and req.sequence == sequence) {
             const payload = req.payload(.log_status);
-            switch (payload.status.value) {
+            switch (payload.status) {
                 .started => {
                     std.log.err("logging in progress", .{});
                     return;
@@ -237,11 +237,9 @@ pub fn execute(self: @This()) !void {
                 .none => {
                     sequence += 1;
                     msg = drivercom.Message.init(.log_get, sequence, .{
-                        .first = .{
-                            .cycle = @intCast(cycle),
-                            .data = tag,
-                            .id = 0,
-                        },
+                        .cycle = @intCast(cycle),
+                        .data = tag,
+                        .id = 0,
                         .cycles = chunk_size,
                     });
                     try command.sendMessage(&msg);
@@ -259,11 +257,9 @@ pub fn execute(self: @This()) !void {
                         if (!axis) continue;
                         sequence += 1;
                         msg = drivercom.Message.init(.log_get, sequence, .{
-                            .first = .{
-                                .cycle = @intCast(cycle),
-                                .data = tag,
-                                .id = @intCast(id),
-                            },
+                            .cycle = @intCast(cycle),
+                            .data = tag,
+                            .id = @intCast(id),
                             .cycles = chunk_size,
                         });
                         try command.sendMessage(&msg);
@@ -284,11 +280,9 @@ pub fn execute(self: @This()) !void {
                         if (!sensor) continue;
                         sequence += 1;
                         msg = drivercom.Message.init(.log_get, sequence, .{
-                            .first = .{
-                                .cycle = @intCast(cycle),
-                                .data = tag,
-                                .id = @intCast(id),
-                            },
+                            .cycle = @intCast(cycle),
+                            .data = tag,
+                            .id = @intCast(id),
                             .cycles = chunk_size,
                         });
                         try command.sendMessage(&msg);

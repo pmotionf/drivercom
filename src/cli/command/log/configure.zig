@@ -112,27 +112,19 @@ pub fn execute(self: @This()) !void {
 
     sequence += 1;
     msg = drivercom.Message.init(.log_set_start, sequence, .{
-        .first = .{
-            .vehicle = params.start.vehicles[0],
-            .start = params.start.kind,
-        },
-        .second = .{
-            .vehicle = params.start.vehicles[1],
-            .hall_sensor_1 = params.start.hall_sensors[0],
-            .hall_sensor_2 = params.start.hall_sensors[1],
-            .start_condition_and = params.start.combinator == .@"and",
-            .start_condition_or = params.start.combinator == .@"or",
-        },
-        .third = .{
-            .vehicle = params.start.vehicles[2],
-            .hall_sensor_3 = params.start.hall_sensors[2],
-            .hall_sensor_4 = params.start.hall_sensors[3],
-        },
-        .fourth = .{
-            .vehicle = params.start.vehicles[3],
-            .hall_sensor_5 = params.start.hall_sensors[4],
-            .hall_sensor_6 = params.start.hall_sensors[5],
-        },
+        .start = params.start.kind,
+        .start_condition_and = params.start.combinator == .@"and",
+        .start_condition_or = params.start.combinator == .@"or",
+        .vehicle1 = params.start.vehicles[0],
+        .vehicle2 = params.start.vehicles[1],
+        .vehicle3 = params.start.vehicles[2],
+        .vehicle4 = params.start.vehicles[3],
+        .hall_sensor_1 = params.start.hall_sensors[0],
+        .hall_sensor_2 = params.start.hall_sensors[1],
+        .hall_sensor_3 = params.start.hall_sensors[2],
+        .hall_sensor_4 = params.start.hall_sensors[3],
+        .hall_sensor_5 = params.start.hall_sensors[4],
+        .hall_sensor_6 = params.start.hall_sensors[5],
     });
     try command.sendMessage(&msg);
 
@@ -140,14 +132,14 @@ pub fn execute(self: @This()) !void {
     msg = drivercom.Message.init(
         .log_status,
         sequence,
-        .{ .status = .{ .value = .stopped }, .cycles_completed = 0 },
+        .{ .status = .stopped, .cycles_completed = 0 },
     );
     while (true) {
         try command.sendMessage(&msg);
         const req = try command.readMessage();
         if (req.kind == .log_status and req.sequence == sequence) {
             const payload = req.payload(.log_status);
-            if (payload.status.value == .invalid) {
+            if (payload.status == .invalid) {
                 std.log.err("invalid log parameters", .{});
                 return;
             }

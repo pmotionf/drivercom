@@ -3,10 +3,10 @@ const std = @import("std");
 const Config = @import("Config.zig");
 const Log = @import("Log.zig");
 
-pub const Message = extern struct {
+pub const Message = packed struct {
     kind: Kind,
     sequence: u16,
-    _payload: Payload = .{ .u8 = .{0} ** 8 },
+    _payload: u64,
     cycle: u16 = 0,
     _120: u8 = 0,
     bcc: u8 = undefined,
@@ -23,7 +23,7 @@ pub const Message = extern struct {
         start_sequence: void,
         end_sequence: void,
         get_id_station: void,
-        set_id_station: extern struct {
+        set_id_station: packed struct {
             id: u16,
             station: u16,
         },
@@ -33,7 +33,7 @@ pub const Message = extern struct {
             _reserved: u9 = 0,
         },
         get_magnet: void,
-        set_magnet: extern struct {
+        set_magnet: packed struct {
             pitch: f32,
             length: f32,
         },
@@ -42,7 +42,7 @@ pub const Message = extern struct {
         get_angle_offset: void,
         set_angle_offset: f32,
         get_axis_length: void,
-        set_axis_length: extern struct {
+        set_axis_length: packed struct {
             axis_length: f32,
             motor_length: f32,
         },
@@ -53,152 +53,150 @@ pub const Message = extern struct {
         get_warmup_voltage: void,
         set_warmup_voltage: f32,
         get_calibration_magnet_length: void,
-        set_calibration_magnet_length: extern struct {
+        set_calibration_magnet_length: packed struct {
             backward: f32,
             forward: f32,
         },
         get_voltage_target: void,
         set_voltage_target: f32,
         get_voltage_limits: void,
-        set_voltage_limits: extern struct {
+        set_voltage_limits: packed struct {
             lower: f32,
             upper: f32,
         },
         get_max_current: u16,
-        set_max_current: extern struct {
+        set_max_current: packed struct {
             axis: u16,
             _: u16 = 0,
             current: f32,
         },
         get_continuous_current: u16,
-        set_continuous_current: extern struct {
+        set_continuous_current: packed struct {
             axis: u16,
             _: u16 = 0,
             current: f32,
         },
         get_current_gain_p: u16,
-        set_current_gain_p: extern struct {
+        set_current_gain_p: packed struct {
             axis: u16,
             _: u16 = 0,
             p: f32,
         },
         get_current_gain_i: u16,
-        set_current_gain_i: extern struct {
+        set_current_gain_i: packed struct {
             axis: u16,
             _: u16 = 0,
             i: f32,
         },
         get_current_gain_denominator: u16,
-        set_current_gain_denominator: extern struct {
+        set_current_gain_denominator: packed struct {
             axis: u16,
             _: u16 = 0,
             denominator: u32,
         },
         get_velocity_gain_p: u16,
-        set_velocity_gain_p: extern struct {
+        set_velocity_gain_p: packed struct {
             axis: u16,
             _: u16 = 0,
             p: f32,
         },
         get_velocity_gain_i: u16,
-        set_velocity_gain_i: extern struct {
+        set_velocity_gain_i: packed struct {
             axis: u16,
             _: u16 = 0,
             i: f32,
         },
         get_velocity_gain_denominator: u16,
-        set_velocity_gain_denominator: extern struct {
+        set_velocity_gain_denominator: packed struct {
             axis: u16,
             _: u16 = 0,
             denominator: u32,
         },
         get_velocity_gain_denominator_pi: u16,
-        set_velocity_gain_denominator_pi: extern struct {
+        set_velocity_gain_denominator_pi: packed struct {
             axis: u16,
             _: u16 = 0,
             denominator: u32,
         },
         get_position_gain_p: u16,
-        set_position_gain_p: extern struct {
+        set_position_gain_p: packed struct {
             axis: u16,
             _: u16 = 0,
             p: f32,
         },
         get_position_gain_denominator: u16,
-        set_position_gain_denominator: extern struct {
+        set_position_gain_denominator: packed struct {
             axis: u16,
             _: u16 = 0,
             denominator: u32,
         },
         get_in_position_threshold: u16,
-        set_in_position_threshold: extern struct {
+        set_in_position_threshold: packed struct {
             axis: u16,
             _: u16 = 0,
             threshold: f32,
         },
         get_base_position: u16,
-        set_base_position: extern struct {
+        set_base_position: packed struct {
             axis: u16,
             _: u16 = 0,
             position: f32,
         },
         get_back_sensor_off: u16,
-        set_back_sensor_off: extern struct {
+        set_back_sensor_off: packed struct {
             axis: u16,
             _: u16 = 0,
             position: i16,
             section_count: i16,
         },
         get_front_sensor_off: u16,
-        set_front_sensor_off: extern struct {
+        set_front_sensor_off: packed struct {
             axis: u16,
             _: u16 = 0,
             position: i16,
             section_count: i16,
         },
         get_rs: u16,
-        set_rs: extern struct {
+        set_rs: packed struct {
             axis: u16,
             _: u16 = 0,
             rs: f32,
         },
         get_ls: u16,
-        set_ls: extern struct {
+        set_ls: packed struct {
             axis: u16,
             _: u16 = 0,
             ls: f32,
         },
         get_kf: u16,
-        set_kf: extern struct {
+        set_kf: packed struct {
             axis: u16,
             _: u16 = 0,
             kf: f32,
         },
         get_kbm: u16,
-        set_kbm: extern struct {
+        set_kbm: packed struct {
             axis: u16,
             _: u16 = 0,
             kbm: f32,
         },
         get_calibrated_magnet_length_backward: u16,
-        set_calibrated_magnet_length_backward: extern struct {
+        set_calibrated_magnet_length_backward: packed struct {
             sensor: u16,
             _: u16 = 0,
             length: f32,
         },
         get_calibrated_magnet_length_forward: u16,
-        set_calibrated_magnet_length_forward: extern struct {
+        set_calibrated_magnet_length_forward: packed struct {
             sensor: u16,
             _: u16 = 0,
             length: f32,
         },
         log_start: void,
         log_stop: void,
-        log_status: extern struct {
-            status: packed struct(u32) {
-                value: Log.Status,
-                _: u30 = 0,
-            },
+        log_status: packed struct {
+            status: Log.Status,
+            _: u30 = 0,
             cycles_completed: u32,
         },
         log_get_cycles: void,
@@ -227,38 +225,28 @@ pub const Message = extern struct {
             _: u10 = 0,
         },
         log_get_start: void,
-        log_set_start: extern struct {
-            first: packed struct(u16) {
-                vehicle: u12,
-                _: u1 = 0,
-                start: Log.Start,
-            },
-            second: packed struct(u16) {
-                vehicle: u12,
-                hall_sensor_2: bool = false,
-                hall_sensor_1: bool = false,
-                start_condition_and: bool = false,
-                start_condition_or: bool = false,
-            },
-            third: packed struct(u16) {
-                vehicle: u12,
-                _: u2 = 0,
-                hall_sensor_4: bool = false,
-                hall_sensor_3: bool = false,
-            },
-            fourth: packed struct(u16) {
-                vehicle: u12,
-                _: u2 = 0,
-                hall_sensor_6: bool = false,
-                hall_sensor_5: bool = false,
-            },
+        log_set_start: packed struct {
+            vehicle1: u12,
+            _: u1 = 0,
+            start: Log.Start,
+            vehicle2: u12,
+            hall_sensor_2: bool = false,
+            hall_sensor_1: bool = false,
+            start_condition_and: bool = false,
+            start_condition_or: bool = false,
+            vehicle3: u12,
+            _1: u2 = 0,
+            hall_sensor_4: bool = false,
+            hall_sensor_3: bool = false,
+            vehicle4: u12,
+            _2: u2 = 0,
+            hall_sensor_6: bool = false,
+            hall_sensor_5: bool = false,
         },
-        log_get: extern struct {
-            first: packed struct(u32) {
-                cycle: u24,
-                data: Log.Tag,
-                id: u3,
-            },
+        log_get: packed struct {
+            cycle: u24,
+            data: Log.Tag,
+            id: u3,
             cycles: u32,
         },
         u8: [8]u8,
@@ -302,12 +290,12 @@ pub const Message = extern struct {
     };
 
     fn PayloadType(comptime kind: Kind) type {
-        return switch (kind) {
-            inline else => b: {
-                const msg: Message = undefined;
-                break :b @TypeOf(@field(msg._payload, @tagName(kind)));
-            },
-        };
+        const ti = @typeInfo(Payload).@"union";
+        inline for (ti.fields) |field| {
+            if (std.mem.eql(u8, field.name, @tagName(kind))) {
+                return field.type;
+            }
+        }
     }
 
     pub fn init(
@@ -320,8 +308,11 @@ pub const Message = extern struct {
                 var msg: Message = .{
                     .kind = kind,
                     .sequence = sequence,
+                    ._payload = undefined,
                 };
-                @field(msg._payload, @tagName(kind)) = p;
+                var _payload: Payload = undefined;
+                @field(_payload, @tagName(kind)) = p;
+                msg._payload = @bitCast(_payload);
                 msg.bcc = msg.getBcc();
                 break :b msg;
             },
@@ -332,8 +323,9 @@ pub const Message = extern struct {
         self: *const Message,
         comptime kind: Kind,
     ) PayloadType(kind) {
+        const _payload: Payload = @bitCast(self._payload);
         return switch (kind) {
-            inline else => @field(self._payload, @tagName(kind)),
+            inline else => @field(_payload, @tagName(kind)),
         };
     }
 

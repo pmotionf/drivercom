@@ -28,14 +28,14 @@ pub fn execute(_: @This()) !void {
     var msg = drivercom.Message.init(
         .log_status,
         sequence,
-        .{ .status = .{ .value = .stopped }, .cycles_completed = 0 },
+        .{ .status = .stopped, .cycles_completed = 0 },
     );
     while (true) {
         try command.sendMessage(&msg);
         const req = try command.readMessage();
         if (req.kind == .log_status and req.sequence == sequence) {
             const payload = req.payload(.log_status);
-            switch (payload.status.value) {
+            switch (payload.status) {
                 .started => {
                     std.log.err("log already started", .{});
                     return;

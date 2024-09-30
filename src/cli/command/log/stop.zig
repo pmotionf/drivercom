@@ -32,7 +32,7 @@ pub fn execute(_: @This()) !void {
     msg = drivercom.Message.init(
         .log_status,
         sequence,
-        .{ .status = .{ .value = .stopped }, .cycles_completed = 0 },
+        .{ .status = .stopped, .cycles_completed = 0 },
     );
     for (0..3) |_| {
         try command.sendMessage(&msg);
@@ -40,7 +40,7 @@ pub fn execute(_: @This()) !void {
         std.log.info("{any}", .{req});
         if (req.kind == .log_status and req.sequence == sequence) {
             const payload = req.payload(.log_status);
-            switch (payload.status.value) {
+            switch (payload.status) {
                 .started => {
                     std.log.err("log started", .{});
                     return;
