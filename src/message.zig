@@ -254,13 +254,12 @@ pub const Message = extern struct {
             },
         },
         log_get: extern struct {
-            cycle: u32,
-            /// Axis ID, hall sensor ID, or vehicle ID depending on tag.
-            id: u16,
-            tag: packed struct(u16) {
-                value: Log.Tag,
-                _: u11 = 0,
+            first: packed struct(u32) {
+                cycle: u24,
+                data: Log.Tag,
+                id: u3,
             },
+            cycles: u32,
         },
         u8: [8]u8,
     };

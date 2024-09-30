@@ -3,19 +3,23 @@ const cli = @import("../../../cli.zig");
 const command = @import("../../command.zig");
 const args = @import("args");
 const drivercom = @import("drivercom");
+const Log = drivercom.Log;
 
 file: ?[]const u8 = null,
+chunk: u32 = 1000,
 
 pub const shorthands = .{
     .f = "file",
+    .c = "chunk",
 };
 
 pub const meta = .{
     .full_text = "Retrieve driver logs.",
-    .usage_summary = "[--file]",
+    .usage_summary = "[--file] [--chunk]",
 
     .option_docs = .{
         .file = "save retrieved driver logs to file",
+        .chunk = "number of cycles to retrieve per log data chunk",
     },
 };
 
@@ -33,7 +37,7 @@ pub fn execute(self: @This()) !void {
         std.log.err("serial port must be provided", .{});
         return;
     }
-    var params: drivercom.Log = undefined;
+    var params: Log = undefined;
 
     var cycles_completed: u32 = 0;
     var sequence: u16 = 0;
@@ -132,34 +136,70 @@ pub fn execute(self: @This()) !void {
     defer if (file) |f| f.close();
 
     const flags: u32 = @bitCast(params.config);
-    const tags = @typeInfo(drivercom.Log.Tag).@"enum".fields;
+    const tags = @typeInfo(Log.Tag).@"enum".fields;
     const stdout = std.io.getStdOut().writer();
+    var total_tag_bytes: usize = 0;
     inline for (0..tags.len) |i| {
         if ((flags >> @intCast(i)) & 1 == 1) {
-            const start_sensor: usize =
-                comptime @intFromEnum(drivercom.Log.Tag.sensor_alarm);
-            const end_sensor =
-                start_sensor + @bitSizeOf(@TypeOf(params.config.sensor));
+            const tag: Log.Tag = @enumFromInt(i);
+            const tag_size = Log.tagSize(tag);
 
-            if (i >= start_sensor and i < end_sensor) {
-                for (params.hall_sensors, 1..) |sensor, id| {
-                    if (!sensor) continue;
+            switch (Log.tagId(tag)) {
+                .none => {
+                    total_tag_bytes += tag_size;
                     if (file) |f| {
-                        try f.writer().print(
+                        try f.writeAll(tags[i].name ++ ",");
+                    }
+                    try stdout.writeAll(tags[i].name ++ ",");
+                },
+                .axis => {
+                    for (params.axes, 1..) |axis, id| {
+                        if (!axis) continue;
+                        if (file) |f| {
+                            try f.writer().print(
+                                "{d}_{s},",
+                                .{ id, tags[i].name },
+                            );
+                        }
+                        try stdout.print(
                             "{d}_{s},",
                             .{ id, tags[i].name },
                         );
+                        total_tag_bytes += tag_size;
                     }
-                    try stdout.print(
-                        "{d}_{s},",
-                        .{ id, tags[i].name },
-                    );
-                }
-            } else {
-                if (file) |f| {
-                    try f.writeAll(tags[i].name ++ ",");
-                }
-                try stdout.writeAll(tags[i].name ++ ",");
+                },
+                .sensor => {
+                    for (params.hall_sensors, 1..) |sensor, id| {
+                        if (!sensor) continue;
+                        if (file) |f| {
+                            try f.writer().print(
+                                "{d}_{s},",
+                                .{ id, tags[i].name },
+                            );
+                        }
+                        try stdout.print(
+                            "{d}_{s},",
+                            .{ id, tags[i].name },
+                        );
+                        total_tag_bytes += tag_size;
+                    }
+                },
+                .vehicle => {
+                    for (params.vehicles) |id| {
+                        if (id == 0) continue;
+                        if (file) |f| {
+                            try f.writer().print(
+                                "{d}_{s},",
+                                .{ id, tags[i].name },
+                            );
+                        }
+                        try stdout.print(
+                            "{d}_{s},",
+                            .{ id, tags[i].name },
+                        );
+                        total_tag_bytes += tag_size;
+                    }
+                },
             }
         }
     }
@@ -168,246 +208,173 @@ pub fn execute(self: @This()) !void {
     }
     try stdout.writeByte('\n');
 
-    for (0..cycles_completed) |i| {
-        if (params.config.driver.cycle) {
-            sequence += 1;
-            msg = drivercom.Message.init(.log_get, sequence, .{
-                .cycle = @intCast(i),
-                .id = 0,
-                .tag = .{
-                    .value = .driver_cycle,
+    const reader = cli.port.?.reader();
+
+    // Split into chunks.
+    const max_chunk_size = self.chunk;
+    var buf = try std.heap.page_allocator.alloc(
+        u8,
+        max_chunk_size * total_tag_bytes,
+    );
+    defer std.heap.page_allocator.free(buf);
+
+    var cycle: u32 = 0;
+    while (cycle < cycles_completed) {
+        var chunk_size: u32 = max_chunk_size;
+        chunk_size = @min(max_chunk_size, cycles_completed - cycle);
+        defer cycle += chunk_size;
+
+        var buf_ind: usize = 0;
+
+        const config: u32 = @bitCast(params.config);
+        const ti = @typeInfo(Log.Tag).@"enum";
+        for (0..ti.fields.len) |i| {
+            if ((config >> @intCast(i)) & 1 == 0) continue;
+            const tag: Log.Tag = @enumFromInt(i);
+            const tag_size = Log.tagSize(tag);
+            const chunk_byte_size = chunk_size * tag_size;
+            switch (Log.tagId(tag)) {
+                .none => {
+                    sequence += 1;
+                    msg = drivercom.Message.init(.log_get, sequence, .{
+                        .first = .{
+                            .cycle = @intCast(cycle),
+                            .data = tag,
+                            .id = 0,
+                        },
+                        .cycles = chunk_size,
+                    });
+                    try command.sendMessage(&msg);
+
+                    var rcv_size: usize = 0;
+                    while (rcv_size < chunk_byte_size) {
+                        const start = buf_ind + rcv_size;
+                        const len = chunk_byte_size - rcv_size;
+                        rcv_size += try reader.readAll(buf[start..][0..len]);
+                    }
+                    buf_ind += chunk_byte_size;
                 },
-            });
-            retry: while (true) {
-                try command.sendMessage(&msg);
-                const req = try command.readMessage();
-                if (req.kind == .log_get and req.sequence == sequence) {
-                    const payload = req.payload(.log_get);
-                    std.log.debug("{any}", .{payload});
-                    if (payload.tag.value == .driver_cycle) {
-                        const cycle = payload.cycle & 0xFFFF;
-                        if (file) |f| {
-                            try f.writer().print("{d},", .{cycle});
+                .axis => {
+                    for (params.axes, 1..) |axis, id| {
+                        if (!axis) continue;
+                        sequence += 1;
+                        msg = drivercom.Message.init(.log_get, sequence, .{
+                            .first = .{
+                                .cycle = @intCast(cycle),
+                                .data = tag,
+                                .id = @intCast(id),
+                            },
+                            .cycles = chunk_size,
+                        });
+                        try command.sendMessage(&msg);
+
+                        var rcv_size: usize = 0;
+                        while (rcv_size < chunk_byte_size) {
+                            const start = buf_ind + rcv_size;
+                            const len = chunk_byte_size - rcv_size;
+                            rcv_size += try reader.readAll(
+                                buf[start..][0..len],
+                            );
                         }
-                        try stdout.print("{d},", .{cycle});
+                        buf_ind += chunk_byte_size;
                     }
-                    break :retry;
-                }
-            }
-        }
-        if (params.config.driver.cycle_time) {
-            sequence += 1;
-            msg = drivercom.Message.init(.log_get, sequence, .{
-                .cycle = @intCast(i),
-                .id = 0,
-                .tag = .{
-                    .value = .driver_cycle_time,
                 },
-            });
-            retry: while (true) {
-                try command.sendMessage(&msg);
-                const req = try command.readMessage();
-                if (req.kind == .log_get and req.sequence == sequence) {
-                    const payload = req.payload(.log_get);
-                    const cycle_time = payload.cycle & 0xFFFF;
-                    if (file) |f| {
-                        try f.writer().print("{d},", .{cycle_time});
+                .sensor => {
+                    for (params.hall_sensors, 1..) |sensor, id| {
+                        if (!sensor) continue;
+                        sequence += 1;
+                        msg = drivercom.Message.init(.log_get, sequence, .{
+                            .first = .{
+                                .cycle = @intCast(cycle),
+                                .data = tag,
+                                .id = @intCast(id),
+                            },
+                            .cycles = chunk_size,
+                        });
+                        try command.sendMessage(&msg);
+
+                        var rcv_size: usize = 0;
+                        while (rcv_size < chunk_byte_size) {
+                            const start = buf_ind + rcv_size;
+                            const len = chunk_byte_size - rcv_size;
+                            rcv_size += try reader.readAll(
+                                buf[start..][0..len],
+                            );
+                        }
+                        buf_ind += chunk_byte_size;
                     }
-                    try stdout.print("{d},", .{cycle_time});
-                    break :retry;
-                }
-            }
-        }
-        if (params.config.driver.vdc) {
-            sequence += 1;
-            msg = drivercom.Message.init(.log_get, sequence, .{
-                .cycle = @intCast(i),
-                .id = 0,
-                .tag = .{
-                    .value = .driver_vdc,
                 },
-            });
-            retry: while (true) {
-                try command.sendMessage(&msg);
-                const req = try command.readMessage();
-                if (req.kind == .log_get and req.sequence == sequence) {
-                    const payload = req.payload(.log_get);
-                    var vdc: f32 = @floatFromInt(payload.cycle);
-                    vdc /= 100.0;
-                    if (file) |f| {
-                        try f.writer().print("{d:.2},", .{vdc});
-                    }
-                    try stdout.print("{d:.2},", .{vdc});
-                    break :retry;
-                }
+                .vehicle => {},
             }
         }
 
-        if (params.config.sensor.alarm) {
-            for (params.hall_sensors, 1..) |sensor, id| {
-                if (!sensor) continue;
-                sequence += 1;
-                msg = drivercom.Message.init(.log_get, sequence, .{
-                    .cycle = @intCast(i),
-                    .id = @intCast(id),
-                    .tag = .{
-                        .value = .sensor_alarm,
-                    },
-                });
-                retry: while (true) {
-                    try command.sendMessage(&msg);
-                    const req = try command.readMessage();
-                    if (req.kind == .log_get and req.sequence == sequence) {
-                        const payload = req.payload(.log_get);
-                        const alarm: bool = payload.cycle != 0;
-                        if (file) |f| {
-                            try f.writer().print("{},", .{alarm});
-                        }
-                        try stdout.print("{},", .{alarm});
-                        break :retry;
+        for (0..chunk_size) |i| {
+            buf_ind = 0;
+
+            inline for (0..ti.fields.len) |j| {
+                if ((config >> @intCast(j)) & 1 == 1) {
+                    const tag: Log.Tag = @enumFromInt(j);
+                    const tag_size: u3 = Log.tagSize(tag);
+                    const chunk_byte_size = chunk_size * tag_size;
+                    const ValueType: type = Log.TagType(tag);
+
+                    switch (Log.tagId(tag)) {
+                        .none => {
+                            const chunk_offset = buf_ind + i * tag_size;
+                            const value: ValueType = Log.tagParse(
+                                tag,
+                                buf[chunk_offset..][0..tag_size],
+                            );
+                            try writeValue(file, value);
+                            buf_ind += chunk_byte_size;
+                        },
+                        .axis => {
+                            for (params.axes) |axis| {
+                                if (!axis) continue;
+                                const chunk_offset = buf_ind + i * tag_size;
+                                const value: ValueType = Log.tagParse(
+                                    tag,
+                                    buf[chunk_offset..][0..tag_size],
+                                );
+                                try writeValue(file, value);
+                                buf_ind += chunk_size * tag_size;
+                            }
+                        },
+                        .sensor => {
+                            for (params.hall_sensors) |sensor| {
+                                if (!sensor) continue;
+                                const chunk_offset = buf_ind + i * tag_size;
+                                const value: ValueType = Log.tagParse(
+                                    tag,
+                                    buf[chunk_offset..][0..tag_size],
+                                );
+                                try writeValue(file, value);
+                                buf_ind += chunk_size * tag_size;
+                            }
+                        },
+                        .vehicle => {},
                     }
                 }
             }
-        }
-
-        if (params.config.sensor.angle) {
-            for (params.hall_sensors, 1..) |sensor, id| {
-                if (!sensor) continue;
-                sequence += 1;
-                msg = drivercom.Message.init(.log_get, sequence, .{
-                    .cycle = @intCast(i),
-                    .id = @intCast(id),
-                    .tag = .{
-                        .value = .sensor_angle,
-                    },
-                });
-                retry: while (true) {
-                    try command.sendMessage(&msg);
-                    const req = try command.readMessage();
-                    if (req.kind == .log_get and req.sequence == sequence) {
-                        const payload = req.payload(.log_get);
-                        const angle: f32 = @bitCast(payload.cycle);
-                        if (file) |f| {
-                            try f.writer().print("{},", .{angle});
-                        }
-                        try stdout.print("{},", .{angle});
-                        break :retry;
-                    }
-                }
+            if (file) |f| {
+                try f.writer().writeByte('\n');
             }
+            try stdout.writeByte('\n');
         }
+    }
+}
 
-        if (params.config.sensor.unwrapped_angle) {
-            for (params.hall_sensors, 1..) |sensor, id| {
-                if (!sensor) continue;
-                sequence += 1;
-                msg = drivercom.Message.init(.log_get, sequence, .{
-                    .cycle = @intCast(i),
-                    .id = @intCast(id),
-                    .tag = .{
-                        .value = .sensor_unwrapped_angle,
-                    },
-                });
-                retry: while (true) {
-                    try command.sendMessage(&msg);
-                    const req = try command.readMessage();
-                    if (req.kind == .log_get and req.sequence == sequence) {
-                        const payload = req.payload(.log_get);
-                        const angle: f32 = @bitCast(payload.cycle);
-                        if (file) |f| {
-                            try f.writer().print("{},", .{angle});
-                        }
-                        try stdout.print("{},", .{angle});
-                        break :retry;
-                    }
-                }
-            }
-        }
-
-        if (params.config.sensor.distance) {
-            for (params.hall_sensors, 1..) |sensor, id| {
-                if (!sensor) continue;
-                sequence += 1;
-                msg = drivercom.Message.init(.log_get, sequence, .{
-                    .cycle = @intCast(i),
-                    .id = @intCast(id),
-                    .tag = .{
-                        .value = .sensor_distance,
-                    },
-                });
-                retry: while (true) {
-                    try command.sendMessage(&msg);
-                    const req = try command.readMessage();
-                    if (req.kind == .log_get and req.sequence == sequence) {
-                        const payload = req.payload(.log_get);
-                        const distance: f32 = @bitCast(payload.cycle);
-                        if (file) |f| {
-                            try f.writer().print("{},", .{distance});
-                        }
-                        try stdout.print("{},", .{distance});
-                        break :retry;
-                    }
-                }
-            }
-        }
-
-        if (params.config.axis.current_d) {
-            for (params.axes, 1..) |axis, id| {
-                if (!axis) continue;
-                sequence += 1;
-                msg = drivercom.Message.init(.log_get, sequence, .{
-                    .cycle = @intCast(i),
-                    .id = @intCast(id),
-                    .tag = .{
-                        .value = .axis_current_d,
-                    },
-                });
-                retry: while (true) {
-                    try command.sendMessage(&msg);
-                    const req = try command.readMessage();
-                    if (req.kind == .log_get and req.sequence == sequence) {
-                        const payload = req.payload(.log_get);
-                        const current: f32 = @bitCast(payload.cycle);
-                        if (file) |f| {
-                            try f.writer().print("{},", .{current});
-                        }
-                        try stdout.print("{},", .{current});
-                        break :retry;
-                    }
-                }
-            }
-        }
-
-        if (params.config.axis.current_q) {
-            for (params.axes, 1..) |axis, id| {
-                if (!axis) continue;
-                sequence += 1;
-                msg = drivercom.Message.init(.log_get, sequence, .{
-                    .cycle = @intCast(i),
-                    .id = @intCast(id),
-                    .tag = .{
-                        .value = .axis_current_q,
-                    },
-                });
-                retry: while (true) {
-                    try command.sendMessage(&msg);
-                    const req = try command.readMessage();
-                    if (req.kind == .log_get and req.sequence == sequence) {
-                        const payload = req.payload(.log_get);
-                        const current: f32 = @bitCast(payload.cycle);
-                        if (file) |f| {
-                            try f.writer().print("{},", .{current});
-                        }
-                        try stdout.print("{},", .{current});
-                        break :retry;
-                    }
-                }
-            }
-        }
-
-        try stdout.writeAll("\n");
+fn writeValue(file: ?std.fs.File, value: anytype) !void {
+    const stdout = std.io.getStdOut().writer();
+    if (comptime @TypeOf(value) == f32) {
         if (file) |f| {
-            try f.writeAll("\n");
+            try f.writer().print("{d},", .{value});
         }
+        try stdout.print("{d},", .{value});
+    } else {
+        if (file) |f| {
+            try f.writer().print("{},", .{value});
+        }
+        try stdout.print("{},", .{value});
     }
 }

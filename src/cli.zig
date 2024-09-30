@@ -136,10 +136,8 @@ pub const Options = struct {
     retry: usize = 3,
 
     pub const shorthands = .{
-        .c = "commands",
         .p = "port",
         .t = "timeout",
-        .h = "help",
         .r = "retry",
     };
 
