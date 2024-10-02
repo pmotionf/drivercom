@@ -75,6 +75,7 @@ pub fn execute(self: @This()) !void {
         );
         defer untyped.deinit();
         var config = try untyped.parse(drivercom.Config);
+
         for (axes) |axis_index| {
             const axis = &config.axes[axis_index];
             axis.current_gain = config.calcCurrentGain(
