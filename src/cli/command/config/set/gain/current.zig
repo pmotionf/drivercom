@@ -40,24 +40,11 @@ pub fn execute(self: @This()) !void {
         return;
     }
 
-    const denominator = try std.fmt.parseUnsigned(u32, cli.positionals[1], 10);
+    const denominator =
+        try std.fmt.parseUnsigned(u32, cli.positionals[1], 10);
 
     var axes_buf: [3]u16 = undefined;
-    var axes: []u16 = &.{};
-
-    var axes_str = std.mem.splitScalar(u8, cli.positionals[0], ',');
-    while (axes_str.next()) |axis_str| {
-        const axis_id = try std.fmt.parseUnsigned(u16, axis_str, 10);
-        if (axis_id == 0 or axis_id > drivercom.Config.MAX_AXES) {
-            std.log.err(
-                "axis {} must be between 1 and {}",
-                .{ axis_id, drivercom.Config.MAX_AXES },
-            );
-            return;
-        }
-        axes_buf[axes.len] = axis_id - 1;
-        axes = axes_buf[0 .. axes.len + 1];
-    }
+    const axes = try command.parseAxis(cli.positionals[0], &axes_buf);
 
     if (self.file) |name| {
         var file = try std.fs.cwd().openFile(name, .{ .mode = .read_write });

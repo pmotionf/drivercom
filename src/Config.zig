@@ -132,7 +132,7 @@ pub const SystemFlags = packed struct {
     },
     calibration_completed: u1,
     rockwell_magnet: u1,
-    flip_encoders: packed struct(u3) {
+    flip_sensors: packed struct(u3) {
         axis1: u1,
         axis2: u1,
         axis3: u1,

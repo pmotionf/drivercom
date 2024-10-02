@@ -49,11 +49,11 @@ pub fn execute(self: @This()) !void {
                 return;
             },
         }
-    } else if (std.mem.eql(u8, "forward", cli.positionals[0])) {
+    } else if (std.ascii.eqlIgnoreCase("forward", cli.positionals[0])) {
         dir = 'f';
-    } else if (std.mem.eql(u8, "backward", cli.positionals[0])) {
+    } else if (std.ascii.eqlIgnoreCase("backward", cli.positionals[0])) {
         dir = 'b';
-    } else if (std.mem.eql(u8, "all", cli.positionals[0])) {
+    } else if (std.ascii.eqlIgnoreCase("all", cli.positionals[0])) {
         dir = 'a';
     } else {
         std.log.err(

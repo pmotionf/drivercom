@@ -93,3 +93,26 @@ pub fn readMessage() !drivercom.Message {
         return error.CommunicationFailure;
     }
 }
+
+/// Parse CLI axis input into a slice of axis indices.
+pub fn parseAxis(str: []const u8, axes_buf: []u16) ![]u16 {
+    std.debug.assert(axes_buf.len >= drivercom.Config.MAX_AXES);
+    var axes: []u16 = &.{};
+
+    var axes_str = std.mem.splitScalar(u8, str, ',');
+    while (axes_str.next()) |axis_str| {
+        if (axis_str.len == 0) continue;
+        const axis_id = try std.fmt.parseUnsigned(u16, axis_str, 10);
+        if (axis_id == 0 or axis_id > drivercom.Config.MAX_AXES) {
+            std.log.err(
+                "axis {} must be between 1 and {}",
+                .{ axis_id, drivercom.Config.MAX_AXES },
+            );
+            return error.InvalidAxis;
+        }
+        axes_buf[axes.len] = axis_id - 1;
+        axes = axes_buf[0 .. axes.len + 1];
+    }
+
+    return axes;
+}
