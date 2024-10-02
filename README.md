@@ -1,6 +1,6 @@
 # drivercom
 
-> PMF Smart Driver RS232 Serial Communications Library.
+> PMF Smart Driver Communications Library.
 
 ## Building
 
