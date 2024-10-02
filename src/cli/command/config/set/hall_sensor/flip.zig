@@ -39,7 +39,7 @@ pub fn execute(self: @This()) !void {
         return;
     }
 
-    var axes_buf: [3]u16 = undefined;
+    var axes_buf: [3]u2 = undefined;
     const axes = try command.parseAxis(cli.positionals[0], &axes_buf);
 
     var flip: bool = false;

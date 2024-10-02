@@ -95,9 +95,9 @@ pub fn readMessage() !drivercom.Message {
 }
 
 /// Parse CLI axis input into a slice of axis indices.
-pub fn parseAxis(str: []const u8, axes_buf: []u16) ![]u16 {
+pub fn parseAxis(str: []const u8, axes_buf: []u2) ![]u2 {
     std.debug.assert(axes_buf.len >= drivercom.Config.MAX_AXES);
-    var axes: []u16 = &.{};
+    var axes: []u2 = &.{};
 
     var axes_str = std.mem.splitScalar(u8, str, ',');
     while (axes_str.next()) |axis_str| {
@@ -110,9 +110,55 @@ pub fn parseAxis(str: []const u8, axes_buf: []u16) ![]u16 {
             );
             return error.InvalidAxis;
         }
-        axes_buf[axes.len] = axis_id - 1;
+        axes_buf[axes.len] = @intCast(axis_id - 1);
         axes = axes_buf[0 .. axes.len + 1];
     }
 
     return axes;
+}
+
+/// Parse CLI sensors input into a slice of sensor indices.
+pub fn parseSensor(str: []const u8, sensor_buf: []u3) ![]u3 {
+    std.debug.assert(sensor_buf.len >= drivercom.Config.MAX_AXES * 2);
+    var sensors: []u3 = &.{};
+
+    var sensors_str = std.mem.splitScalar(u8, str, ',');
+    while (sensors_str.next()) |sensor_str| {
+        if (sensor_str.len == 0) continue;
+        const sensor_id = try std.fmt.parseUnsigned(u16, sensor_str, 10);
+        if (sensor_id == 0 or sensor_id > drivercom.Config.MAX_AXES * 2) {
+            std.log.err(
+                "sensor {} must be between 1 and {}",
+                .{ sensor_id, drivercom.Config.MAX_AXES * 2 },
+            );
+            return error.InvalidSensor;
+        }
+        sensor_buf[sensors.len] = @intCast(sensor_id - 1);
+        sensors = sensor_buf[0 .. sensors.len + 1];
+    }
+
+    return sensors;
+}
+
+/// Parse CLI direction into 'f', 'b', or 'a'.
+pub fn parseDirection(str: []const u8) !u8 {
+    if (str.len == 1) {
+        switch (str[0]) {
+            'f', 'F' => return 'f',
+            'b', 'B' => return 'b',
+            'a', 'A' => return 'a',
+            else => {
+                std.log.err("{c} is not f, b, or a", .{str[0]});
+                return error.InvalidDirection;
+            },
+        }
+    } else {
+        if (std.ascii.eqlIgnoreCase("backward", str)) return 'b';
+        if (std.ascii.eqlIgnoreCase("forward", str)) return 'f';
+        if (std.ascii.eqlIgnoreCase("all", str)) return 'a';
+
+        std.log.err("{s} is not backward, forward, or all", .{str});
+        return error.InvalidDirection;
+    }
+    unreachable;
 }

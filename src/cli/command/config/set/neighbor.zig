@@ -39,28 +39,7 @@ pub fn execute(self: @This()) !void {
         return;
     }
 
-    var dir: u8 = undefined;
-    if (cli.positionals[0].len == 1) {
-        switch (cli.positionals[0][0]) {
-            'f', 'b', 'a' => |c| dir = c,
-            else => |c| {
-                std.log.err("invalid neighbor direction '{c}'", .{c});
-                return;
-            },
-        }
-    } else if (std.ascii.eqlIgnoreCase("forward", cli.positionals[0])) {
-        dir = 'f';
-    } else if (std.ascii.eqlIgnoreCase("backward", cli.positionals[0])) {
-        dir = 'b';
-    } else if (std.ascii.eqlIgnoreCase("all", cli.positionals[0])) {
-        dir = 'a';
-    } else {
-        std.log.err(
-            "invalid neighbor direction '{s}'",
-            .{cli.positionals[0]},
-        );
-        return;
-    }
+    const dir = try command.parseDirection(cli.positionals[0]);
 
     if (self.file) |name| {
         var file = try std.fs.cwd().openFile(name, .{ .mode = .read_write });

@@ -42,7 +42,7 @@ pub fn execute(self: @This()) !void {
     const denominator =
         try std.fmt.parseUnsigned(u32, cli.positionals[1], 10);
 
-    var axes_buf: [3]u16 = undefined;
+    var axes_buf: [3]u2 = undefined;
     const axes = try command.parseAxis(cli.positionals[0], &axes_buf);
 
     if (self.file) |name| {
