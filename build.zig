@@ -71,7 +71,6 @@ pub fn build(b: *std.Build) void {
         var imports = [_]Import{
             .{ .name = "serialport" },
             .{ .name = "args" },
-            .{ .name = "yaml" },
         };
         for (&imports) |*import| {
             import.dependency = b.lazyDependency(

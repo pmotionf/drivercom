@@ -3,7 +3,6 @@ const command = @import("../../../../command.zig");
 const cli = @import("../../../../../cli.zig");
 const args = @import("args");
 const drivercom = @import("drivercom");
-const yaml = @import("yaml");
 
 file: ?[]const u8 = null,
 
@@ -76,12 +75,14 @@ pub fn execute(self: @This()) !void {
 
         const file_str = try file.readToEndAlloc(allocator, 1_024_000_000);
         defer allocator.free(file_str);
-        var untyped = try yaml.Yaml.load(
+        var untyped = try std.json.parseFromSlice(
+            drivercom.Config,
             allocator,
             file_str,
+            .{},
         );
         defer untyped.deinit();
-        var config = try untyped.parse(drivercom.Config);
+        var config = untyped.value;
 
         for (axes) |axis_index| {
             switch (axis_index) {
@@ -93,7 +94,11 @@ pub fn execute(self: @This()) !void {
         }
 
         try file.seekTo(0);
-        try yaml.stringify(allocator, config, file.writer());
+        try std.json.stringify(
+            config,
+            .{ .whitespace = .indent_2 },
+            file.writer(),
+        );
     }
 
     if (cli.port) |_| {

@@ -6,7 +6,6 @@ const cli = @import("../../../cli.zig");
 const command = @import("../../command.zig");
 const args = @import("args");
 const drivercom = @import("drivercom");
-const yaml = @import("yaml");
 
 file: ?[]const u8 = null,
 
@@ -623,13 +622,16 @@ pub fn execute(self: @This()) !void {
 
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
-    const allocator = arena.allocator();
     if (self.file) |f| {
         var file = try std.fs.cwd().createFile(f, .{});
         defer file.close();
 
-        try yaml.stringify(allocator, config, file.writer());
+        try std.json.stringify(
+            config,
+            .{ .whitespace = .indent_2 },
+            file.writer(),
+        );
     }
-    try yaml.stringify(allocator, config, stdout);
+    try std.json.stringify(config, .{ .whitespace = .indent_2 }, stdout);
     try stdout.writeByte('\n');
 }
