@@ -23,16 +23,17 @@ pub fn execute(_: @This()) !void {
         std.log.err("serial port must be provided", .{});
         return;
     }
-    var msg = drivercom.Message.init(.get_system_flags, 0, {});
-    var flags: drivercom.Config.SystemFlags = undefined;
-    while (true) {
-        try command.sendMessage(&msg);
-        const rsp = try command.readMessage();
-        if (rsp.kind == .set_system_flags and rsp.sequence == 0) {
-            flags = rsp.payload(.set_system_flags).flags;
-            break;
-        }
-    }
+
+    const payload = try command.transceiveMessage(
+        .get_system_flags,
+        .set_system_flags,
+        .{
+            .sequence = 0,
+            .payload = {},
+        },
+    );
+
+    const flags = payload.flags;
 
     const stdout = std.io.getStdOut().writer();
     try stdout.print(

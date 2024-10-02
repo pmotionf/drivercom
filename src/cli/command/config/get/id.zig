@@ -24,19 +24,18 @@ pub fn execute(_: @This()) !void {
         return;
     }
 
-    const msg = drivercom.Message.init(.get_id_station, 0, {});
-    while (true) {
-        try command.sendMessage(&msg);
-        const req = try command.readMessage();
-        if (req.kind == .set_id_station and req.sequence == 0) {
-            const payload = req.payload(.set_id_station);
+    const payload = try command.transceiveMessage(
+        .get_id_station,
+        .set_id_station,
+        .{
+            .sequence = 0,
+            .payload = {},
+        },
+    );
 
-            const stdout = std.io.getStdOut().writer();
-            try stdout.print(
-                "Driver ID: {}\nCC-Link Station ID: {}\n",
-                .{ payload.id, payload.station },
-            );
-            break;
-        }
-    }
+    const stdout = std.io.getStdOut().writer();
+    try stdout.print(
+        "Driver ID: {}\nCC-Link Station ID: {}\n",
+        .{ payload.id, payload.station },
+    );
 }
