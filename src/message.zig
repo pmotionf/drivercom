@@ -28,9 +28,9 @@ pub const Message = packed struct {
             station: u16,
         },
         get_system_flags: void,
-        set_system_flags: packed struct {
+        set_system_flags: packed struct(u16) {
             flags: Config.SystemFlags,
-            _reserved: u9 = 0,
+            _reserved: u6 = 0,
         },
         get_magnet: void,
         set_magnet: packed struct {
