@@ -86,9 +86,9 @@ pub fn execute(self: @This()) !void {
 
         for (axes) |axis_index| {
             switch (axis_index) {
-                0 => config.flags.flip_sensors.axis1 = if (flip) 1 else 0,
-                1 => config.flags.flip_sensors.axis2 = if (flip) 1 else 0,
-                2 => config.flags.flip_sensors.axis3 = if (flip) 1 else 0,
+                0 => config.flags.flip_sensors.axis1 = flip,
+                1 => config.flags.flip_sensors.axis2 = flip,
+                2 => config.flags.flip_sensors.axis3 = flip,
                 else => unreachable,
             }
         }
@@ -119,9 +119,9 @@ pub fn execute(self: @This()) !void {
 
         for (axes) |axis_index| {
             switch (axis_index) {
-                0 => flags.flip_sensors.axis1 = if (flip) 1 else 0,
-                1 => flags.flip_sensors.axis2 = if (flip) 1 else 0,
-                2 => flags.flip_sensors.axis3 = if (flip) 1 else 0,
+                0 => flags.flip_sensors.axis1 = flip,
+                1 => flags.flip_sensors.axis2 = flip,
+                2 => flags.flip_sensors.axis3 = flip,
                 else => unreachable,
             }
         }

@@ -121,21 +121,21 @@ pub const HallSensor = struct {
 };
 
 pub const SystemFlags = packed struct {
-    home_sensor: u1,
+    home_sensor: bool,
     has_neighbor: packed struct(u2) {
-        backward: u1,
-        forward: u1,
+        backward: bool,
+        forward: bool,
     },
     uses_axis: packed struct(u2) {
-        axis2: u1,
-        axis3: u1,
+        axis2: bool,
+        axis3: bool,
     },
-    calibration_completed: u1,
-    rockwell_magnet: u1,
+    calibration_completed: bool,
+    rockwell_magnet: bool,
     flip_sensors: packed struct(u3) {
-        axis1: u1,
-        axis2: u1,
-        axis3: u1,
+        axis1: bool,
+        axis2: bool,
+        axis3: bool,
     },
 };
 

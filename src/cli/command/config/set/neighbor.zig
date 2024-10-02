@@ -62,16 +62,16 @@ pub fn execute(self: @This()) !void {
 
         switch (dir) {
             'a' => {
-                config.flags.has_neighbor.backward = 1;
-                config.flags.has_neighbor.forward = 1;
+                config.flags.has_neighbor.backward = true;
+                config.flags.has_neighbor.forward = true;
             },
             'b' => {
-                config.flags.has_neighbor.backward = 1;
-                config.flags.has_neighbor.forward = 0;
+                config.flags.has_neighbor.backward = true;
+                config.flags.has_neighbor.forward = false;
             },
             'f' => {
-                config.flags.has_neighbor.backward = 0;
-                config.flags.has_neighbor.forward = 1;
+                config.flags.has_neighbor.backward = false;
+                config.flags.has_neighbor.forward = true;
             },
             else => unreachable,
         }
@@ -98,16 +98,16 @@ pub fn execute(self: @This()) !void {
 
         switch (dir) {
             'a' => {
-                flags.has_neighbor.backward = 1;
-                flags.has_neighbor.forward = 1;
+                flags.has_neighbor.backward = true;
+                flags.has_neighbor.forward = true;
             },
             'b' => {
-                flags.has_neighbor.backward = 1;
-                flags.has_neighbor.forward = 0;
+                flags.has_neighbor.backward = true;
+                flags.has_neighbor.forward = false;
             },
             'f' => {
-                flags.has_neighbor.backward = 0;
-                flags.has_neighbor.forward = 1;
+                flags.has_neighbor.backward = false;
+                flags.has_neighbor.forward = true;
             },
             else => unreachable,
         }
