@@ -6,6 +6,12 @@ const drivercom = @import("drivercom");
 const serialport = @import("serialport");
 const command = @import("cli/command.zig");
 
+pub const version: std.SemanticVersion = .{
+    .major = 0,
+    .minor = 1,
+    .patch = 0,
+};
+
 pub var port: ?serialport.Port = null;
 pub var timeout: usize = 1000;
 pub var retry: usize = 3;

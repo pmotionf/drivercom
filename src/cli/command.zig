@@ -1,3 +1,4 @@
+pub const version = @import("command/version.zig");
 pub const firmware = @import("command/firmware.zig");
 pub const port = @import("command/port.zig");
 pub const config = @import("command/config.zig");
