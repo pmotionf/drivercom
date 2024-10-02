@@ -18,6 +18,7 @@ pub fn sendMessage(msg: *const drivercom.Message) !void {
 
     var retry: usize = 0;
     while (retry < cli.retry) {
+        try cli.port.?.flush(.{ .input = true, .output = true });
         try writer.writeAll(std.mem.asBytes(msg));
         std.log.debug("Wrote message {s}: {any}", .{
             @tagName(msg.kind),
@@ -58,7 +59,7 @@ pub fn sendMessage(msg: *const drivercom.Message) !void {
         break;
     } else {
         std.log.err("all retries failed", .{});
-        return error.CommunicationFailure;
+        return error.CommunicationTimeout;
     }
     std.log.debug("Received response for {s}", .{@tagName(msg.kind)});
 }
@@ -79,7 +80,7 @@ pub fn readMessage() !drivercom.Message {
         }
     } else {
         std.log.err("wait for driver message timed out", .{});
-        return error.CommunicationFailure;
+        return error.CommunicationTimeout;
     }
     std.debug.assert(read_size == 16);
 
@@ -91,6 +92,97 @@ pub fn readMessage() !drivercom.Message {
         try cli.port.?.flush(.{ .input = true });
         std.log.err("corrupt driver message read", .{});
         return error.CommunicationFailure;
+    }
+}
+
+/// Send and receive one message exchange.
+pub fn transceiveMessage(
+    comptime send: drivercom.Message.Kind,
+    comptime receive: drivercom.Message.Kind,
+    options: struct {
+        sequence: u16,
+        payload: drivercom.Message.PayloadType(send),
+        retry: enum(usize) { infinite, once, _ } = .once,
+    },
+) !drivercom.Message.PayloadType(receive) {
+    const msg = drivercom.Message.init(
+        send,
+        options.sequence,
+        options.payload,
+    );
+    switch (options.retry) {
+        .infinite => {
+            while (true) {
+                try sendMessage(&msg);
+                const rsp = readMessage() catch |e| switch (e) {
+                    error.CommunicationTimeout => continue,
+                    else => return e,
+                };
+
+                if (rsp.kind == receive and
+                    rsp.sequence == options.sequence)
+                {
+                    return rsp.payload(receive);
+                }
+            }
+        },
+        .once => {
+            try sendMessage(&msg);
+            const rsp = try readMessage();
+
+            if (rsp.kind == receive and
+                rsp.sequence == options.sequence)
+            {
+                return rsp.payload(receive);
+            } else {
+                std.log.err(
+                    "{s}:{d} expected {s}:{d} but got {s}:{d}",
+                    .{
+                        @tagName(send),
+                        options.sequence,
+                        @tagName(receive),
+                        options.sequence,
+                        @tagName(rsp.kind),
+                        rsp.sequence,
+                    },
+                );
+                return error.CommunicationFailure;
+            }
+        },
+        _ => {
+            const retry = @intFromEnum(options.retry);
+            for (0..retry) |_| {
+                try sendMessage(&msg);
+                const rsp = readMessage() catch |e| switch (e) {
+                    error.CommunicationTimeout => {
+                        std.log.err("message read timed out", .{});
+                        continue;
+                    },
+                    else => return e,
+                };
+
+                if (rsp.kind == receive and
+                    rsp.sequence == options.sequence)
+                {
+                    return rsp.payload(receive);
+                } else {
+                    std.log.err(
+                        "{s}:{d} expected {s}:{d} but got {s}:{d}",
+                        .{
+                            @tagName(send),
+                            options.sequence,
+                            @tagName(receive),
+                            options.sequence,
+                            @tagName(rsp.kind),
+                            rsp.sequence,
+                        },
+                    );
+                }
+            } else {
+                std.log.err("retry {d}/{d} failed", .{ retry, retry });
+                return error.CommunicationFailure;
+            }
+        },
     }
 }
 

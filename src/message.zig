@@ -277,7 +277,7 @@ pub const Message = packed struct {
         break :b @Type(.{ .@"enum" = result });
     };
 
-    fn PayloadType(comptime kind: Kind) type {
+    pub fn PayloadType(comptime kind: Kind) type {
         const ti = @typeInfo(Payload).@"union";
         inline for (ti.fields) |field| {
             if (std.mem.eql(u8, field.name, @tagName(kind))) {

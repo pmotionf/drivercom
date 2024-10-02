@@ -42,581 +42,492 @@ pub fn execute(self: @This()) !void {
 
     var sequence: u16 = 0;
     {
-        const msg = drivercom.Message.init(.get_id_station, sequence, {});
-        try command.sendMessage(&msg);
-        const req = try command.readMessage();
-        if (req.kind == .set_id_station and req.sequence == sequence) {
-            sequence += 1;
-            const payload = req.payload(.set_id_station);
-            config.id = payload.id;
-            config.station_id = payload.station;
-        } else {
-            std.log.err("received invalid response: {any}", .{req});
-            return error.CommunicationFailure;
-        }
+        const payload = try command.transceiveMessage(
+            .get_id_station,
+            .set_id_station,
+            .{ .sequence = sequence, .payload = {} },
+        );
+        config.id = payload.id;
+        config.station_id = payload.station;
     }
-
     {
-        const msg = drivercom.Message.init(.get_system_flags, sequence, {});
-        try command.sendMessage(&msg);
-        const req = try command.readMessage();
-        if (req.kind == .set_system_flags and req.sequence == sequence) {
-            sequence += 1;
-            const payload = req.payload(.set_system_flags);
-            config.flags = payload.flags;
-        } else {
-            std.log.err("received invalid response: {any}", .{req});
-            return error.CommunicationFailure;
-        }
+        sequence += 1;
+        const payload = try command.transceiveMessage(
+            .get_system_flags,
+            .set_system_flags,
+            .{ .sequence = sequence, .payload = {} },
+        );
+        config.flags = payload.flags;
     }
-
     {
-        const msg = drivercom.Message.init(.get_magnet, sequence, {});
-        try command.sendMessage(&msg);
-        const req = try command.readMessage();
-        if (req.kind == .set_magnet and req.sequence == sequence) {
-            sequence += 1;
-            const payload = req.payload(.set_magnet);
-            config.magnet.pitch = payload.pitch;
-            config.magnet.length = payload.length;
-        } else {
-            std.log.err("received invalid response: {any}", .{req});
-            return error.CommunicationFailure;
-        }
+        sequence += 1;
+        const payload = try command.transceiveMessage(
+            .get_magnet,
+            .set_magnet,
+            .{ .sequence = sequence, .payload = {} },
+        );
+        config.magnet.pitch = payload.pitch;
+        config.magnet.length = payload.length;
     }
-
     {
-        const msg = drivercom.Message.init(.get_vehicle_mass, sequence, {});
-        try command.sendMessage(&msg);
-        const req = try command.readMessage();
-        if (req.kind == .set_vehicle_mass and req.sequence == sequence) {
-            sequence += 1;
-            const payload = req.payload(.set_vehicle_mass);
-            config.vehicle_mass = payload;
-        } else {
-            std.log.err("received invalid response: {any}", .{req});
-            return error.CommunicationFailure;
-        }
+        sequence += 1;
+        const payload = try command.transceiveMessage(
+            .get_vehicle_mass,
+            .set_vehicle_mass,
+            .{ .sequence = sequence, .payload = {} },
+        );
+        config.vehicle_mass = payload;
     }
-
-    while (true) {
-        const msg = drivercom.Message.init(.get_angle_offset, sequence, {});
-        try command.sendMessage(&msg);
-        const req = try command.readMessage();
-        if (req.kind == .set_angle_offset and req.sequence == sequence) {
-            sequence += 1;
-            const payload = req.payload(.set_angle_offset);
-            config.mechanical_angle_offset = payload;
-            break;
-        }
+    {
+        sequence += 1;
+        const payload = try command.transceiveMessage(
+            .get_angle_offset,
+            .set_angle_offset,
+            .{ .sequence = sequence, .payload = {} },
+        );
+        config.mechanical_angle_offset = payload;
     }
-
-    while (true) {
-        const msg = drivercom.Message.init(.get_axis_length, sequence, {});
-        try command.sendMessage(&msg);
-        const req = try command.readMessage();
-        if (req.kind == .set_axis_length and req.sequence == sequence) {
-            sequence += 1;
-            const payload = req.payload(.set_axis_length);
-            config.axis_length = payload.axis_length;
-            config.motor.length = payload.motor_length;
-            break;
-        }
+    {
+        sequence += 1;
+        const payload = try command.transceiveMessage(
+            .get_axis_length,
+            .set_axis_length,
+            .{ .sequence = sequence, .payload = {} },
+        );
+        config.axis_length = payload.axis_length;
+        config.motor.length = payload.motor_length;
     }
-
-    while (true) {
-        const msg = drivercom.Message.init(.get_calibrated_home, sequence, {});
-        try command.sendMessage(&msg);
-        const req = try command.readMessage();
-        if (req.kind == .set_calibrated_home and req.sequence == sequence) {
-            sequence += 1;
-            const payload = req.payload(.set_calibrated_home);
-            config.calibrated_home_position = payload;
-            break;
-        }
+    {
+        sequence += 1;
+        const payload = try command.transceiveMessage(
+            .get_calibrated_home,
+            .set_calibrated_home,
+            .{ .sequence = sequence, .payload = {} },
+        );
+        config.calibrated_home_position = payload;
     }
-
-    while (true) {
-        const msg = drivercom.Message.init(.get_total_axes, sequence, {});
-        try command.sendMessage(&msg);
-        const req = try command.readMessage();
-        if (req.kind == .set_total_axes and req.sequence == sequence) {
-            sequence += 1;
-            const payload = req.payload(.set_total_axes);
-            config.total_axes = payload;
-            break;
-        }
+    {
+        sequence += 1;
+        const payload = try command.transceiveMessage(
+            .get_total_axes,
+            .set_total_axes,
+            .{ .sequence = sequence, .payload = {} },
+        );
+        config.total_axes = payload;
     }
-
-    while (true) {
-        const msg = drivercom.Message.init(.get_warmup_voltage, sequence, {});
-        try command.sendMessage(&msg);
-        const req = try command.readMessage();
-        if (req.kind == .set_warmup_voltage and req.sequence == sequence) {
-            sequence += 1;
-            const payload = req.payload(.set_warmup_voltage);
-            config.warmup_voltage_reference = payload;
-            break;
-        }
+    {
+        sequence += 1;
+        const payload = try command.transceiveMessage(
+            .get_warmup_voltage,
+            .set_warmup_voltage,
+            .{ .sequence = sequence, .payload = {} },
+        );
+        config.warmup_voltage_reference = payload;
     }
-
-    while (true) {
-        const msg = drivercom.Message.init(
+    {
+        sequence += 1;
+        const payload = try command.transceiveMessage(
             .get_calibration_magnet_length,
-            sequence,
-            {},
+            .set_calibration_magnet_length,
+            .{ .sequence = sequence, .payload = {} },
         );
-        try command.sendMessage(&msg);
-        const req = try command.readMessage();
-        if (req.kind == .set_calibration_magnet_length and
-            req.sequence == sequence)
-        {
-            sequence += 1;
-            const payload = req.payload(.set_calibration_magnet_length);
-            config.calibration_magnet_length.backward = payload.backward;
-            config.calibration_magnet_length.forward = payload.forward;
-            break;
-        }
+        config.calibration_magnet_length.backward = payload.backward;
+        config.calibration_magnet_length.forward = payload.forward;
     }
-
-    while (true) {
-        const msg = drivercom.Message.init(.get_voltage_target, sequence, {});
-        try command.sendMessage(&msg);
-        const req = try command.readMessage();
-        if (req.kind == .set_voltage_target and req.sequence == sequence) {
-            sequence += 1;
-            const payload = req.payload(.set_voltage_target);
-            config.vdc.target = payload;
-            break;
-        }
+    {
+        sequence += 1;
+        const payload = try command.transceiveMessage(
+            .get_voltage_target,
+            .set_voltage_target,
+            .{ .sequence = sequence, .payload = {} },
+        );
+        config.vdc.target = payload;
     }
-
-    while (true) {
-        const msg = drivercom.Message.init(.get_voltage_limits, sequence, {});
-        try command.sendMessage(&msg);
-        const req = try command.readMessage();
-        if (req.kind == .set_voltage_limits and req.sequence == sequence) {
-            sequence += 1;
-            const payload = req.payload(.set_voltage_limits);
-            config.vdc.limit.lower = payload.lower;
-            config.vdc.limit.upper = payload.upper;
-            break;
-        }
+    {
+        sequence += 1;
+        const payload = try command.transceiveMessage(
+            .get_voltage_limits,
+            .set_voltage_limits,
+            .{ .sequence = sequence, .payload = {} },
+        );
+        config.vdc.limit.lower = payload.lower;
+        config.vdc.limit.upper = payload.upper;
     }
-
-    while (true) {
-        const msg = drivercom.Message.init(.get_max_current, sequence, {});
-        try command.sendMessage(&msg);
-        const req = try command.readMessage();
-        if (req.kind == .set_max_current and req.sequence == sequence) {
-            const payload = req.payload(.set_max_current);
-            sequence += 1;
-            config.motor.max_current = payload;
-            break;
-        }
+    {
+        sequence += 1;
+        const payload = try command.transceiveMessage(
+            .get_max_current,
+            .set_max_current,
+            .{ .sequence = sequence, .payload = {} },
+        );
+        config.motor.max_current = payload;
     }
-
-    while (true) {
-        const msg = drivercom.Message.init(
+    {
+        sequence += 1;
+        const payload = try command.transceiveMessage(
             .get_continuous_current,
-            sequence,
-            {},
+            .set_continuous_current,
+            .{ .sequence = sequence, .payload = {} },
         );
-        try command.sendMessage(&msg);
-        const req = try command.readMessage();
-        if (req.kind == .set_continuous_current and
-            req.sequence == sequence)
-        {
-            const payload = req.payload(.set_continuous_current);
-            sequence += 1;
-            config.motor.continuous_current = payload;
-            break;
-        }
+        config.motor.continuous_current = payload;
     }
-
-    while (true) {
-        const msg = drivercom.Message.init(.get_rs, sequence, {});
-        try command.sendMessage(&msg);
-        const req = try command.readMessage();
-        if (req.kind == .set_rs and req.sequence == sequence) {
-            const payload = req.payload(.set_rs);
-            sequence += 1;
-            config.motor.rs = payload;
-            break;
-        }
+    {
+        sequence += 1;
+        const payload = try command.transceiveMessage(
+            .get_rs,
+            .set_rs,
+            .{ .sequence = sequence, .payload = {} },
+        );
+        config.motor.rs = payload;
     }
-
-    while (true) {
-        const msg = drivercom.Message.init(.get_ls, sequence, {});
-        try command.sendMessage(&msg);
-        const req = try command.readMessage();
-        if (req.kind == .set_ls and req.sequence == sequence) {
-            const payload = req.payload(.set_ls);
-            sequence += 1;
-            config.motor.ls = payload;
-            break;
-        }
+    {
+        sequence += 1;
+        const payload = try command.transceiveMessage(
+            .get_ls,
+            .set_ls,
+            .{ .sequence = sequence, .payload = {} },
+        );
+        config.motor.ls = payload;
     }
-
-    while (true) {
-        const msg = drivercom.Message.init(.get_kf, sequence, {});
-        try command.sendMessage(&msg);
-        const req = try command.readMessage();
-        if (req.kind == .set_kf and req.sequence == sequence) {
-            const payload = req.payload(.set_kf);
-            sequence += 1;
-            config.motor.kf = payload;
-            break;
-        }
+    {
+        sequence += 1;
+        const payload = try command.transceiveMessage(
+            .get_kf,
+            .set_kf,
+            .{ .sequence = sequence, .payload = {} },
+        );
+        config.motor.kf = payload;
     }
-
-    while (true) {
-        const msg = drivercom.Message.init(.get_kbm, sequence, {});
-        try command.sendMessage(&msg);
-        const req = try command.readMessage();
-        if (req.kind == .set_kbm and req.sequence == sequence) {
-            const payload = req.payload(.set_kbm);
-            sequence += 1;
-            config.motor.kbm = payload;
-            break;
-        }
+    {
+        sequence += 1;
+        const payload = try command.transceiveMessage(
+            .get_kbm,
+            .set_kbm,
+            .{ .sequence = sequence, .payload = {} },
+        );
+        config.motor.kbm = payload;
     }
 
     for (0..drivercom.Config.MAX_AXES) |_i| {
         const i: u16 = @intCast(_i);
-
-        while (true) {
-            const msg = drivercom.Message.init(
+        {
+            sequence += 1;
+            const payload = try command.transceiveMessage(
                 .get_current_gain_p,
-                sequence,
-                i,
+                .set_current_gain_p,
+                .{ .sequence = sequence, .payload = i },
             );
-            try command.sendMessage(&msg);
-            const req = try command.readMessage();
-            if (req.kind == .set_current_gain_p and req.sequence == sequence) {
-                const payload = req.payload(.set_current_gain_p);
-                if (payload.axis != i) continue;
-                sequence += 1;
-                config.axes[i].current_gain.p = payload.p;
-                break;
+            if (payload.axis != i) {
+                std.log.err(
+                    "{s} for axis {d} received axis {d}",
+                    .{ @tagName(.get_current_gain_p), i, payload.axis },
+                );
+                return error.CommunicationFailure;
             }
+            config.axes[i].current_gain.p = payload.p;
         }
-
-        while (true) {
-            const msg = drivercom.Message.init(
+        {
+            sequence += 1;
+            const payload = try command.transceiveMessage(
                 .get_current_gain_i,
-                sequence,
-                i,
+                .set_current_gain_i,
+                .{ .sequence = sequence, .payload = i },
             );
-            try command.sendMessage(&msg);
-            const req = try command.readMessage();
-            if (req.kind == .set_current_gain_i and req.sequence == sequence) {
-                const payload = req.payload(.set_current_gain_i);
-                if (payload.axis != i) continue;
-                sequence += 1;
-                config.axes[i].current_gain.i = payload.i;
-                break;
+            if (payload.axis != i) {
+                std.log.err(
+                    "{s} for axis {d} received axis {d}",
+                    .{ @tagName(.get_current_gain_i), i, payload.axis },
+                );
+                return error.CommunicationFailure;
             }
+            config.axes[i].current_gain.i = payload.i;
         }
-
-        while (true) {
-            const msg = drivercom.Message.init(
+        {
+            sequence += 1;
+            const payload = try command.transceiveMessage(
                 .get_current_gain_denominator,
-                sequence,
-                i,
+                .set_current_gain_denominator,
+                .{ .sequence = sequence, .payload = i },
             );
-            try command.sendMessage(&msg);
-            const req = try command.readMessage();
-            if (req.kind == .set_current_gain_denominator and
-                req.sequence == sequence)
-            {
-                const payload = req.payload(.set_current_gain_denominator);
-                if (payload.axis != i) continue;
-                sequence += 1;
-                config.axes[i].current_gain.denominator = payload.denominator;
-                break;
+            if (payload.axis != i) {
+                std.log.err(
+                    "{s} for axis {d} received axis {d}",
+                    .{
+                        @tagName(.get_current_gain_denominator),
+                        i,
+                        payload.axis,
+                    },
+                );
+                return error.CommunicationFailure;
             }
+            config.axes[i].current_gain.denominator = payload.denominator;
         }
-
-        while (true) {
-            const msg = drivercom.Message.init(
+        {
+            sequence += 1;
+            const payload = try command.transceiveMessage(
                 .get_velocity_gain_p,
-                sequence,
-                i,
+                .set_velocity_gain_p,
+                .{ .sequence = sequence, .payload = i },
             );
-            try command.sendMessage(&msg);
-            const req = try command.readMessage();
-            if (req.kind == .set_velocity_gain_p and
-                req.sequence == sequence)
-            {
-                const payload = req.payload(.set_velocity_gain_p);
-                if (payload.axis != i) continue;
-                sequence += 1;
-                config.axes[i].velocity_gain.p = payload.p;
-                break;
+            if (payload.axis != i) {
+                std.log.err(
+                    "{s} for axis {d} received axis {d}",
+                    .{ @tagName(.get_velocity_gain_p), i, payload.axis },
+                );
+                return error.CommunicationFailure;
             }
+            config.axes[i].velocity_gain.p = payload.p;
         }
-
-        while (true) {
-            const msg = drivercom.Message.init(
+        {
+            sequence += 1;
+            const payload = try command.transceiveMessage(
                 .get_velocity_gain_i,
-                sequence,
-                i,
+                .set_velocity_gain_i,
+                .{ .sequence = sequence, .payload = i },
             );
-            try command.sendMessage(&msg);
-            const req = try command.readMessage();
-            if (req.kind == .set_velocity_gain_i and
-                req.sequence == sequence)
-            {
-                const payload = req.payload(.set_velocity_gain_i);
-                if (payload.axis != i) continue;
-                sequence += 1;
-                config.axes[i].velocity_gain.i = payload.i;
-                break;
+            if (payload.axis != i) {
+                std.log.err(
+                    "{s} for axis {d} received axis {d}",
+                    .{ @tagName(.get_velocity_gain_i), i, payload.axis },
+                );
+                return error.CommunicationFailure;
             }
+            config.axes[i].velocity_gain.i = payload.i;
         }
-
-        while (true) {
-            const msg = drivercom.Message.init(
+        {
+            sequence += 1;
+            const payload = try command.transceiveMessage(
                 .get_velocity_gain_denominator,
-                sequence,
-                i,
+                .set_velocity_gain_denominator,
+                .{ .sequence = sequence, .payload = i },
             );
-            try command.sendMessage(&msg);
-            const req = try command.readMessage();
-            if (req.kind == .set_velocity_gain_denominator and
-                req.sequence == sequence)
-            {
-                const payload = req.payload(.set_velocity_gain_denominator);
-                if (payload.axis != i) continue;
-                sequence += 1;
-                config.axes[i].velocity_gain.denominator = payload.denominator;
-                break;
+            if (payload.axis != i) {
+                std.log.err(
+                    "{s} for axis {d} received axis {d}",
+                    .{
+                        @tagName(.get_velocity_gain_denominator),
+                        i,
+                        payload.axis,
+                    },
+                );
+                return error.CommunicationFailure;
             }
+            config.axes[i].velocity_gain.denominator = payload.denominator;
         }
-
-        while (true) {
-            const msg = drivercom.Message.init(
+        {
+            sequence += 1;
+            const payload = try command.transceiveMessage(
                 .get_velocity_gain_denominator_pi,
-                sequence,
-                i,
+                .set_velocity_gain_denominator_pi,
+                .{ .sequence = sequence, .payload = i },
             );
-            try command.sendMessage(&msg);
-            const req = try command.readMessage();
-            if (req.kind == .set_velocity_gain_denominator_pi and
-                req.sequence == sequence)
-            {
-                const payload = req.payload(.set_velocity_gain_denominator_pi);
-                if (payload.axis != i) continue;
-                sequence += 1;
-                config.axes[i].velocity_gain.denominator_pi =
-                    payload.denominator;
-                break;
+            if (payload.axis != i) {
+                std.log.err(
+                    "{s} for axis {d} received axis {d}",
+                    .{
+                        @tagName(.get_velocity_gain_denominator_pi),
+                        i,
+                        payload.axis,
+                    },
+                );
+                return error.CommunicationFailure;
             }
+            config.axes[i].velocity_gain.denominator_pi = payload.denominator;
         }
-
-        while (true) {
-            const msg = drivercom.Message.init(
+        {
+            sequence += 1;
+            const payload = try command.transceiveMessage(
                 .get_position_gain_p,
-                sequence,
-                i,
+                .set_position_gain_p,
+                .{ .sequence = sequence, .payload = i },
             );
-            try command.sendMessage(&msg);
-            const req = try command.readMessage();
-            if (req.kind == .set_position_gain_p and
-                req.sequence == sequence)
-            {
-                const payload = req.payload(.set_position_gain_p);
-                if (payload.axis != i) continue;
-                sequence += 1;
-                config.axes[i].position_gain.p = payload.p;
-                break;
+            if (payload.axis != i) {
+                std.log.err(
+                    "{s} for axis {d} received axis {d}",
+                    .{ @tagName(.get_position_gain_p), i, payload.axis },
+                );
+                return error.CommunicationFailure;
             }
+            config.axes[i].position_gain.p = payload.p;
         }
-
-        while (true) {
-            const msg = drivercom.Message.init(
+        {
+            sequence += 1;
+            const payload = try command.transceiveMessage(
                 .get_position_gain_denominator,
-                sequence,
-                i,
+                .set_position_gain_denominator,
+                .{ .sequence = sequence, .payload = i },
             );
-            try command.sendMessage(&msg);
-            const req = try command.readMessage();
-            if (req.kind == .set_position_gain_denominator and
-                req.sequence == sequence)
-            {
-                const payload = req.payload(.set_position_gain_denominator);
-                if (payload.axis != i) continue;
-                sequence += 1;
-                config.axes[i].position_gain.denominator = payload.denominator;
-                break;
+            if (payload.axis != i) {
+                std.log.err(
+                    "{s} for axis {d} received axis {d}",
+                    .{
+                        @tagName(.get_position_gain_denominator),
+                        i,
+                        payload.axis,
+                    },
+                );
+                return error.CommunicationFailure;
             }
+            config.axes[i].position_gain.denominator = payload.denominator;
         }
-
-        while (true) {
-            const msg = drivercom.Message.init(
+        {
+            sequence += 1;
+            const payload = try command.transceiveMessage(
                 .get_in_position_threshold,
-                sequence,
-                i,
+                .set_in_position_threshold,
+                .{ .sequence = sequence, .payload = i },
             );
-            try command.sendMessage(&msg);
-            const req = try command.readMessage();
-            if (req.kind == .set_in_position_threshold and
-                req.sequence == sequence)
-            {
-                const payload = req.payload(.set_in_position_threshold);
-                if (payload.axis != i) continue;
-                sequence += 1;
-                config.axes[i].in_position_threshold = payload.threshold;
-                break;
+            if (payload.axis != i) {
+                std.log.err(
+                    "{s} for axis {d} received axis {d}",
+                    .{
+                        @tagName(.get_in_position_threshold),
+                        i,
+                        payload.axis,
+                    },
+                );
+                return error.CommunicationFailure;
             }
+            config.axes[i].in_position_threshold = payload.threshold;
         }
-
-        while (true) {
-            const msg = drivercom.Message.init(
+        {
+            sequence += 1;
+            const payload = try command.transceiveMessage(
                 .get_base_position,
-                sequence,
-                i,
+                .set_base_position,
+                .{ .sequence = sequence, .payload = i },
             );
-            try command.sendMessage(&msg);
-            const req = try command.readMessage();
-            if (req.kind == .set_base_position and req.sequence == sequence) {
-                const payload = req.payload(.set_base_position);
-                if (payload.axis != i) continue;
-                sequence += 1;
-                config.axes[i].base_position = payload.position;
-                break;
+            if (payload.axis != i) {
+                std.log.err(
+                    "{s} for axis {d} received axis {d}",
+                    .{ @tagName(.get_base_position), i, payload.axis },
+                );
+                return error.CommunicationFailure;
             }
+            config.axes[i].base_position = payload.position;
         }
-
-        while (true) {
-            const msg = drivercom.Message.init(
+        {
+            sequence += 1;
+            const payload = try command.transceiveMessage(
                 .get_back_sensor_off,
-                sequence,
-                i,
+                .set_back_sensor_off,
+                .{ .sequence = sequence, .payload = i },
             );
-            try command.sendMessage(&msg);
-            const req = try command.readMessage();
-            if (req.kind == .set_back_sensor_off and
-                req.sequence == sequence)
-            {
-                const payload = req.payload(.set_back_sensor_off);
-                if (payload.axis != i) continue;
-                sequence += 1;
-                config.axes[i].back_sensor_off.position = payload.position;
-                config.axes[i].back_sensor_off.section_count =
-                    payload.section_count;
-                break;
+            if (payload.axis != i) {
+                std.log.err(
+                    "{s} for axis {d} received axis {d}",
+                    .{ @tagName(.get_back_sensor_off), i, payload.axis },
+                );
+                return error.CommunicationFailure;
             }
+            config.axes[i].back_sensor_off.position = payload.position;
+            config.axes[i].back_sensor_off.section_count =
+                payload.section_count;
         }
-
-        while (true) {
-            const msg = drivercom.Message.init(
+        {
+            sequence += 1;
+            const payload = try command.transceiveMessage(
                 .get_front_sensor_off,
-                sequence,
-                i,
+                .set_front_sensor_off,
+                .{ .sequence = sequence, .payload = i },
             );
-            try command.sendMessage(&msg);
-            const req = try command.readMessage();
-            if (req.kind == .set_front_sensor_off and
-                req.sequence == sequence)
-            {
-                const payload = req.payload(.set_front_sensor_off);
-                if (payload.axis != i) continue;
-                sequence += 1;
-                config.axes[i].front_sensor_off.position = payload.position;
-                config.axes[i].front_sensor_off.section_count =
-                    payload.section_count;
-                break;
+            if (payload.axis != i) {
+                std.log.err(
+                    "{s} for axis {d} received axis {d}",
+                    .{ @tagName(.get_front_sensor_off), i, payload.axis },
+                );
+                return error.CommunicationFailure;
             }
+            config.axes[i].front_sensor_off.position = payload.position;
+            config.axes[i].front_sensor_off.section_count =
+                payload.section_count;
         }
     }
 
     for (0..drivercom.Config.MAX_AXES * 2) |_i| {
         const i: u16 = @intCast(_i);
-
-        while (true) {
-            const msg = drivercom.Message.init(
+        {
+            sequence += 1;
+            const payload = try command.transceiveMessage(
                 .get_calibrated_magnet_length_backward,
-                sequence,
-                i,
+                .set_calibrated_magnet_length_backward,
+                .{ .sequence = sequence, .payload = i },
             );
-            try command.sendMessage(&msg);
-            const req = try command.readMessage();
-            if (req.kind == .set_calibrated_magnet_length_backward and
-                req.sequence == sequence)
-            {
-                const payload = req.payload(
-                    .set_calibrated_magnet_length_backward,
+            if (payload.sensor != i) {
+                std.log.err(
+                    "{s} for sensor {d} received axis {d}",
+                    .{
+                        @tagName(.get_calibrated_magnet_length_backward),
+                        i,
+                        payload.sensor,
+                    },
                 );
-                if (payload.sensor != i) continue;
-                sequence += 1;
-                config.hall_sensors[i].calibrated_magnet_length.backward =
-                    payload.length;
-                break;
+                return error.CommunicationFailure;
             }
+            config.hall_sensors[i].calibrated_magnet_length.backward =
+                payload.length;
         }
-
-        while (true) {
-            const msg = drivercom.Message.init(
+        {
+            sequence += 1;
+            const payload = try command.transceiveMessage(
                 .get_calibrated_magnet_length_forward,
-                sequence,
-                i,
+                .set_calibrated_magnet_length_forward,
+                .{ .sequence = sequence, .payload = i },
             );
-            try command.sendMessage(&msg);
-            const req = try command.readMessage();
-            if (req.kind == .set_calibrated_magnet_length_forward and
-                req.sequence == sequence)
-            {
-                const payload = req.payload(
-                    .set_calibrated_magnet_length_forward,
+            if (payload.sensor != i) {
+                std.log.err(
+                    "{s} for sensor {d} received axis {d}",
+                    .{
+                        @tagName(.get_calibrated_magnet_length_forward),
+                        i,
+                        payload.sensor,
+                    },
                 );
-                if (payload.sensor != i) continue;
-                sequence += 1;
-                config.hall_sensors[i].calibrated_magnet_length.forward =
-                    payload.length;
-                break;
+                return error.CommunicationFailure;
             }
+            config.hall_sensors[i].calibrated_magnet_length.forward =
+                payload.length;
         }
-
-        while (true) {
-            const msg = drivercom.Message.init(
+        {
+            sequence += 1;
+            const payload = try command.transceiveMessage(
                 .get_ignore_distance_backward,
-                sequence,
-                i,
+                .set_ignore_distance_backward,
+                .{ .sequence = sequence, .payload = i },
             );
-            try command.sendMessage(&msg);
-            const req = try command.readMessage();
-            if (req.kind == .set_ignore_distance_backward and
-                req.sequence == sequence)
-            {
-                const payload = req.payload(.set_ignore_distance_backward);
-                if (payload.sensor != i) continue;
-                sequence += 1;
-                config.hall_sensors[i].ignore_distance.backward =
-                    payload.distance;
-                break;
+            if (payload.sensor != i) {
+                std.log.err(
+                    "{s} for sensor {d} received axis {d}",
+                    .{
+                        @tagName(.get_ignore_distance_backward),
+                        i,
+                        payload.sensor,
+                    },
+                );
+                return error.CommunicationFailure;
             }
+            config.hall_sensors[i].ignore_distance.backward =
+                payload.distance;
         }
-
-        while (true) {
-            const msg = drivercom.Message.init(
+        {
+            sequence += 1;
+            const payload = try command.transceiveMessage(
                 .get_ignore_distance_forward,
-                sequence,
-                i,
+                .set_ignore_distance_forward,
+                .{ .sequence = sequence, .payload = i },
             );
-            try command.sendMessage(&msg);
-            const req = try command.readMessage();
-            if (req.kind == .set_ignore_distance_forward and
-                req.sequence == sequence)
-            {
-                const payload = req.payload(.set_ignore_distance_forward);
-                if (payload.sensor != i) continue;
-                sequence += 1;
-                config.hall_sensors[i].ignore_distance.forward =
-                    payload.distance;
-                break;
+            if (payload.sensor != i) {
+                std.log.err(
+                    "{s} for sensor {d} received axis {d}",
+                    .{
+                        @tagName(.get_ignore_distance_forward),
+                        i,
+                        payload.sensor,
+                    },
+                );
+                return error.CommunicationFailure;
             }
+            config.hall_sensors[i].ignore_distance.forward = payload.distance;
         }
     }
 
