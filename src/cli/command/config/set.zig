@@ -1,5 +1,7 @@
 pub const id = @import("set/id.zig");
 pub const neighbor = @import("set/neighbor.zig");
+pub const calibration_magnet_length =
+    @import("set/calibration_magnet_length.zig");
 pub const gain = @import("set/gain.zig");
 pub const hall_sensor = @import("set/hall_sensor.zig");
 
