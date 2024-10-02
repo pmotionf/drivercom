@@ -43,18 +43,23 @@ pub fn execute(self: @This()) !void {
         return;
     }
 
-    const axis_id = try std.fmt.parseUnsigned(u16, cli.positionals[0], 10);
     const denominator = try std.fmt.parseUnsigned(u32, cli.positionals[1], 10);
 
-    if (axis_id == 0 or axis_id > drivercom.Config.MAX_AXES) {
-        std.log.err(
-            "axis must be valid between 1 and {}",
-            .{drivercom.Config.MAX_AXES},
-        );
-        return;
+    var axes_buf: [3]u16 = undefined;
+    var axes: []u16 = &.{};
+    var axes_str = std.mem.splitScalar(u8, cli.positionals[0], ',');
+    while (axes_str.next()) |axis_str| {
+        const axis_id = try std.fmt.parseUnsigned(u16, axis_str, 10);
+        if (axis_id == 0 or axis_id > drivercom.Config.MAX_AXES) {
+            std.log.err(
+                "axis {} must be between 1 and {}",
+                .{ axis_id, drivercom.Config.MAX_AXES },
+            );
+            return;
+        }
+        axes_buf[axes.len] = axis_id - 1;
+        axes = axes_buf[0 .. axes.len + 1];
     }
-
-    const axis_index = axis_id - 1;
 
     if (self.file) |name| {
         var file = try std.fs.cwd().openFile(name, .{ .mode = .read_write });
@@ -73,12 +78,14 @@ pub fn execute(self: @This()) !void {
         defer untyped.deinit();
         var config = try untyped.parse(drivercom.Config);
 
-        const axis = &config.axes[axis_index];
+        for (axes) |axis_index| {
+            const axis = &config.axes[axis_index];
 
-        axis.position_gain = config.calcPositionGain(
-            axis_index,
-            denominator,
-        );
+            axis.position_gain = config.calcPositionGain(
+                axis_index,
+                denominator,
+            );
+        }
 
         try file.seekTo(0);
         try yaml.stringify(allocator, config, file.writer());
@@ -88,67 +95,80 @@ pub fn execute(self: @This()) !void {
         var config: drivercom.Config = undefined;
 
         var sequence: u16 = 0;
-        var msg = drivercom.Message.init(
-            .get_current_gain_denominator,
-            sequence,
-            axis_index,
-        );
-        while (true) {
-            try command.sendMessage(&msg);
-            const rsp = try command.readMessage();
-            if (rsp.kind == .set_current_gain_denominator and
-                rsp.sequence == sequence)
-            {
-                const payload = rsp.payload(.set_current_gain_denominator);
-                config.axes[axis_index].current_gain.denominator =
-                    payload.denominator;
-                break;
+        for (axes) |axis_index| {
+            sequence += 1;
+            var msg = drivercom.Message.init(
+                .get_current_gain_denominator,
+                sequence,
+                axis_index,
+            );
+            while (true) {
+                try command.sendMessage(&msg);
+                const rsp = try command.readMessage();
+                if (rsp.kind == .set_current_gain_denominator and
+                    rsp.sequence == sequence)
+                {
+                    const payload = rsp.payload(.set_current_gain_denominator);
+                    config.axes[axis_index].current_gain.denominator =
+                        payload.denominator;
+                    break;
+                }
+            }
+
+            sequence += 1;
+            msg = drivercom.Message.init(
+                .get_velocity_gain_denominator,
+                sequence,
+                axis_index,
+            );
+            while (true) {
+                try command.sendMessage(&msg);
+                const rsp = try command.readMessage();
+                if (rsp.kind == .set_velocity_gain_denominator and
+                    rsp.sequence == sequence)
+                {
+                    const payload = rsp.payload(
+                        .set_velocity_gain_denominator,
+                    );
+                    config.axes[axis_index].velocity_gain.denominator =
+                        payload.denominator;
+                    break;
+                }
             }
         }
 
-        sequence += 1;
-        msg = drivercom.Message.init(
-            .get_velocity_gain_denominator,
-            sequence,
-            axis_index,
-        );
-        while (true) {
-            try command.sendMessage(&msg);
-            const rsp = try command.readMessage();
-            if (rsp.kind == .set_velocity_gain_denominator and
-                rsp.sequence == sequence)
-            {
-                const payload = rsp.payload(.set_velocity_gain_denominator);
-                config.axes[axis_index].velocity_gain.denominator =
-                    payload.denominator;
-                break;
-            }
+        for (axes) |axis_index| {
+            const axis = &config.axes[axis_index];
+            axis.position_gain = config.calcPositionGain(
+                axis_index,
+                denominator,
+            );
         }
 
-        const axis = &config.axes[axis_index];
-        axis.position_gain = config.calcPositionGain(axis_index, denominator);
+        for (axes) |axis_index| {
+            const axis = &config.axes[axis_index];
+            sequence += 1;
+            var msg = drivercom.Message.init(
+                .set_position_gain_p,
+                sequence,
+                .{ .axis = axis_index, .p = axis.position_gain.p },
+            );
+            try command.sendMessage(&msg);
 
-        sequence += 1;
-        msg = drivercom.Message.init(
-            .set_position_gain_p,
-            sequence,
-            .{ .axis = axis_index, .p = axis.position_gain.p },
-        );
-        try command.sendMessage(&msg);
+            sequence += 1;
+            msg = drivercom.Message.init(
+                .set_position_gain_denominator,
+                sequence,
+                .{
+                    .axis = axis_index,
+                    .denominator = axis.position_gain.denominator,
+                },
+            );
+            try command.sendMessage(&msg);
 
-        sequence += 1;
-        msg = drivercom.Message.init(
-            .set_position_gain_denominator,
-            sequence,
-            .{
-                .axis = axis_index,
-                .denominator = axis.position_gain.denominator,
-            },
-        );
-        try command.sendMessage(&msg);
-
-        sequence += 1;
-        msg = drivercom.Message.init(.save_config, sequence, {});
-        try command.sendMessage(&msg);
+            sequence += 1;
+            msg = drivercom.Message.init(.save_config, sequence, {});
+            try command.sendMessage(&msg);
+        }
     }
 }
