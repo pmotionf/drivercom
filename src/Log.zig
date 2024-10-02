@@ -78,6 +78,8 @@ pub fn tagSize(tag: Tag) u3 {
         .driver_cycle_time,
         .driver_vdc,
         .sensor_alarm,
+        .sensor_valid,
+        .sensor_active,
         => 2,
         .sensor_angle,
         .sensor_unwrapped_angle,
@@ -116,7 +118,10 @@ pub fn tagParse(comptime tag: Tag, data: []const u8) TagType(tag) {
             result_f /= 100.0;
             return result_f;
         },
-        .sensor_alarm => {
+        .sensor_alarm,
+        .sensor_valid,
+        .sensor_active,
+        => {
             return data[0] != 0;
         },
     }
@@ -127,7 +132,10 @@ pub fn TagType(comptime tag: Tag) type {
         .driver_cycle,
         .driver_cycle_time,
         => u16,
-        .sensor_alarm => bool,
+        .sensor_alarm,
+        .sensor_valid,
+        .sensor_active,
+        => bool,
         .driver_vdc,
         .sensor_angle,
         .sensor_unwrapped_angle,
@@ -152,6 +160,8 @@ pub const Config = packed struct(u32) {
         angle: bool = false,
         unwrapped_angle: bool = false,
         distance: bool = false,
+        valid: bool = false,
+        active: bool = false,
     } = .{},
 
     // Axis log.
@@ -159,7 +169,7 @@ pub const Config = packed struct(u32) {
         current_d: bool = false,
         current_q: bool = false,
     } = .{},
-    _: u23 = 0,
+    _: u21 = 0,
 };
 
 pub const Start = enum(u3) {
