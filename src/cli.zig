@@ -7,7 +7,7 @@ const serialport = @import("serialport");
 const command = @import("cli/command.zig");
 
 pub var port: ?serialport.Port = null;
-pub var timeout: usize = 100;
+pub var timeout: usize = 1000;
 pub var retry: usize = 3;
 pub var positionals: [][]const u8 = &.{};
 
