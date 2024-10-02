@@ -144,7 +144,7 @@ pub fn execute(self: @This()) !void {
             const tag: Log.Tag = @enumFromInt(i);
             const tag_size = Log.tagSize(tag);
 
-            switch (Log.tagId(tag)) {
+            switch (Log.tagKind(tag)) {
                 .none => {
                     total_tag_bytes += tag_size;
                     if (file) |f| {
@@ -233,7 +233,7 @@ pub fn execute(self: @This()) !void {
             const tag: Log.Tag = @enumFromInt(i);
             const tag_size = Log.tagSize(tag);
             const chunk_byte_size = chunk_size * tag_size;
-            switch (Log.tagId(tag)) {
+            switch (Log.tagKind(tag)) {
                 .none => {
                     sequence += 1;
                     msg = drivercom.Message.init(.log_get, sequence, .{
@@ -312,7 +312,7 @@ pub fn execute(self: @This()) !void {
                     const chunk_byte_size = chunk_size * tag_size;
                     const ValueType: type = Log.TagType(tag);
 
-                    switch (Log.tagId(tag)) {
+                    switch (Log.tagKind(tag)) {
                         .none => {
                             const chunk_offset = buf_ind + i * tag_size;
                             const value: ValueType = Log.tagParse(

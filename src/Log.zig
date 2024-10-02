@@ -64,7 +64,7 @@ pub const Tag: type = b: {
     break :b @Type(.{ .@"enum" = result });
 };
 
-pub const TagIdKind = enum {
+pub const TagKind = enum {
     none,
     axis,
     sensor,
@@ -86,11 +86,13 @@ pub fn tagSize(tag: Tag) u3 {
         .sensor_distance,
         .axis_current_d,
         .axis_current_q,
+        .axis_reference_current_d,
+        .axis_reference_current_q,
         => 4,
     };
 }
 
-pub fn tagId(tag: Tag) TagIdKind {
+pub fn tagKind(tag: Tag) TagKind {
     if (@tagName(tag)[0] == 'd') return .none;
     if (@tagName(tag)[0] == 's') return .sensor;
     if (@tagName(tag)[0] == 'a') return .axis;
@@ -109,6 +111,8 @@ pub fn tagParse(comptime tag: Tag, data: []const u8) TagType(tag) {
         .sensor_distance,
         .axis_current_d,
         .axis_current_q,
+        .axis_reference_current_d,
+        .axis_reference_current_q,
         => {
             return std.mem.bytesToValue(TagType(tag), data);
         },
@@ -142,6 +146,8 @@ pub fn TagType(comptime tag: Tag) type {
         .sensor_distance,
         .axis_current_d,
         .axis_current_q,
+        .axis_reference_current_d,
+        .axis_reference_current_q,
         => f32,
     };
 }
@@ -157,19 +163,21 @@ pub const Config = packed struct(u32) {
     // Sensor log.
     sensor: packed struct {
         alarm: bool = false,
+        valid: bool = false,
+        active: bool = false,
         angle: bool = false,
         unwrapped_angle: bool = false,
         distance: bool = false,
-        valid: bool = false,
-        active: bool = false,
     } = .{},
 
     // Axis log.
     axis: packed struct {
         current_d: bool = false,
         current_q: bool = false,
+        reference_current_d: bool = false,
+        reference_current_q: bool = false,
     } = .{},
-    _: u21 = 0,
+    _: u19 = 0,
 };
 
 pub const Start = enum(u3) {
