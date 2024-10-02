@@ -132,5 +132,8 @@ pub fn execute(self: @This()) !void {
             .flags = flags,
         });
         try command.sendMessage(&msg);
+
+        msg = drivercom.Message.init(.save_config, 2, {});
+        try command.sendMessage(&msg);
     }
 }
