@@ -41,92 +41,75 @@ pub fn execute(self: @This()) !void {
 
     var cycles_completed: u32 = 0;
     var sequence: u16 = 0;
-    var msg = drivercom.Message.init(
-        .log_status,
-        sequence,
-        .{ .status = .stopped, .cycles_completed = 0 },
-    );
-    while (true) {
-        try command.sendMessage(&msg);
-        const req = try command.readMessage();
-        if (req.kind == .log_status and req.sequence == sequence) {
-            const payload = req.payload(.log_status);
-            switch (payload.status) {
-                .started => {
-                    std.log.err("logging in progress", .{});
-                    return;
-                },
-                .waiting => {
-                    std.log.err("log waiting for start conditions", .{});
-                    return;
-                },
-                .invalid => {
-                    std.log.err("invalid log parameters", .{});
-                    return;
-                },
-                .stopped => {
-                    cycles_completed = payload.cycles_completed;
-                    break;
-                },
-            }
+    {
+        const payload = try command.transceiveMessage(
+            .log_status,
+            .log_status,
+            .{
+                .sequence = sequence,
+                .payload = .{ .status = .stopped, .cycles_completed = 0 },
+            },
+        );
+        switch (payload.status) {
+            .started => {
+                std.log.err("logging in progress", .{});
+                return;
+            },
+            .waiting => {
+                std.log.err("log waiting for start conditions", .{});
+                return;
+            },
+            .invalid => {
+                std.log.err("invalid log parameters", .{});
+                return;
+            },
+            .stopped => {
+                cycles_completed = payload.cycles_completed;
+            },
         }
     }
-
-    sequence += 1;
-    msg = drivercom.Message.init(.log_get_conf, sequence, {});
-    while (true) {
-        try command.sendMessage(&msg);
-        const req = try command.readMessage();
-        if (req.kind == .log_set_conf and req.sequence == sequence) {
-            const payload = req.payload(.log_set_conf);
-            params.config = payload;
-            break;
-        }
+    {
+        sequence += 1;
+        const payload = try command.transceiveMessage(
+            .log_get_conf,
+            .log_set_conf,
+            .{ .sequence = sequence, .payload = {} },
+        );
+        params.config = payload;
     }
-
-    sequence += 1;
-    msg = drivercom.Message.init(.log_get_axis, sequence, {});
-    while (true) {
-        try command.sendMessage(&msg);
-        const req = try command.readMessage();
-        if (req.kind == .log_set_axis and req.sequence == sequence) {
-            const payload = req.payload(.log_set_axis);
-            params.axes[0] = payload.axis1;
-            params.axes[1] = payload.axis2;
-            params.axes[2] = payload.axis3;
-            break;
-        }
+    {
+        sequence += 1;
+        const payload = try command.transceiveMessage(
+            .log_get_axis,
+            .log_set_axis,
+            .{ .sequence = sequence, .payload = {} },
+        );
+        params.axes[0] = payload.axis1;
+        params.axes[1] = payload.axis2;
+        params.axes[2] = payload.axis3;
     }
-
-    sequence += 1;
-    msg = drivercom.Message.init(.log_get_vehicles, sequence, {});
-    while (true) {
-        try command.sendMessage(&msg);
-        const req = try command.readMessage();
-        if (req.kind == .log_set_vehicles and req.sequence == sequence) {
-            const payload = req.payload(.log_set_vehicles);
-            for (0..4) |i| {
-                params.vehicles[i] = @intCast(payload[i]);
-            }
-            break;
-        }
+    {
+        sequence += 1;
+        const payload = try command.transceiveMessage(
+            .log_get_vehicles,
+            .log_set_vehicles,
+            .{ .sequence = sequence, .payload = {} },
+        );
+        for (0..4) |i| params.vehicles[i] = @intCast(payload[i]);
     }
-
-    sequence += 1;
-    msg = drivercom.Message.init(.log_get_sensors, sequence, {});
-    while (true) {
-        try command.sendMessage(&msg);
-        const req = try command.readMessage();
-        if (req.kind == .log_set_sensors and req.sequence == sequence) {
-            const payload = req.payload(.log_set_sensors);
-            params.hall_sensors[0] = payload.sensor1;
-            params.hall_sensors[1] = payload.sensor2;
-            params.hall_sensors[2] = payload.sensor3;
-            params.hall_sensors[3] = payload.sensor4;
-            params.hall_sensors[4] = payload.sensor5;
-            params.hall_sensors[5] = payload.sensor6;
-            break;
-        }
+    {
+        sequence += 1;
+        const payload = try command.transceiveMessage(
+            .log_get_sensors,
+            .log_set_sensors,
+            .{ .sequence = sequence, .payload = {} },
+        );
+        params.hall_sensors[0] = payload.sensor1;
+        params.hall_sensors[1] = payload.sensor2;
+        params.hall_sensors[2] = payload.sensor3;
+        params.hall_sensors[3] = payload.sensor4;
+        params.hall_sensors[4] = payload.sensor5;
+        params.hall_sensors[5] = payload.sensor6;
     }
 
     const file: ?std.fs.File = if (self.file) |f|
@@ -236,7 +219,7 @@ pub fn execute(self: @This()) !void {
             switch (Log.tagKind(tag)) {
                 .none => {
                     sequence += 1;
-                    msg = drivercom.Message.init(.log_get, sequence, .{
+                    const msg = drivercom.Message.init(.log_get, sequence, .{
                         .cycle = @intCast(cycle),
                         .data = tag,
                         .id = 0,
@@ -256,12 +239,16 @@ pub fn execute(self: @This()) !void {
                     for (params.axes, 1..) |axis, id| {
                         if (!axis) continue;
                         sequence += 1;
-                        msg = drivercom.Message.init(.log_get, sequence, .{
-                            .cycle = @intCast(cycle),
-                            .data = tag,
-                            .id = @intCast(id),
-                            .cycles = chunk_size,
-                        });
+                        const msg = drivercom.Message.init(
+                            .log_get,
+                            sequence,
+                            .{
+                                .cycle = @intCast(cycle),
+                                .data = tag,
+                                .id = @intCast(id),
+                                .cycles = chunk_size,
+                            },
+                        );
                         try command.sendMessage(&msg);
 
                         var rcv_size: usize = 0;
@@ -279,12 +266,16 @@ pub fn execute(self: @This()) !void {
                     for (params.hall_sensors, 1..) |sensor, id| {
                         if (!sensor) continue;
                         sequence += 1;
-                        msg = drivercom.Message.init(.log_get, sequence, .{
-                            .cycle = @intCast(cycle),
-                            .data = tag,
-                            .id = @intCast(id),
-                            .cycles = chunk_size,
-                        });
+                        const msg = drivercom.Message.init(
+                            .log_get,
+                            sequence,
+                            .{
+                                .cycle = @intCast(cycle),
+                                .data = tag,
+                                .id = @intCast(id),
+                                .cycles = chunk_size,
+                            },
+                        );
                         try command.sendMessage(&msg);
 
                         var rcv_size: usize = 0;

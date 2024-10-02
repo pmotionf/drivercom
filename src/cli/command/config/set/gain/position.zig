@@ -88,54 +88,36 @@ pub fn execute(self: @This()) !void {
         var config: drivercom.Config = undefined;
 
         var sequence: u16 = 0;
-        for (axes) |axis_index| {
-            sequence += 1;
-            var msg = drivercom.Message.init(
-                .get_current_gain_denominator,
-                sequence,
-                axis_index,
-            );
-            while (true) {
-                try command.sendMessage(&msg);
-                const rsp = try command.readMessage();
-                if (rsp.kind == .set_current_gain_denominator and
-                    rsp.sequence == sequence)
-                {
-                    const payload = rsp.payload(.set_current_gain_denominator);
-                    config.axes[axis_index].current_gain.denominator =
-                        payload.denominator;
-                    break;
-                }
+        for (axes) |i| {
+            {
+                sequence += 1;
+                const payload = try command.transceiveMessage(
+                    .get_current_gain_denominator,
+                    .set_current_gain_denominator,
+                    .{
+                        .sequence = sequence,
+                        .payload = i,
+                    },
+                );
+                config.axes[i].current_gain.denominator = payload.denominator;
             }
-
-            sequence += 1;
-            msg = drivercom.Message.init(
-                .get_velocity_gain_denominator,
-                sequence,
-                axis_index,
-            );
-            while (true) {
-                try command.sendMessage(&msg);
-                const rsp = try command.readMessage();
-                if (rsp.kind == .set_velocity_gain_denominator and
-                    rsp.sequence == sequence)
-                {
-                    const payload = rsp.payload(
-                        .set_velocity_gain_denominator,
-                    );
-                    config.axes[axis_index].velocity_gain.denominator =
-                        payload.denominator;
-                    break;
-                }
+            {
+                sequence += 1;
+                const payload = try command.transceiveMessage(
+                    .get_velocity_gain_denominator,
+                    .set_velocity_gain_denominator,
+                    .{
+                        .sequence = sequence,
+                        .payload = i,
+                    },
+                );
+                config.axes[i].velocity_gain.denominator = payload.denominator;
             }
         }
 
-        for (axes) |axis_index| {
-            const axis = &config.axes[axis_index];
-            axis.position_gain = config.calcPositionGain(
-                axis_index,
-                denominator,
-            );
+        for (axes) |i| {
+            const axis = &config.axes[i];
+            axis.position_gain = config.calcPositionGain(i, denominator);
         }
 
         for (axes) |axis_index| {

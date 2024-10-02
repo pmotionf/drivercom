@@ -93,131 +93,80 @@ pub fn execute(self: @This()) !void {
         var config: drivercom.Config = undefined;
 
         var sequence: u16 = 0;
-        var msg = drivercom.Message.init(.get_magnet, sequence, {});
-        while (true) {
-            try command.sendMessage(&msg);
-            const rsp = try command.readMessage();
-            if (rsp.kind == .set_magnet and rsp.sequence == sequence) {
-                const payload = rsp.payload(.set_magnet);
-                config.magnet.pitch = payload.pitch;
-                config.magnet.length = payload.length;
-                break;
-            }
-        }
-
-        sequence += 1;
-        msg = drivercom.Message.init(.get_vehicle_mass, sequence, {});
-        while (true) {
-            try command.sendMessage(&msg);
-            const rsp = try command.readMessage();
-            if (rsp.kind == .set_vehicle_mass and rsp.sequence == sequence) {
-                const payload = rsp.payload(.set_vehicle_mass);
-                config.vehicle_mass = payload;
-                break;
-            }
-        }
-
-        sequence += 1;
-        msg = drivercom.Message.init(.get_ls, sequence, {});
-        while (true) {
-            try command.sendMessage(&msg);
-            const rsp = try command.readMessage();
-            if (rsp.kind == .set_ls and rsp.sequence == sequence) {
-                const payload = rsp.payload(.set_ls);
-                config.motor.ls = payload;
-                break;
-            }
-        }
-
-        sequence += 1;
-        msg = drivercom.Message.init(.get_rs, sequence, {});
-        while (true) {
-            try command.sendMessage(&msg);
-            const rsp = try command.readMessage();
-            if (rsp.kind == .set_rs and rsp.sequence == sequence) {
-                const payload = rsp.payload(.set_rs);
-                config.motor.rs = payload;
-                break;
-            }
-        }
-
-        sequence += 1;
-        msg = drivercom.Message.init(.get_kf, sequence, {});
-        while (true) {
-            try command.sendMessage(&msg);
-            const rsp = try command.readMessage();
-            if (rsp.kind == .set_kf and rsp.sequence == sequence) {
-                const payload = rsp.payload(.set_kf);
-                config.motor.kf = payload;
-                break;
-            }
-        }
-
-        for (axes) |axis_index| {
-            sequence += 1;
-            msg = drivercom.Message.init(
-                .get_velocity_gain_denominator,
-                sequence,
-                axis_index,
+        {
+            const payload = try command.transceiveMessage(
+                .get_magnet,
+                .set_magnet,
+                .{ .sequence = sequence, .payload = {} },
             );
-            while (true) {
-                try command.sendMessage(&msg);
-                const rsp = try command.readMessage();
-                if (rsp.kind == .set_velocity_gain_denominator and
-                    rsp.sequence == sequence)
-                {
-                    const payload = rsp.payload(
-                        .set_velocity_gain_denominator,
-                    );
-                    if (payload.axis != axis_index) continue;
-                    config.axes[axis_index].velocity_gain.denominator =
-                        payload.denominator;
-                    break;
-                }
-            }
-
+            config.magnet.pitch = payload.pitch;
+            config.magnet.length = payload.length;
+        }
+        {
             sequence += 1;
-            msg = drivercom.Message.init(
-                .get_velocity_gain_denominator_pi,
-                sequence,
-                axis_index,
+            const payload = try command.transceiveMessage(
+                .get_vehicle_mass,
+                .set_vehicle_mass,
+                .{ .sequence = sequence, .payload = {} },
             );
-            while (true) {
-                try command.sendMessage(&msg);
-                const rsp = try command.readMessage();
-                if (rsp.kind == .set_velocity_gain_denominator_pi and
-                    rsp.sequence == sequence)
-                {
-                    const payload = rsp.payload(
-                        .set_velocity_gain_denominator_pi,
-                    );
-                    if (payload.axis != axis_index) continue;
-                    config.axes[axis_index].velocity_gain.denominator_pi =
-                        payload.denominator;
-                    break;
-                }
-            }
-
+            config.vehicle_mass = payload;
+        }
+        {
             sequence += 1;
-            msg = drivercom.Message.init(
-                .get_position_gain_denominator,
-                sequence,
-                axis_index,
+            const payload = try command.transceiveMessage(
+                .get_ls,
+                .set_ls,
+                .{ .sequence = sequence, .payload = {} },
             );
-            while (true) {
-                try command.sendMessage(&msg);
-                const rsp = try command.readMessage();
-                if (rsp.kind == .set_position_gain_denominator and
-                    rsp.sequence == sequence)
-                {
-                    const payload = rsp.payload(
-                        .set_position_gain_denominator,
-                    );
-                    if (payload.axis != axis_index) continue;
-                    config.axes[axis_index].position_gain.denominator =
-                        payload.denominator;
-                    break;
-                }
+            config.motor.ls = payload;
+        }
+        {
+            sequence += 1;
+            const payload = try command.transceiveMessage(
+                .get_rs,
+                .set_rs,
+                .{ .sequence = sequence, .payload = {} },
+            );
+            config.motor.rs = payload;
+        }
+        {
+            sequence += 1;
+            const payload = try command.transceiveMessage(
+                .get_kf,
+                .set_kf,
+                .{ .sequence = sequence, .payload = {} },
+            );
+            config.motor.kf = payload;
+        }
+
+        for (axes) |i| {
+            {
+                sequence += 1;
+                const payload = try command.transceiveMessage(
+                    .get_velocity_gain_denominator,
+                    .set_velocity_gain_denominator,
+                    .{ .sequence = sequence, .payload = i },
+                );
+                config.axes[i].velocity_gain.denominator = payload.denominator;
+            }
+            {
+                sequence += 1;
+                const payload = try command.transceiveMessage(
+                    .get_velocity_gain_denominator_pi,
+                    .set_velocity_gain_denominator_pi,
+                    .{ .sequence = sequence, .payload = i },
+                );
+                config.axes[i].velocity_gain.denominator_pi =
+                    payload.denominator;
+            }
+            {
+                sequence += 1;
+                const payload = try command.transceiveMessage(
+                    .get_position_gain_denominator,
+                    .set_position_gain_denominator,
+                    .{ .sequence = sequence, .payload = i },
+                );
+                config.axes[i].position_gain.denominator = payload.denominator;
             }
         }
 
@@ -241,7 +190,7 @@ pub fn execute(self: @This()) !void {
         for (axes) |axis_index| {
             const axis = &config.axes[axis_index];
             sequence += 1;
-            msg = drivercom.Message.init(
+            var msg = drivercom.Message.init(
                 .set_current_gain_p,
                 sequence,
                 .{ .axis = axis_index, .p = axis.current_gain.p },
