@@ -30,6 +30,11 @@ pub fn help(_: @This()) !void {
 }
 
 pub fn execute(self: @This()) !void {
+    if (cli.port == null and self.file == null) {
+        std.log.err("serial port or file must be provided", .{});
+        return;
+    }
+
     if (cli.positionals.len != 2) {
         std.log.err("axis and denominator must be provided", .{});
         return;
