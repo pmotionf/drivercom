@@ -112,7 +112,7 @@ pub fn execute(self: @This()) !void {
         sequence,
         .{
             .axis_length = config.axis_length,
-            .motor_length = config.motor_length,
+            .motor_length = config.motor.length,
         },
     );
     try command.sendMessage(&msg);
@@ -171,27 +171,40 @@ pub fn execute(self: @This()) !void {
     );
     try command.sendMessage(&msg);
 
+    sequence += 1;
+    msg = drivercom.Message.init(
+        .set_max_current,
+        sequence,
+        config.motor.max_current,
+    );
+    try command.sendMessage(&msg);
+
+    sequence += 1;
+    msg = drivercom.Message.init(
+        .set_continuous_current,
+        sequence,
+        config.motor.continuous_current,
+    );
+    try command.sendMessage(&msg);
+
+    sequence += 1;
+    msg = drivercom.Message.init(.set_rs, sequence, config.motor.rs);
+    try command.sendMessage(&msg);
+
+    sequence += 1;
+    msg = drivercom.Message.init(.set_ls, sequence, config.motor.ls);
+    try command.sendMessage(&msg);
+
+    sequence += 1;
+    msg = drivercom.Message.init(.set_kf, sequence, config.motor.kf);
+    try command.sendMessage(&msg);
+
+    sequence += 1;
+    msg = drivercom.Message.init(.set_kbm, sequence, config.motor.kbm);
+    try command.sendMessage(&msg);
+
     for (0..drivercom.Config.MAX_AXES) |_i| {
         const i: u16 = @intCast(_i);
-
-        sequence += 1;
-        msg = drivercom.Message.init(
-            .set_max_current,
-            sequence,
-            .{ .axis = i, .current = config.axes[i].max_current },
-        );
-        try command.sendMessage(&msg);
-
-        sequence += 1;
-        msg = drivercom.Message.init(
-            .set_continuous_current,
-            sequence,
-            .{
-                .axis = i,
-                .current = config.axes[i].continuous_current,
-            },
-        );
-        try command.sendMessage(&msg);
 
         sequence += 1;
         msg = drivercom.Message.init(
@@ -316,38 +329,6 @@ pub fn execute(self: @This()) !void {
             },
         );
         try command.sendMessage(&msg);
-
-        sequence += 1;
-        msg = drivercom.Message.init(
-            .set_rs,
-            sequence,
-            .{ .axis = i, .rs = config.axes[i].rs },
-        );
-        try command.sendMessage(&msg);
-
-        sequence += 1;
-        msg = drivercom.Message.init(
-            .set_ls,
-            sequence,
-            .{ .axis = i, .ls = config.axes[i].ls },
-        );
-        try command.sendMessage(&msg);
-
-        sequence += 1;
-        msg = drivercom.Message.init(
-            .set_kf,
-            sequence,
-            .{ .axis = i, .kf = config.axes[i].kf },
-        );
-        try command.sendMessage(&msg);
-
-        sequence += 1;
-        msg = drivercom.Message.init(
-            .set_kbm,
-            sequence,
-            .{ .axis = i, .kbm = config.axes[i].kbm },
-        );
-        try command.sendMessage(&msg);
     }
 
     for (0..drivercom.Config.MAX_AXES * 2) |_i| {
@@ -371,6 +352,28 @@ pub fn execute(self: @This()) !void {
             .{
                 .sensor = i,
                 .length = config.hall_sensors[i].calibrated_magnet_length.forward,
+            },
+        );
+        try command.sendMessage(&msg);
+
+        sequence += 1;
+        msg = drivercom.Message.init(
+            .set_ignore_distance_backward,
+            sequence,
+            .{
+                .sensor = i,
+                .distance = config.hall_sensors[i].ignore_distance.backward,
+            },
+        );
+        try command.sendMessage(&msg);
+
+        sequence += 1;
+        msg = drivercom.Message.init(
+            .set_ignore_distance_forward,
+            sequence,
+            .{
+                .sensor = i,
+                .distance = config.hall_sensors[i].ignore_distance.forward,
             },
         );
         try command.sendMessage(&msg);

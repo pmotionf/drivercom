@@ -126,6 +126,18 @@ pub fn execute(self: @This()) !void {
             }
         }
 
+        sequence += 1;
+        msg = drivercom.Message.init(.get_kf, sequence, {});
+        while (true) {
+            try command.sendMessage(&msg);
+            const rsp = try command.readMessage();
+            if (rsp.kind == .set_kf and rsp.sequence == sequence) {
+                const payload = rsp.payload(.set_kf);
+                config.motor.kf = payload;
+                break;
+            }
+        }
+
         for (axes) |axis_index| {
             sequence += 1;
             msg = drivercom.Message.init(
@@ -142,19 +154,6 @@ pub fn execute(self: @This()) !void {
                     const payload = rsp.payload(.set_current_gain_denominator);
                     config.axes[axis_index].current_gain.denominator =
                         payload.denominator;
-                    break;
-                }
-            }
-
-            sequence += 1;
-            msg = drivercom.Message.init(.get_kf, sequence, axis_index);
-            while (true) {
-                try command.sendMessage(&msg);
-                const rsp = try command.readMessage();
-                if (rsp.kind == .set_kf and rsp.sequence == sequence) {
-                    const payload = rsp.payload(.set_kf);
-                    if (payload.axis != axis_index) continue;
-                    config.axes[axis_index].kf = payload.kf;
                     break;
                 }
             }

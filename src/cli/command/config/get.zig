@@ -120,7 +120,7 @@ pub fn execute(self: @This()) !void {
             sequence += 1;
             const payload = req.payload(.set_axis_length);
             config.axis_length = payload.axis_length;
-            config.motor_length = payload.motor_length;
+            config.motor.length = payload.motor_length;
             break;
         }
     }
@@ -205,40 +205,86 @@ pub fn execute(self: @This()) !void {
         }
     }
 
+    while (true) {
+        const msg = drivercom.Message.init(.get_max_current, sequence, {});
+        try command.sendMessage(&msg);
+        const req = try command.readMessage();
+        if (req.kind == .set_max_current and req.sequence == sequence) {
+            const payload = req.payload(.set_max_current);
+            sequence += 1;
+            config.motor.max_current = payload;
+            break;
+        }
+    }
+
+    while (true) {
+        const msg = drivercom.Message.init(
+            .get_continuous_current,
+            sequence,
+            {},
+        );
+        try command.sendMessage(&msg);
+        const req = try command.readMessage();
+        if (req.kind == .set_continuous_current and
+            req.sequence == sequence)
+        {
+            const payload = req.payload(.set_continuous_current);
+            sequence += 1;
+            config.motor.continuous_current = payload;
+            break;
+        }
+    }
+
+    while (true) {
+        const msg = drivercom.Message.init(.get_rs, sequence, {});
+        try command.sendMessage(&msg);
+        const req = try command.readMessage();
+        if (req.kind == .set_rs and req.sequence == sequence) {
+            const payload = req.payload(.set_rs);
+            sequence += 1;
+            config.motor.rs = payload;
+            break;
+        }
+    }
+
+    while (true) {
+        const msg = drivercom.Message.init(.get_ls, sequence, {});
+        try command.sendMessage(&msg);
+        const req = try command.readMessage();
+        if (req.kind == .set_ls and req.sequence == sequence) {
+            const payload = req.payload(.set_ls);
+            sequence += 1;
+            config.motor.ls = payload;
+            break;
+        }
+    }
+
+    while (true) {
+        const msg = drivercom.Message.init(.get_kf, sequence, {});
+        try command.sendMessage(&msg);
+        const req = try command.readMessage();
+        if (req.kind == .set_kf and req.sequence == sequence) {
+            const payload = req.payload(.set_kf);
+            sequence += 1;
+            config.motor.kf = payload;
+            break;
+        }
+    }
+
+    while (true) {
+        const msg = drivercom.Message.init(.get_kbm, sequence, {});
+        try command.sendMessage(&msg);
+        const req = try command.readMessage();
+        if (req.kind == .set_kbm and req.sequence == sequence) {
+            const payload = req.payload(.set_kbm);
+            sequence += 1;
+            config.motor.kbm = payload;
+            break;
+        }
+    }
+
     for (0..drivercom.Config.MAX_AXES) |_i| {
         const i: u16 = @intCast(_i);
-
-        while (true) {
-            const msg = drivercom.Message.init(.get_max_current, sequence, i);
-            try command.sendMessage(&msg);
-            const req = try command.readMessage();
-            if (req.kind == .set_max_current and req.sequence == sequence) {
-                const payload = req.payload(.set_max_current);
-                if (payload.axis != i) continue;
-                sequence += 1;
-                config.axes[i].max_current = payload.current;
-                break;
-            }
-        }
-
-        while (true) {
-            const msg = drivercom.Message.init(
-                .get_continuous_current,
-                sequence,
-                i,
-            );
-            try command.sendMessage(&msg);
-            const req = try command.readMessage();
-            if (req.kind == .set_continuous_current and
-                req.sequence == sequence)
-            {
-                const payload = req.payload(.set_continuous_current);
-                if (payload.axis != i) continue;
-                sequence += 1;
-                config.axes[i].continuous_current = payload.current;
-                break;
-            }
-        }
 
         while (true) {
             const msg = drivercom.Message.init(
@@ -485,58 +531,6 @@ pub fn execute(self: @This()) !void {
                 break;
             }
         }
-
-        while (true) {
-            const msg = drivercom.Message.init(.get_rs, sequence, i);
-            try command.sendMessage(&msg);
-            const req = try command.readMessage();
-            if (req.kind == .set_rs and req.sequence == sequence) {
-                const payload = req.payload(.set_rs);
-                if (payload.axis != i) continue;
-                sequence += 1;
-                config.axes[i].rs = payload.rs;
-                break;
-            }
-        }
-
-        while (true) {
-            const msg = drivercom.Message.init(.get_ls, sequence, i);
-            try command.sendMessage(&msg);
-            const req = try command.readMessage();
-            if (req.kind == .set_ls and req.sequence == sequence) {
-                const payload = req.payload(.set_ls);
-                if (payload.axis != i) continue;
-                sequence += 1;
-                config.axes[i].ls = payload.ls;
-                break;
-            }
-        }
-
-        while (true) {
-            const msg = drivercom.Message.init(.get_kf, sequence, i);
-            try command.sendMessage(&msg);
-            const req = try command.readMessage();
-            if (req.kind == .set_kf and req.sequence == sequence) {
-                const payload = req.payload(.set_kf);
-                if (payload.axis != i) continue;
-                sequence += 1;
-                config.axes[i].kf = payload.kf;
-                break;
-            }
-        }
-
-        while (true) {
-            const msg = drivercom.Message.init(.get_kbm, sequence, i);
-            try command.sendMessage(&msg);
-            const req = try command.readMessage();
-            if (req.kind == .set_kbm and req.sequence == sequence) {
-                const payload = req.payload(.set_kbm);
-                if (payload.axis != i) continue;
-                sequence += 1;
-                config.axes[i].kbm = payload.kbm;
-                break;
-            }
-        }
     }
 
     for (0..drivercom.Config.MAX_AXES * 2) |_i| {
@@ -582,6 +576,46 @@ pub fn execute(self: @This()) !void {
                 sequence += 1;
                 config.hall_sensors[i].calibrated_magnet_length.forward =
                     payload.length;
+                break;
+            }
+        }
+
+        while (true) {
+            const msg = drivercom.Message.init(
+                .get_ignore_distance_backward,
+                sequence,
+                i,
+            );
+            try command.sendMessage(&msg);
+            const req = try command.readMessage();
+            if (req.kind == .set_ignore_distance_backward and
+                req.sequence == sequence)
+            {
+                const payload = req.payload(.set_ignore_distance_backward);
+                if (payload.sensor != i) continue;
+                sequence += 1;
+                config.hall_sensors[i].ignore_distance.backward =
+                    payload.distance;
+                break;
+            }
+        }
+
+        while (true) {
+            const msg = drivercom.Message.init(
+                .get_ignore_distance_forward,
+                sequence,
+                i,
+            );
+            try command.sendMessage(&msg);
+            const req = try command.readMessage();
+            if (req.kind == .set_ignore_distance_forward and
+                req.sequence == sequence)
+            {
+                const payload = req.payload(.set_ignore_distance_forward);
+                if (payload.sensor != i) continue;
+                sequence += 1;
+                config.hall_sensors[i].ignore_distance.forward =
+                    payload.distance;
                 break;
             }
         }

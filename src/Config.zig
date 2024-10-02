@@ -25,8 +25,19 @@ mechanical_angle_offset: f32,
 
 axis_length: f32,
 
-/// Motor coil length in meters.
-motor_length: f32,
+motor: struct {
+    /// Motor coil length in meters.
+    length: f32,
+    max_current: f32,
+    continuous_current: f32,
+    /// Resistance.
+    rs: f32,
+    /// Inductance.
+    ls: f32,
+    /// Force constant.
+    kf: f32,
+    kbm: f32,
+},
 
 calibrated_home_position: f32,
 
@@ -83,8 +94,6 @@ pub const PositionGain = struct {
 };
 
 pub const Axis = struct {
-    max_current: f32,
-    continuous_current: f32,
     current_gain: CurrentGain,
     velocity_gain: VelocityGain,
     position_gain: PositionGain,
@@ -98,18 +107,14 @@ pub const Axis = struct {
         position: i16,
         section_count: i16,
     },
-
-    /// Resistance.
-    rs: f32,
-    /// Inductance.
-    ls: f32,
-    /// Force constant.
-    kf: f32,
-    kbm: f32,
 };
 
 pub const HallSensor = struct {
     calibrated_magnet_length: struct {
+        backward: f32,
+        forward: f32,
+    },
+    ignore_distance: struct {
         backward: f32,
         forward: f32,
     },
@@ -140,16 +145,14 @@ pub fn calcCurrentGain(
     denominator: u32,
 ) CurrentGain {
     std.debug.assert(axis_index < MAX_AXES);
-    const axis = self.axes[axis_index];
-
     const wcc = drivercom.gain.current.wcc(denominator);
     return .{
         .denominator = denominator,
         .p = @floatCast(
-            drivercom.gain.current.p(axis.ls, wcc),
+            drivercom.gain.current.p(self.motor.ls, wcc),
         ),
         .i = @floatCast(
-            drivercom.gain.current.i(axis.rs, wcc),
+            drivercom.gain.current.i(self.motor.rs, wcc),
         ),
     };
 }
@@ -167,7 +170,7 @@ pub fn calcVelocityGain(
     const radius = drivercom.gain.velocity.radius(self.magnet.pitch);
     const inertia = drivercom.gain.velocity.inertia(self.vehicle_mass, radius);
     const torque_constant =
-        drivercom.gain.velocity.torqueConstant(axis.kf, radius);
+        drivercom.gain.velocity.torqueConstant(self.motor.kf, radius);
     const wsc = drivercom.gain.velocity.wsc(denominator, wcc);
     const wpi = drivercom.gain.velocity.wpi(denominator_pi, wsc);
     const p = drivercom.gain.velocity.p(inertia, torque_constant, wsc);
