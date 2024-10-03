@@ -128,7 +128,7 @@ pub fn execute(self: @This()) !void {
             const tag_size = Log.tagSize(tag);
 
             switch (Log.tagKind(tag)) {
-                .none => {
+                .driver => {
                     total_tag_bytes += tag_size;
                     if (file) |f| {
                         try f.writeAll(tags[i].name ++ ",");
@@ -217,7 +217,7 @@ pub fn execute(self: @This()) !void {
             const tag_size = Log.tagSize(tag);
             const chunk_byte_size = chunk_size * tag_size;
             switch (Log.tagKind(tag)) {
-                .none => {
+                .driver => {
                     sequence += 1;
                     const msg = drivercom.Message.init(.log_get, sequence, .{
                         .cycle = @intCast(cycle),
@@ -304,7 +304,7 @@ pub fn execute(self: @This()) !void {
                     const ValueType: type = Log.TagType(tag);
 
                     switch (Log.tagKind(tag)) {
-                        .none => {
+                        .driver => {
                             const chunk_offset = buf_ind + i * tag_size;
                             const value: ValueType = Log.tagParse(
                                 tag,
