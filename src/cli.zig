@@ -141,12 +141,6 @@ pub const Options = struct {
     help: bool = false,
     retry: usize = 3,
 
-    pub const shorthands = .{
-        .p = "port",
-        .t = "timeout",
-        .r = "retry",
-    };
-
     pub const meta = .{
         .full_text = "PMF Smart Driver connection utility.",
         .usage_summary = "[--port] [--timeout] [--retry] <command>",

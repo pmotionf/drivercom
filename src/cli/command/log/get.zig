@@ -7,10 +7,12 @@ const Log = drivercom.Log;
 
 file: ?[]const u8 = null,
 chunk: u32 = 1000,
+@"resume": bool = false,
 
 pub const shorthands = .{
     .f = "file",
     .c = "chunk",
+    .r = "resume",
 };
 
 pub const meta = .{
@@ -20,6 +22,7 @@ pub const meta = .{
     .option_docs = .{
         .file = "save retrieved driver logs to file",
         .chunk = "number of cycles to retrieve per log data chunk",
+        .@"resume" = "resume log retrieval from last stored data in file",
     },
 };
 
@@ -37,6 +40,48 @@ pub fn execute(self: @This()) !void {
         std.log.err("serial port must be provided", .{});
         return;
     }
+
+    if (self.file == null and self.@"resume") {
+        std.log.err("file must be provided to resume", .{});
+        return;
+    }
+
+    const file: ?std.fs.File = if (self.file) |f|
+        try std.fs.cwd().createFile(f, .{
+            .read = self.@"resume",
+            .truncate = !self.@"resume",
+        })
+    else
+        null;
+    defer if (file) |f| f.close();
+
+    var @"resume": bool = self.@"resume";
+
+    var cycle: u32 = 0;
+    if (@"resume") {
+        const reader = file.?.reader();
+        var last_newline_offset: u64 = 0;
+        var file_offset: u64 = 0;
+        while (true) {
+            const b = reader.readByte() catch |err| switch (err) {
+                error.EndOfStream => break,
+                else => return err,
+            };
+            file_offset += 1;
+            if (b == '\n') {
+                last_newline_offset = file_offset;
+                cycle += 1;
+            }
+        }
+        if (cycle == 0) {
+            @"resume" = false;
+        } else {
+            // Account for log header.
+            cycle -= 1;
+            try file.?.seekTo(last_newline_offset);
+        }
+    }
+
     var params: Log = undefined;
 
     var cycles_completed: u32 = 0;
@@ -112,12 +157,6 @@ pub fn execute(self: @This()) !void {
         params.hall_sensors[5] = payload.sensor6;
     }
 
-    const file: ?std.fs.File = if (self.file) |f|
-        try std.fs.cwd().createFile(f, .{})
-    else
-        null;
-    defer if (file) |f| f.close();
-
     const flags: u32 = @bitCast(params.config);
     const tags = @typeInfo(Log.Tag).@"enum".fields;
     const stdout = std.io.getStdOut().writer();
@@ -130,14 +169,18 @@ pub fn execute(self: @This()) !void {
             switch (Log.tagKind(tag)) {
                 .driver => {
                     total_tag_bytes += tag_size;
-                    if (file) |f| {
-                        try f.writeAll(tags[i].name ++ ",");
+                    if (!@"resume") {
+                        if (file) |f| {
+                            try f.writeAll(tags[i].name ++ ",");
+                        }
+                        try stdout.writeAll(tags[i].name ++ ",");
                     }
-                    try stdout.writeAll(tags[i].name ++ ",");
                 },
                 .axis => {
                     for (params.axes, 1..) |axis, id| {
                         if (!axis) continue;
+                        total_tag_bytes += tag_size;
+                        if (@"resume") continue;
                         if (file) |f| {
                             try f.writer().print(
                                 "{d}_{s},",
@@ -148,12 +191,13 @@ pub fn execute(self: @This()) !void {
                             "{d}_{s},",
                             .{ id, tags[i].name },
                         );
-                        total_tag_bytes += tag_size;
                     }
                 },
                 .sensor => {
                     for (params.hall_sensors, 1..) |sensor, id| {
                         if (!sensor) continue;
+                        total_tag_bytes += tag_size;
+                        if (@"resume") continue;
                         if (file) |f| {
                             try f.writer().print(
                                 "{d}_{s},",
@@ -164,12 +208,13 @@ pub fn execute(self: @This()) !void {
                             "{d}_{s},",
                             .{ id, tags[i].name },
                         );
-                        total_tag_bytes += tag_size;
                     }
                 },
                 .vehicle => {
                     for (params.vehicles) |id| {
                         if (id == 0) continue;
+                        total_tag_bytes += tag_size;
+                        if (@"resume") continue;
                         if (file) |f| {
                             try f.writer().print(
                                 "{d}_{s},",
@@ -180,16 +225,17 @@ pub fn execute(self: @This()) !void {
                             "{d}_{s},",
                             .{ id, tags[i].name },
                         );
-                        total_tag_bytes += tag_size;
                     }
                 },
             }
         }
     }
-    if (file) |f| {
-        try f.writer().writeByte('\n');
+    if (!@"resume") {
+        if (file) |f| {
+            try f.writer().writeByte('\n');
+        }
+        try stdout.writeByte('\n');
     }
-    try stdout.writeByte('\n');
 
     const reader = cli.port.?.reader();
 
@@ -201,7 +247,6 @@ pub fn execute(self: @This()) !void {
     );
     defer std.heap.page_allocator.free(buf);
 
-    var cycle: u32 = 0;
     while (cycle < cycles_completed) {
         var chunk_size: u32 = max_chunk_size;
         chunk_size = @min(max_chunk_size, cycles_completed - cycle);
