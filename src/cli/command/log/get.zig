@@ -56,6 +56,7 @@ pub fn execute(self: @This()) !void {
     defer if (file) |f| f.close();
 
     var @"resume": bool = self.@"resume";
+    var resume_columns: usize = 0;
 
     var cycle: u32 = 0;
     if (@"resume") {
@@ -68,6 +69,9 @@ pub fn execute(self: @This()) !void {
                 else => return err,
             };
             file_offset += 1;
+            if (b == ',' and cycle == 0) {
+                resume_columns += 1;
+            }
             if (b == '\n') {
                 last_newline_offset = file_offset;
                 cycle += 1;
@@ -75,6 +79,7 @@ pub fn execute(self: @This()) !void {
         }
         if (cycle == 0) {
             @"resume" = false;
+            try file.?.seekTo(0);
         } else {
             // Account for log header.
             cycle -= 1;
@@ -161,6 +166,7 @@ pub fn execute(self: @This()) !void {
     const tags = @typeInfo(Log.Tag).@"enum".fields;
     const stdout = std.io.getStdOut().writer();
     var total_tag_bytes: usize = 0;
+    var columns: usize = 0;
     inline for (0..tags.len) |i| {
         if ((flags >> @intCast(i)) & 1 == 1) {
             const tag: Log.Tag = @enumFromInt(i);
@@ -168,6 +174,7 @@ pub fn execute(self: @This()) !void {
 
             switch (Log.tagKind(tag)) {
                 .driver => {
+                    columns += 1;
                     total_tag_bytes += tag_size;
                     if (!@"resume") {
                         if (file) |f| {
@@ -179,6 +186,7 @@ pub fn execute(self: @This()) !void {
                 .axis => {
                     for (params.axes, 1..) |axis, id| {
                         if (!axis) continue;
+                        columns += 1;
                         total_tag_bytes += tag_size;
                         if (@"resume") continue;
                         if (file) |f| {
@@ -196,6 +204,7 @@ pub fn execute(self: @This()) !void {
                 .sensor => {
                     for (params.hall_sensors, 1..) |sensor, id| {
                         if (!sensor) continue;
+                        columns += 1;
                         total_tag_bytes += tag_size;
                         if (@"resume") continue;
                         if (file) |f| {
@@ -213,6 +222,7 @@ pub fn execute(self: @This()) !void {
                 .vehicle => {
                     for (params.vehicles) |id| {
                         if (id == 0) continue;
+                        columns += 1;
                         total_tag_bytes += tag_size;
                         if (@"resume") continue;
                         if (file) |f| {
@@ -230,7 +240,12 @@ pub fn execute(self: @This()) !void {
             }
         }
     }
-    if (!@"resume") {
+    if (@"resume") {
+        if (columns != resume_columns) {
+            std.log.err("resume log column count mismatch", .{});
+            return;
+        }
+    } else {
         if (file) |f| {
             try f.writer().writeByte('\n');
         }
