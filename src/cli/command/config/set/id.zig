@@ -64,12 +64,7 @@ pub fn execute(self: @This()) !void {
         config.id = driver_id;
         config.station_id = station_id;
 
-        try file.seekTo(0);
-        try std.json.stringify(
-            config,
-            .{ .whitespace = .indent_2 },
-            file.writer(),
-        );
+        try command.writeConfigFile(file, config);
     }
 
     if (cli.port) |_| {

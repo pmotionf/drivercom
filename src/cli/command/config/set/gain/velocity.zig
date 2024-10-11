@@ -83,12 +83,7 @@ pub fn execute(self: @This()) !void {
             );
         }
 
-        try file.seekTo(0);
-        try std.json.stringify(
-            config,
-            .{ .whitespace = .indent_2 },
-            file.writer(),
-        );
+        try command.writeConfigFile(file, config);
     }
 
     if (cli.port) |_| {

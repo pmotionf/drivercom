@@ -254,3 +254,9 @@ pub fn parseDirection(str: []const u8) !u8 {
     }
     unreachable;
 }
+
+pub fn writeConfigFile(file: std.fs.File, c: drivercom.Config) !void {
+    try file.seekTo(0);
+    try file.setEndPos(0);
+    try std.json.stringify(c, .{ .whitespace = .indent_2 }, file.writer());
+}
