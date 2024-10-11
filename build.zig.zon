@@ -1,20 +1,9 @@
 .{
     .name = "drivercom",
-    .version = "0.0.1",
+    .version = "0.1.0",
     .minimum_zig_version = "0.14.0-dev.1694+3b465ebec",
 
-    .dependencies = .{
-        .serialport = .{
-            .url = "https://github.com/mochalins/serialport/archive/1585573.tar.gz",
-            .hash = "1220bc1db44424d0f77bd5bb8ade1f06f79909fc49f86421e3d511af9bda8b8d6fbf",
-            .lazy = true,
-        },
-        .args = .{
-            .url = "https://github.com/mochalins/zig-args/archive/8aa1a57.tar.gz",
-            .hash = "122098c4dac1fe09c33ad4f0ffca362a3731096d5245e53b1c6b533867ce2582a7bd",
-            .lazy = true,
-        },
-    },
+    .dependencies = .{},
 
     .paths = .{
         "build.zig",

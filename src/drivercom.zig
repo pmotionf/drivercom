@@ -62,3 +62,7 @@ pub const gain = struct {
         }
     };
 };
+
+test {
+    std.testing.refAllDeclsRecursive(@This());
+}

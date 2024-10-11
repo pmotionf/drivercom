@@ -31,6 +31,3 @@ jobs:
         
       - name: Run library tests
         run: zig build -Dlibrary=static test --summary all
-
-      - name: Run CLI tests
-        run: zig build -Dcli test --summary all
