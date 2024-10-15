@@ -18,6 +18,12 @@ pub const Config = packed struct(u32) {
         cycle: bool = false,
         cycle_time: bool = false,
         vdc: bool = false,
+        com_bwd_sent: bool = false,
+        com_bwd_arrived: bool = false,
+        com_fwd_sent: bool = false,
+        com_fwd_arrived: bool = false,
+        com_bwd_sent_cycles: bool = false,
+        com_fwd_sent_cycles: bool = false,
     } = .{},
 
     // Sensor log.
@@ -39,7 +45,7 @@ pub const Config = packed struct(u32) {
         vehicle_id: bool = false,
         vehicle_position: bool = false,
     } = .{},
-    _: u17 = 0,
+    _: u11 = 0,
 };
 
 pub const Start = enum(u3) {
@@ -88,6 +94,12 @@ pub fn tagSize(tag: Tag) u3 {
         .sensor_valid,
         .sensor_active,
         .axis_vehicle_id,
+        .driver_com_bwd_sent,
+        .driver_com_bwd_arrived,
+        .driver_com_fwd_sent,
+        .driver_com_fwd_arrived,
+        .driver_com_bwd_sent_cycles,
+        .driver_com_fwd_sent_cycles,
         => 2,
         .sensor_angle,
         .sensor_unwrapped_angle,
@@ -115,6 +127,12 @@ pub fn tagParse(comptime tag: Tag, data: []const u8) TagType(tag) {
         .axis_reference_current_q,
         .axis_vehicle_id,
         .axis_vehicle_position,
+        .driver_com_bwd_sent,
+        .driver_com_bwd_arrived,
+        .driver_com_fwd_sent,
+        .driver_com_fwd_arrived,
+        .driver_com_bwd_sent_cycles,
+        .driver_com_fwd_sent_cycles,
         => {
             return std.mem.bytesToValue(TagType(tag), data);
         },
@@ -133,11 +151,25 @@ pub fn tagParse(comptime tag: Tag, data: []const u8) TagType(tag) {
     }
 }
 
+test tagParse {
+    const vdc: u16 = 12089;
+    try std.testing.expectEqual(
+        120.89,
+        tagParse(.driver_vdc, std.mem.asBytes(&vdc)),
+    );
+}
+
 pub fn TagType(comptime tag: Tag) type {
     return switch (tag) {
         .driver_cycle,
         .driver_cycle_time,
         .axis_vehicle_id,
+        .driver_com_bwd_sent,
+        .driver_com_bwd_arrived,
+        .driver_com_fwd_sent,
+        .driver_com_fwd_arrived,
+        .driver_com_bwd_sent_cycles,
+        .driver_com_fwd_sent_cycles,
         => u16,
         .sensor_alarm,
         .sensor_valid,

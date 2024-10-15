@@ -298,7 +298,7 @@ pub const Message = packed struct {
                     .sequence = sequence,
                     ._payload = undefined,
                 };
-                var _payload: Payload = undefined;
+                var _payload: Payload = .{ .u8 = .{0} ** 8 };
                 @field(_payload, @tagName(kind)) = p;
                 msg._payload = @bitCast(_payload);
                 msg.bcc = msg.getBcc();
