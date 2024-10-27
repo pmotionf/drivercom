@@ -32,8 +32,10 @@ pub const Config = packed struct(u32) {
         valid: bool = false,
         active: bool = false,
         angle: bool = false,
+        average_angle: bool = false,
         unwrapped_angle: bool = false,
         distance: bool = false,
+        velocity: bool = false,
     } = .{},
 
     // Axis log.
@@ -44,8 +46,9 @@ pub const Config = packed struct(u32) {
         reference_current_q: bool = false,
         vehicle_id: bool = false,
         vehicle_position: bool = false,
+        average_angle_diff: bool = false,
     } = .{},
-    _: u11 = 0,
+    _: u8 = 0,
 };
 
 pub const Start = enum(u3) {
@@ -104,11 +107,14 @@ pub fn tagSize(tag: Tag) u3 {
         .sensor_angle,
         .sensor_unwrapped_angle,
         .sensor_distance,
+        .sensor_average_angle,
+        .sensor_velocity,
         .axis_current_d,
         .axis_current_q,
         .axis_reference_current_d,
         .axis_reference_current_q,
         .axis_vehicle_position,
+        .axis_average_angle_diff,
         => 4,
     };
 }
@@ -119,14 +125,17 @@ pub fn tagParse(comptime tag: Tag, data: []const u8) TagType(tag) {
         .driver_cycle,
         .driver_cycle_time,
         .sensor_angle,
+        .sensor_average_angle,
         .sensor_unwrapped_angle,
         .sensor_distance,
+        .sensor_velocity,
         .axis_current_d,
         .axis_current_q,
         .axis_reference_current_d,
         .axis_reference_current_q,
         .axis_vehicle_id,
         .axis_vehicle_position,
+        .axis_average_angle_diff,
         .driver_com_bwd_sent,
         .driver_com_bwd_arrived,
         .driver_com_fwd_sent,
@@ -177,13 +186,16 @@ pub fn TagType(comptime tag: Tag) type {
         => bool,
         .driver_vdc,
         .sensor_angle,
+        .sensor_average_angle,
         .sensor_unwrapped_angle,
         .sensor_distance,
+        .sensor_velocity,
         .axis_current_d,
         .axis_current_q,
         .axis_reference_current_d,
         .axis_reference_current_q,
         .axis_vehicle_position,
+        .axis_average_angle_diff,
         => f32,
     };
 }
