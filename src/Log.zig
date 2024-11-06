@@ -230,7 +230,7 @@ fn unwrapConfig(
                 );
             },
             .bool => {
-                result = result ++ .{.{
+                result = result ++ .{std.builtin.Type.EnumField{
                     .name = name ++ field.name,
                     .value = tag_value.*,
                 }};
