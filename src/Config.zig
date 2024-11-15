@@ -9,22 +9,20 @@ id: struct {
     driver: u16,
     station: u16,
 },
-
 flags: SystemFlags,
-
 magnet: struct {
     /// Magnet pole pair pitch in meters.
     pitch: f32,
     length: f32,
 },
-
 /// Vehicle mass in kg.
 vehicle_mass: f32,
-
+/// Vehicle length in meters.
+vehicle_length: f32,
 mechanical_angle_offset: f32,
-
 axis_length: f32,
-
+/// Distance between two hall sensors in one axis, in meters.
+hall_sensor_gap: f32,
 motor: struct {
     /// Motor coil length in meters.
     length: f32,
@@ -38,18 +36,13 @@ motor: struct {
     kf: f32,
     kbm: f32,
 },
-
-calibrated_home_position: f32,
-
-total_axes: u16,
-
-warmup_voltage_reference: f32,
-
-calibration_magnet_length: struct {
+system_zero: f32,
+system_axes: u16,
+warmup_voltage: f32,
+default_magnet_length: struct {
     backward: f32,
     forward: f32,
 },
-
 vdc: struct {
     target: f32,
     limit: struct {
@@ -57,9 +50,7 @@ vdc: struct {
         upper: f32,
     },
 },
-
 axes: [3]Axis,
-
 hall_sensors: [6]HallSensor,
 
 pub const CurrentGain = struct {
