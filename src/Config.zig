@@ -4,13 +4,13 @@ const drivercom = @import("drivercom.zig");
 
 pub const MAX_AXES = 3;
 
-/// Driver ID.
-id: u16,
+/// Driver ID and Driver's CC-Link Station ID..
+id: struct {
+    driver: u16,
+    station: u16,
+},
 
-/// Driver's CC-Link Station ID.
-station_id: u16,
-
-flags: SystemFlags,
+system_flags: SystemFlags,
 
 magnet: struct {
     /// Magnet pole pair pitch in meters.
@@ -21,7 +21,7 @@ magnet: struct {
 /// Vehicle mass in kg.
 vehicle_mass: f32,
 
-mechanical_angle_offset: f32,
+angle_offset: f32,
 
 axis_length: f32,
 
@@ -43,14 +43,14 @@ calibrated_home_position: f32,
 
 total_axes: u16,
 
-warmup_voltage_reference: f32,
+warmup_voltage: f32,
 
 calibration_magnet_length: struct {
     backward: f32,
     forward: f32,
 },
 
-vdc: struct {
+voltage: struct {
     target: f32,
     limit: struct {
         lower: f32,
