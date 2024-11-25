@@ -10,7 +10,7 @@ id: struct {
     station: u16,
 },
 
-system_flags: SystemFlags,
+flags: SystemFlags,
 
 magnet: struct {
     /// Magnet pole pair pitch in meters.
@@ -21,7 +21,7 @@ magnet: struct {
 /// Vehicle mass in kg.
 vehicle_mass: f32,
 
-angle_offset: f32,
+mechanical_angle_offset: f32,
 
 axis_length: f32,
 
@@ -43,14 +43,14 @@ calibrated_home_position: f32,
 
 total_axes: u16,
 
-warmup_voltage: f32,
+warmup_voltage_reference: f32,
 
 calibration_magnet_length: struct {
     backward: f32,
     forward: f32,
 },
 
-voltage: struct {
+vdc: struct {
     target: f32,
     limit: struct {
         lower: f32,

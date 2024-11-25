@@ -27,9 +27,9 @@ pub const Message = packed struct {
             driver: u16,
             station: u16,
         },
-        get_system_flags: void,
-        set_system_flags: packed struct(u16) {
-            system_flags: Config.SystemFlags,
+        get_flags: void,
+        set_flags: packed struct(u16) {
+            flags: Config.SystemFlags,
             _reserved: u6 = 0,
         },
         get_magnet: void,
@@ -39,8 +39,8 @@ pub const Message = packed struct {
         },
         get_vehicle_mass: void,
         set_vehicle_mass: f32,
-        get_angle_offset: void,
-        set_angle_offset: f32,
+        get_mechanical_angle_offset: void,
+        set_mechanical_angle_offset: f32,
         get_axis_length: void,
         set_axis_length: packed struct {
             axis_length: f32,
@@ -50,17 +50,17 @@ pub const Message = packed struct {
         set_calibrated_home_position: f32,
         get_total_axes: void,
         set_total_axes: u16,
-        get_warmup_voltage: void,
-        set_warmup_voltage: f32,
+        get_warmup_voltage_reference: void,
+        set_warmup_voltage_reference: f32,
         get_calibration_magnet_length: void,
         set_calibration_magnet_length: packed struct {
             backward: f32,
             forward: f32,
         },
-        get_voltage_target: void,
-        set_voltage_target: f32,
-        get_voltage_limit: void,
-        set_voltage_limit: packed struct {
+        get_vdc_target: void,
+        set_vdc_target: f32,
+        get_vdc_limit: void,
+        set_vdc_limit: packed struct {
             lower: f32,
             upper: f32,
         },
@@ -108,7 +108,7 @@ pub const Message = packed struct {
         set_velocity_gain_denominator_pi: packed struct {
             axis: u16,
             _: u16 = 0,
-            denominator: u32,
+            denominator_pi: u32,
         },
         get_position_gain_p: u16,
         set_position_gain_p: packed struct {
@@ -252,9 +252,9 @@ pub const Message = packed struct {
         var val: u16 = 1;
         for (ti.fields) |field| {
             if (std.mem.eql(u8, "u8", field.name)) continue;
-            if (std.mem.eql(u8, "get_id_station", field.name)) {
+            if (std.mem.eql(u8, "get_id", field.name)) {
                 val = 0x10;
-            } else if (std.mem.eql(u8, "get_max_current", field.name)) {
+            } else if (std.mem.eql(u8, "get_motor_max_current", field.name)) {
                 val = 0x30;
             } else if (std.mem.eql(
                 u8,
