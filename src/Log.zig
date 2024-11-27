@@ -2,14 +2,14 @@ const std = @import("std");
 
 cycles: u32 = 0,
 config: Config = .{},
-axes: [3]bool = .{false} ** 3,
-hall_sensors: [6]bool = .{false} ** 6,
-vehicles: [4]u12 = .{0} ** 4,
+axis: [3]bool = .{false} ** 3,
+hall_sensor: [6]bool = .{false} ** 6,
+vehicle: [4]u12 = .{0} ** 4,
 start: struct {
     kind: Start = .immediate,
     combinator: Start.Combinator = .@"or",
-    hall_sensors: [6]bool = .{false} ** 6,
-    vehicles: [4]u12 = .{0} ** 4,
+    hall_sensor: [6]bool = .{false} ** 6,
+    vehicle: [4]u12 = .{0} ** 4,
 } = .{},
 
 pub const Config = packed struct(u32) {
