@@ -18,6 +18,13 @@ magnet: struct {
     length: f32,
 },
 
+arrival: struct {
+    threshold: struct {
+        position: f32,
+        velocity: f32,
+    },
+},
+
 /// Vehicle mass in kg.
 vehicle_mass: f32,
 
@@ -97,7 +104,6 @@ pub const Axis = struct {
     current_gain: CurrentGain,
     velocity_gain: VelocityGain,
     position_gain: PositionGain,
-    in_position_threshold: f32,
     base_position: f32,
     back_sensor_off: struct {
         position: i16,

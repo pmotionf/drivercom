@@ -64,6 +64,10 @@ pub const Message = packed struct {
             lower: f32,
             upper: f32,
         },
+        get_arrival_threshold_position: void,
+        set_arrival_threshold_position: f32,
+        get_arrival_threshold_velocity: void,
+        set_arrival_threshold_velocity: f32,
         get_motor_max_current: void,
         set_motor_max_current: f32,
         get_motor_continuous_current: void,
@@ -121,12 +125,6 @@ pub const Message = packed struct {
             axis: u16,
             _: u16 = 0,
             denominator: u32,
-        },
-        get_in_position_threshold: u16,
-        set_in_position_threshold: packed struct {
-            axis: u16,
-            _: u16 = 0,
-            in_position_threshold: f32,
         },
         get_base_position: u16,
         set_base_position: packed struct {
