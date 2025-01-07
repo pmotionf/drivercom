@@ -22,158 +22,177 @@ pub const Message = packed struct {
         },
         start_sequence: void,
         end_sequence: void,
-        get_id: void,
-        set_id: packed struct {
+        // Configuration message name guide:
+        // -----------|-------------------------------------------------------
+        // `:`        | Delimiter used after `get` or `set`. E.g. `get:foo`.
+        // -----------|-------------------------------------------------------
+        // `<foo>`    | Denotes that a field of the message payload also named
+        //            | `foo` contains the value.
+        // -----------|-------------------------------------------------------
+        // `|`        | Separates multiple Config fields contained within the
+        //            | message payload, each field at the same level of
+        //            | nesting to each other.
+        // -----------|-------------------------------------------------------
+        // `.`        | Denotes a Config field nested within the parent, e.g.
+        //            | `foo.bar` would denote a Config field `bar` within the
+        //            | Config parent field (struct) `foo`.
+        // -----------|-------------------------------------------------------
+        // `foo[bar]` | Indicates a Config field `foo` that is a sequence type
+        //            | (array), indexed by the value contained in the message
+        //            | payload field `bar`.
+        // -----------|-------------------------------------------------------
+        @"get:id": void,
+        @"set:id": packed struct {
             driver: u16,
             station: u16,
         },
-        get_flags: void,
-        set_flags: packed struct(u16) {
+        @"get:<flags>": void,
+        @"set:<flags>": packed struct(u16) {
             flags: Config.SystemFlags,
-            _reserved: u6 = 0,
+            _: u6 = 0,
         },
-        get_magnet: void,
-        set_magnet: packed struct {
+        @"get:magnet": void,
+        @"set:magnet": packed struct {
             pitch: f32,
             length: f32,
         },
-        get_vehicle_mass: void,
-        set_vehicle_mass: f32,
-        get_mechanical_angle_offset: void,
-        set_mechanical_angle_offset: f32,
-        get_axis_length: void,
-        set_axis_length: packed struct {
+        @"get:vehicle_mass": void,
+        @"set:vehicle_mass": f32,
+        @"get:mechanical_angle_offset": void,
+        @"set:mechanical_angle_offset": f32,
+        @"get:<axis_length>|<motor_length>": void,
+        @"set:<axis_length>|<motor_length>": packed struct {
             axis_length: f32,
             motor_length: f32,
         },
-        get_calibrated_home_position: void,
-        set_calibrated_home_position: f32,
-        get_total_axes: void,
-        set_total_axes: u16,
-        get_warmup_voltage_reference: void,
-        set_warmup_voltage_reference: f32,
-        get_calibration_magnet_length: void,
-        set_calibration_magnet_length: packed struct {
+        @"get:calibrated_home_position": void,
+        @"set:calibrated_home_position": f32,
+        @"get:total_axes": void,
+        @"set:total_axes": u16,
+        @"get:warmup_voltage_reference": void,
+        @"set:warmup_voltage_reference": f32,
+        @"get:calibration_magnet_length": void,
+        @"set:calibration_magnet_length": packed struct {
             backward: f32,
             forward: f32,
         },
-        get_vdc_target: void,
-        set_vdc_target: f32,
-        get_vdc_limit: void,
-        set_vdc_limit: packed struct {
+        @"get:vdc.target": void,
+        @"set:vdc.target": f32,
+        @"get:vdc.limit": void,
+        @"set:vdc.limit": packed struct {
             lower: f32,
             upper: f32,
         },
-        get_arrival_threshold_position: void,
-        set_arrival_threshold_position: f32,
-        get_arrival_threshold_velocity: void,
-        set_arrival_threshold_velocity: f32,
-        get_motor_max_current: void,
-        set_motor_max_current: f32,
-        get_motor_continuous_current: void,
-        set_motor_continuous_current: f32,
-        get_current_gain_p: u16,
-        set_current_gain_p: packed struct {
+        @"get:arrival.threshold.position": void,
+        @"set:arrival.threshold.position": f32,
+        @"get:arrival.threshold.velocity": void,
+        @"set:arrival.threshold.velocity": f32,
+        @"get:motor.max_current": void,
+        @"set:motor.max_current": f32,
+        @"get:motor.continuous_current": void,
+        @"set:motor.continuous_current": f32,
+        @"get:axes[axis].current_gain.p": u16,
+        @"set:axes[axis].current_gain.p": packed struct {
             axis: u16,
             _: u16 = 0,
             p: f32,
         },
-        get_current_gain_i: u16,
-        set_current_gain_i: packed struct {
+        @"get:axes[axis].current_gain.i": u16,
+        @"set:axes[axis].current_gain.i": packed struct {
             axis: u16,
             _: u16 = 0,
             i: f32,
         },
-        get_current_gain_denominator: u16,
-        set_current_gain_denominator: packed struct {
+        @"get:axes[axis].current_gain.denominator": u16,
+        @"set:axes[axis].current_gain.denominator": packed struct {
             axis: u16,
             _: u16 = 0,
             denominator: u32,
         },
-        get_velocity_gain_p: u16,
-        set_velocity_gain_p: packed struct {
+        @"get:axes[axis].velocity_gain.p": u16,
+        @"set:axes[axis].velocity_gain.p": packed struct {
             axis: u16,
             _: u16 = 0,
             p: f32,
         },
-        get_velocity_gain_i: u16,
-        set_velocity_gain_i: packed struct {
+        @"get:axes[axis].velocity_gain.i": u16,
+        @"set:axes[axis].velocity_gain.i": packed struct {
             axis: u16,
             _: u16 = 0,
             i: f32,
         },
-        get_velocity_gain_denominator: u16,
-        set_velocity_gain_denominator: packed struct {
+        @"get:axes[axis].velocity_gain.denominator": u16,
+        @"set:axes[axis].velocity_gain.denominator": packed struct {
             axis: u16,
             _: u16 = 0,
             denominator: u32,
         },
-        get_velocity_gain_denominator_pi: u16,
-        set_velocity_gain_denominator_pi: packed struct {
+        @"get:axes[axis].velocity_gain.denominator_pi": u16,
+        @"set:axes[axis].velocity_gain.denominator_pi": packed struct {
             axis: u16,
             _: u16 = 0,
             denominator_pi: u32,
         },
-        get_position_gain_p: u16,
-        set_position_gain_p: packed struct {
+        @"get:axes[axis].position_gain.p": u16,
+        @"set:axes[axis].position_gain.p": packed struct {
             axis: u16,
             _: u16 = 0,
             p: f32,
         },
-        get_position_gain_denominator: u16,
-        set_position_gain_denominator: packed struct {
+        @"get:axes[axis].position_gain.<denominator>": u16,
+        @"set:axes[axis].position_gain.<denominator>": packed struct {
             axis: u16,
             _: u16 = 0,
             denominator: u32,
         },
-        get_base_position: u16,
-        set_base_position: packed struct {
+        @"get:axes[axis].<base_position>": u16,
+        @"set:axes[axis].<base_position>": packed struct {
             axis: u16,
             _: u16 = 0,
             base_position: f32,
         },
-        get_back_sensor_off: u16,
-        set_back_sensor_off: packed struct {
+        @"get:axes[axis].back_sensor_off": u16,
+        @"set:axes[axis].back_sensor_off": packed struct {
             axis: u16,
             _: u16 = 0,
             position: i16,
             section_count: i16,
         },
-        get_front_sensor_off: u16,
-        set_front_sensor_off: packed struct {
+        @"get:axes[axis].front_sensor_off": u16,
+        @"set:axes[axis].front_sensor_off": packed struct {
             axis: u16,
             _: u16 = 0,
             position: i16,
             section_count: i16,
         },
-        get_motor_rs: void,
-        set_motor_rs: f32,
-        get_motor_ls: void,
-        set_motor_ls: f32,
-        get_motor_kf: void,
-        set_motor_kf: f32,
-        get_motor_kbm: void,
-        set_motor_kbm: f32,
-        get_calibrated_magnet_length_backward: u16,
-        set_calibrated_magnet_length_backward: packed struct {
+        @"get:motor.rs": void,
+        @"set:motor.rs": f32,
+        @"get:motor.ls": void,
+        @"set:motor.ls": f32,
+        @"get:motor.kf": void,
+        @"set:motor.kf": f32,
+        @"get:motor.kbm": void,
+        @"set:motor.kbm": f32,
+        @"get:hall_sensors[sensor].calibrated_magnet_length.<backward>": u16,
+        @"set:hall_sensors[sensor].calibrated_magnet_length.<backward>": packed struct {
             sensor: u16,
             _: u16 = 0,
             backward: f32,
         },
-        get_calibrated_magnet_length_forward: u16,
-        set_calibrated_magnet_length_forward: packed struct {
+        @"get:hall_sensors[sensor].calibrated_magnet_length.<forward>": u16,
+        @"set:hall_sensors[sensor].calibrated_magnet_length.<forward>": packed struct {
             sensor: u16,
             _: u16 = 0,
             forward: f32,
         },
-        get_ignore_distance_backward: u16,
-        set_ignore_distance_backward: packed struct {
+        @"get:hall_sensors[sensor].ignore_distance.<backward>": u16,
+        @"set:hall_sensors[sensor].ignore_distance.<backward>": packed struct {
             sensor: u16,
             _: u16 = 0,
             backward: f32,
         },
-        get_ignore_distance_forward: u16,
-        set_ignore_distance_forward: packed struct {
+        @"get:hall_sensors[sensor].ignore_distance.<forward>": u16,
+        @"set:hall_sensors[sensor].ignore_distance.<forward>": packed struct {
             sensor: u16,
             _: u16 = 0,
             forward: f32,
@@ -236,6 +255,20 @@ pub const Message = packed struct {
             cycles: u32,
         },
         u8: [8]u8,
+
+        /// Creates new message payload from `Config` struct. If payload kind
+        /// must contain value from an indexable field in `Config` struct, a
+        /// valid index must be provided.
+        pub fn fromConfig(kind: std.meta.stringToEnum(comptime T: type, str: []const u8)config: Config, index: ?usize) Payload {
+            // TODO
+        }
+
+        /// Creates a new `Config` struct from payload. An existing `Config`
+        /// struct can be provided to fill all values not provided by the
+        /// payload.
+        pub fn toConfig(payload: Payload, existing_config: ?Config) Config {
+            // TODO
+        }
     };
 
     pub const Kind = b: {
@@ -250,13 +283,13 @@ pub const Message = packed struct {
         var val: u16 = 1;
         for (ti.fields) |field| {
             if (std.mem.eql(u8, "u8", field.name)) continue;
-            if (std.mem.eql(u8, "get_id", field.name)) {
+            if (std.mem.eql(u8, "get:id", field.name)) {
                 val = 0x10;
-            } else if (std.mem.eql(u8, "get_motor_max_current", field.name)) {
+            } else if (std.mem.eql(u8, "get:motor.max_current", field.name)) {
                 val = 0x30;
             } else if (std.mem.eql(
                 u8,
-                "get_calibrated_magnet_length_backward",
+                "get:hall_sensors[sensor].calibrated_magnet_length.<backward>",
                 field.name,
             )) {
                 val = 0x60;
@@ -331,5 +364,13 @@ comptime {
             "Message is invalid size {}",
             .{@sizeOf(Message)},
         ));
+    }
+
+    const payload_ti = @typeInfo(Message.Payload).@"union";
+    for (payload_ti.fields) |field| {
+        if (field.name.len < 3) continue;
+        if (!std.mem.eql(u8, "set", field.name[0..3])) continue;
+
+        // const field_ti = @typeInfo(field.type);
     }
 }
