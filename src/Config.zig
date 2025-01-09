@@ -189,6 +189,14 @@ pub const Flags = packed struct {
         axis2: bool,
         axis3: bool,
     },
+
+    pub fn toInt(self: Flags) u16 {
+        return @as(u10, @bitCast(self));
+    }
+
+    pub fn fromInt(int: u10) Flags {
+        return @bitCast(int);
+    }
 };
 
 pub fn calcCurrentGain(
