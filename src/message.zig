@@ -14,7 +14,6 @@ pub const Message = packed struct {
     pub const Payload = extern union {
         response: void,
         ping: u32,
-        save_config: void,
         firmware_version: extern struct {
             major: u16 = 0,
             minor: u16 = 0,
@@ -22,181 +21,259 @@ pub const Message = packed struct {
         },
         start_sequence: void,
         end_sequence: void,
-        // Configuration message name guide:
-        // -----------|-------------------------------------------------------
-        // `:`        | Delimiter used after `get` or `set`. E.g. `get:foo`.
-        // -----------|-------------------------------------------------------
-        // `<foo>`    | Denotes that a field of the message payload also named
-        //            | `foo` contains the value.
-        // -----------|-------------------------------------------------------
-        // `|`        | Separates multiple Config fields contained within the
-        //            | message payload, each field at the same level of
-        //            | nesting to each other.
-        // -----------|-------------------------------------------------------
-        // `.`        | Denotes a Config field nested within the parent, e.g.
-        //            | `foo.bar` would denote a Config field `bar` within the
-        //            | Config parent field (struct) `foo`.
-        // -----------|-------------------------------------------------------
-        // `foo[bar]` | Indicates a Config field `foo` that is a sequence type
-        //            | (array), indexed by the value contained in the message
-        //            | payload field `bar`.
-        // -----------|-------------------------------------------------------
-        @"get:id": void,
-        @"set:id": packed struct {
-            driver: u16,
-            station: u16,
+
+        config_get: Config.FieldKind,
+        config_set: extern struct {
+            kind: Config.FieldKind,
+            index: u16 = 0,
+            value: extern union {
+                i16: i16,
+                u16: u16,
+                u32: u32,
+                f32: f32,
+            },
+
+            /// Set the value from Config struct. Valid kind and (if needed)
+            /// index must be provided.
+            pub fn fromConfig(self: *@This(), config: Config) void {
+                switch (self.kind) {
+                    .id => self.value.u16 = config.id.driver,
+                    .station => self.value.u16 = config.id.station,
+                    .flags => self.value.u16 =
+                        @as(u10, @bitCast(config.flags)),
+                    .@"magnet.pitch" => self.value.f32 = config.magnet.pitch,
+                    .@"magnet.length" => self.value.f32 =
+                        config.magnet.length,
+                    .@"carrier.mass" => self.value.f32 = config.vehicle_mass,
+                    .@"carrier.arrival.threshold.position" => self.value.f32 =
+                        config.arrival.threshold.position,
+                    .@"carrier.arrival.threshold.velocity" => self.value.f32 =
+                        config.arrival.threshold.velocity,
+                    .mechanical_angle_offset => self.value.f32 =
+                        config.mechanical_angle_offset,
+                    .@"axis.length" => self.value.f32 = config.axis_length,
+                    .@"coil.length" => self.value.f32 = config.motor.length,
+                    .@"coil.max_current" => self.value.f32 =
+                        config.motor.max_current,
+                    .@"coil.continuous_current" => self.value.f32 =
+                        config.motor.continuous_current,
+                    .@"coil.rs" => self.value.f32 = config.motor.rs,
+                    .@"coil.ls" => self.value.f32 = config.motor.ls,
+                    .@"coil.kf" => self.value.f32 = config.motor.kf,
+                    .@"coil.kbm" => self.value.f32 = config.motor.kbm,
+                    .zero_position => self.value.f32 =
+                        config.calibrated_home_position,
+                    .line_axes => self.value.u32 = config.total_axes,
+                    .warmup_voltage => self.value.f32 =
+                        config.warmup_voltage_reference,
+                    .@"default_magnet_length.backward" => self.value.f32 =
+                        config.calibration_magnet_length.backward,
+                    .@"default_magnet_length.forward" => self.value.f32 =
+                        config.calibration_magnet_length.forward,
+                    .@"vdc.target" => self.value.f32 = config.vdc.target,
+                    .@"vdc.limit.lower" => self.value.f32 =
+                        config.vdc.limit.lower,
+                    .@"vdc.limit.upper" => self.value.f32 =
+                        config.vdc.limit.upper,
+                    .@"axes.gain.current.p" => self.value.f32 =
+                        config.axes[self.index].current_gain.p,
+                    .@"axes.gain.current.i" => self.value.f32 =
+                        config.axes[self.index].current_gain.i,
+                    .@"axes.gain.current.denominator" => self.value.u32 =
+                        config.axes[self.index].current_gain.denominator,
+                    .@"axes.gain.velocity.p" => self.value.f32 =
+                        config.axes[self.index].velocity_gain.p,
+                    .@"axes.gain.velocity.i" => self.value.f32 =
+                        config.axes[self.index].velocity_gain.i,
+                    .@"axes.gain.velocity.denominator" => self.value.u32 =
+                        config.axes[self.index].velocity_gain.denominator,
+                    .@"axes.gain.velocity.denominator_pi" => self.value.u32 =
+                        config.axes[self.index].velocity_gain.denominator_pi,
+                    .@"axes.gain.position.p" => self.value.f32 =
+                        config.axes[self.index].position_gain.p,
+                    .@"axes.gain.position.denominator" => self.value.u32 =
+                        config.axes[self.index].position_gain.denominator,
+                    .@"axes.base_position" => self.value.f32 =
+                        config.axes[self.index].base_position,
+                    .@"axes.sensor_off.back.position" => self.value.i16 =
+                        config.axes[self.index].back_sensor_off.position,
+                    .@"axes.sensor_off.back.section_count" => self.value.i16 =
+                        config.axes[self.index].back_sensor_off.section_count,
+                    .@"axes.sensor_off.front.position" => self.value.i16 =
+                        config.axes[self.index].front_sensor_off.position,
+                    .@"axes.sensor_off.front.section_count" => self.value.i16 =
+                        config.axes[self.index].front_sensor_off.section_count,
+                    .@"hall_sensors.magnet_length.backward" => self.value.f32 =
+                        config.hall_sensors[self.index].calibrated_magnet_length.backward,
+                    .@"hall_sensors.magnet_length.forward" => self.value.f32 =
+                        config.hall_sensors[self.index].calibrated_magnet_length.forward,
+                    .@"hall_sensors.ignore_distance.backward" => self.value.f32 =
+                        config.hall_sensors[self.index].ignore_distance.backward,
+                    .@"hall_sensors.ignore_distance.forward" => self.value.f32 =
+                        config.hall_sensors[self.index].ignore_distance.forward,
+                }
+            }
+
+            test fromConfig {
+                var pl: Payload = .{ .config_set = .{
+                    .kind = .station,
+                    .value = undefined,
+                } };
+                const conf: Config = std.mem.zeroInit(Config, .{
+                    .id = .{
+                        .driver = 1,
+                        .station = 13,
+                    },
+                });
+                pl.config_set.fromConfig(conf);
+                try std.testing.expectEqual(13, pl.config_set.value.u16);
+            }
+
+            /// Set the corresponding Config struct value from this message.
+            pub fn setConfig(self: @This(), config: *Config) void {
+                switch (self.kind) {
+                    .id => config.id.driver = self.value.u16,
+                    .station => config.id.station = self.value.u16,
+                    .flags => config.flags = @bitCast(@as(
+                        @typeInfo(Config.Flags).@"struct".backing_integer.?,
+                        @truncate(self.value.u16),
+                    )),
+                    .@"magnet.pitch" => config.magnet.pitch = self.value.f32,
+                    .@"magnet.length" => {
+                        config.magnet.length = self.value.f32;
+                    },
+                    .@"carrier.mass" => config.vehicle_mass = self.value.f32,
+                    .@"carrier.arrival.threshold.position" => {
+                        config.arrival.threshold.position = self.value.f32;
+                    },
+                    .@"carrier.arrival.threshold.velocity" => {
+                        config.arrival.threshold.velocity = self.value.f32;
+                    },
+                    .mechanical_angle_offset => {
+                        config.mechanical_angle_offset = self.value.f32;
+                    },
+                    .@"axis.length" => config.axis_length = self.value.f32,
+                    .@"coil.length" => config.motor.length = self.value.f32,
+                    .@"coil.max_current" => {
+                        config.motor.max_current = self.value.f32;
+                    },
+                    .@"coil.continuous_current" => {
+                        config.motor.continuous_current = self.value.f32;
+                    },
+                    .@"coil.rs" => config.motor.rs = self.value.f32,
+                    .@"coil.ls" => config.motor.ls = self.value.f32,
+                    .@"coil.kf" => config.motor.kf = self.value.f32,
+                    .@"coil.kbm" => config.motor.kbm = self.value.f32,
+                    .zero_position => {
+                        config.calibrated_home_position = self.value.f32;
+                    },
+                    .line_axes => config.total_axes = self.value.u32,
+                    .warmup_voltage => {
+                        config.warmup_voltage_reference = self.value.f32;
+                    },
+                    .@"default_magnet_length.backward" => {
+                        config.calibration_magnet_length.backward =
+                            self.value.f32;
+                    },
+                    .@"default_magnet_length.forward" => {
+                        config.calibration_magnet_length.forward =
+                            self.value.f32;
+                    },
+                    .@"vdc.target" => {
+                        config.vdc.target = self.value.f32;
+                    },
+                    .@"vdc.limit.lower" => {
+                        config.vdc.limit.lower = self.value.f32;
+                    },
+                    .@"vdc.limit.upper" => {
+                        config.vdc.limit.upper = self.value.f32;
+                    },
+                    .@"axes.gain.current.p" => {
+                        config.axes[self.index].current_gain.p =
+                            self.value.f32;
+                    },
+                    .@"axes.gain.current.i" => {
+                        config.axes[self.index].current_gain.i =
+                            self.value.f32;
+                    },
+                    .@"axes.gain.current.denominator" => {
+                        config.axes[self.index].current_gain.denominator =
+                            self.value.u32;
+                    },
+                    .@"axes.gain.velocity.p" => {
+                        config.axes[self.index].velocity_gain.p =
+                            self.value.f32;
+                    },
+                    .@"axes.gain.velocity.i" => {
+                        config.axes[self.index].velocity_gain.i =
+                            self.value.f32;
+                    },
+                    .@"axes.gain.velocity.denominator" => {
+                        config.axes[self.index].velocity_gain.denominator =
+                            self.value.u32;
+                    },
+                    .@"axes.gain.velocity.denominator_pi" => {
+                        config.axes[self.index].velocity_gain.denominator_pi =
+                            self.value.u32;
+                    },
+                    .@"axes.gain.position.p" => {
+                        config.axes[self.index].position_gain.p =
+                            self.value.f32;
+                    },
+                    .@"axes.gain.position.denominator" => {
+                        config.axes[self.index].position_gain.denominator =
+                            self.value.u32;
+                    },
+                    .@"axes.base_position" => {
+                        config.axes[self.index].base_position =
+                            self.value.f32;
+                    },
+                    .@"axes.sensor_off.back.position" => {
+                        config.axes[self.index].back_sensor_off.position =
+                            self.value.i16;
+                    },
+                    .@"axes.sensor_off.back.section_count" => {
+                        config.axes[self.index].back_sensor_off.section_count =
+                            self.value.i16;
+                    },
+                    .@"axes.sensor_off.front.position" => {
+                        config.axes[self.index].front_sensor_off.position =
+                            self.value.i16;
+                    },
+                    .@"axes.sensor_off.front.section_count" => {
+                        config.axes[self.index].front_sensor_off.section_count =
+                            self.value.i16;
+                    },
+                    .@"hall_sensors.magnet_length.backward" => {
+                        config.hall_sensors[self.index].calibrated_magnet_length.backward =
+                            self.value.f32;
+                    },
+                    .@"hall_sensors.magnet_length.forward" => {
+                        config.hall_sensors[self.index].calibrated_magnet_length.forward =
+                            self.value.f32;
+                    },
+                    .@"hall_sensors.ignore_distance.backward" => {
+                        config.hall_sensors[self.index].ignore_distance.backward =
+                            self.value.f32;
+                    },
+                    .@"hall_sensors.ignore_distance.forward" => {
+                        config.hall_sensors[self.index].ignore_distance.forward =
+                            self.value.f32;
+                    },
+                }
+            }
+
+            test setConfig {
+                var config: Config = std.mem.zeroInit(Config, .{});
+                setConfig(.{
+                    .kind = .station,
+                    .value = .{ .u16 = 3 },
+                }, &config);
+                try std.testing.expectEqual(3, config.id.station);
+            }
         },
-        @"get:<flags>": void,
-        @"set:<flags>": packed struct(u16) {
-            flags: Config.SystemFlags,
-            _: u6 = 0,
-        },
-        @"get:magnet": void,
-        @"set:magnet": packed struct {
-            pitch: f32,
-            length: f32,
-        },
-        @"get:vehicle_mass": void,
-        @"set:vehicle_mass": f32,
-        @"get:mechanical_angle_offset": void,
-        @"set:mechanical_angle_offset": f32,
-        @"get:<axis_length>|<motor_length>": void,
-        @"set:<axis_length>|<motor_length>": packed struct {
-            axis_length: f32,
-            motor_length: f32,
-        },
-        @"get:calibrated_home_position": void,
-        @"set:calibrated_home_position": f32,
-        @"get:total_axes": void,
-        @"set:total_axes": u16,
-        @"get:warmup_voltage_reference": void,
-        @"set:warmup_voltage_reference": f32,
-        @"get:calibration_magnet_length": void,
-        @"set:calibration_magnet_length": packed struct {
-            backward: f32,
-            forward: f32,
-        },
-        @"get:vdc.target": void,
-        @"set:vdc.target": f32,
-        @"get:vdc.limit": void,
-        @"set:vdc.limit": packed struct {
-            lower: f32,
-            upper: f32,
-        },
-        @"get:arrival.threshold.position": void,
-        @"set:arrival.threshold.position": f32,
-        @"get:arrival.threshold.velocity": void,
-        @"set:arrival.threshold.velocity": f32,
-        @"get:motor.max_current": void,
-        @"set:motor.max_current": f32,
-        @"get:motor.continuous_current": void,
-        @"set:motor.continuous_current": f32,
-        @"get:axes[axis].current_gain.p": u16,
-        @"set:axes[axis].current_gain.p": packed struct {
-            axis: u16,
-            _: u16 = 0,
-            p: f32,
-        },
-        @"get:axes[axis].current_gain.i": u16,
-        @"set:axes[axis].current_gain.i": packed struct {
-            axis: u16,
-            _: u16 = 0,
-            i: f32,
-        },
-        @"get:axes[axis].current_gain.denominator": u16,
-        @"set:axes[axis].current_gain.denominator": packed struct {
-            axis: u16,
-            _: u16 = 0,
-            denominator: u32,
-        },
-        @"get:axes[axis].velocity_gain.p": u16,
-        @"set:axes[axis].velocity_gain.p": packed struct {
-            axis: u16,
-            _: u16 = 0,
-            p: f32,
-        },
-        @"get:axes[axis].velocity_gain.i": u16,
-        @"set:axes[axis].velocity_gain.i": packed struct {
-            axis: u16,
-            _: u16 = 0,
-            i: f32,
-        },
-        @"get:axes[axis].velocity_gain.denominator": u16,
-        @"set:axes[axis].velocity_gain.denominator": packed struct {
-            axis: u16,
-            _: u16 = 0,
-            denominator: u32,
-        },
-        @"get:axes[axis].velocity_gain.denominator_pi": u16,
-        @"set:axes[axis].velocity_gain.denominator_pi": packed struct {
-            axis: u16,
-            _: u16 = 0,
-            denominator_pi: u32,
-        },
-        @"get:axes[axis].position_gain.p": u16,
-        @"set:axes[axis].position_gain.p": packed struct {
-            axis: u16,
-            _: u16 = 0,
-            p: f32,
-        },
-        @"get:axes[axis].position_gain.<denominator>": u16,
-        @"set:axes[axis].position_gain.<denominator>": packed struct {
-            axis: u16,
-            _: u16 = 0,
-            denominator: u32,
-        },
-        @"get:axes[axis].<base_position>": u16,
-        @"set:axes[axis].<base_position>": packed struct {
-            axis: u16,
-            _: u16 = 0,
-            base_position: f32,
-        },
-        @"get:axes[axis].back_sensor_off": u16,
-        @"set:axes[axis].back_sensor_off": packed struct {
-            axis: u16,
-            _: u16 = 0,
-            position: i16,
-            section_count: i16,
-        },
-        @"get:axes[axis].front_sensor_off": u16,
-        @"set:axes[axis].front_sensor_off": packed struct {
-            axis: u16,
-            _: u16 = 0,
-            position: i16,
-            section_count: i16,
-        },
-        @"get:motor.rs": void,
-        @"set:motor.rs": f32,
-        @"get:motor.ls": void,
-        @"set:motor.ls": f32,
-        @"get:motor.kf": void,
-        @"set:motor.kf": f32,
-        @"get:motor.kbm": void,
-        @"set:motor.kbm": f32,
-        @"get:hall_sensors[sensor].calibrated_magnet_length.<backward>": u16,
-        @"set:hall_sensors[sensor].calibrated_magnet_length.<backward>": packed struct {
-            sensor: u16,
-            _: u16 = 0,
-            backward: f32,
-        },
-        @"get:hall_sensors[sensor].calibrated_magnet_length.<forward>": u16,
-        @"set:hall_sensors[sensor].calibrated_magnet_length.<forward>": packed struct {
-            sensor: u16,
-            _: u16 = 0,
-            forward: f32,
-        },
-        @"get:hall_sensors[sensor].ignore_distance.<backward>": u16,
-        @"set:hall_sensors[sensor].ignore_distance.<backward>": packed struct {
-            sensor: u16,
-            _: u16 = 0,
-            backward: f32,
-        },
-        @"get:hall_sensors[sensor].ignore_distance.<forward>": u16,
-        @"set:hall_sensors[sensor].ignore_distance.<forward>": packed struct {
-            sensor: u16,
-            _: u16 = 0,
-            forward: f32,
-        },
+        config_save: void,
+
         log_start: void,
         log_stop: void,
         log_status: packed struct {
@@ -255,20 +332,6 @@ pub const Message = packed struct {
             cycles: u32,
         },
         u8: [8]u8,
-
-        /// Creates new message payload from `Config` struct. If payload kind
-        /// must contain value from an indexable field in `Config` struct, a
-        /// valid index must be provided.
-        pub fn fromConfig(kind: std.meta.stringToEnum(comptime T: type, str: []const u8)config: Config, index: ?usize) Payload {
-            // TODO
-        }
-
-        /// Creates a new `Config` struct from payload. An existing `Config`
-        /// struct can be provided to fill all values not provided by the
-        /// payload.
-        pub fn toConfig(payload: Payload, existing_config: ?Config) Config {
-            // TODO
-        }
     };
 
     pub const Kind = b: {
@@ -283,16 +346,8 @@ pub const Message = packed struct {
         var val: u16 = 1;
         for (ti.fields) |field| {
             if (std.mem.eql(u8, "u8", field.name)) continue;
-            if (std.mem.eql(u8, "get:id", field.name)) {
+            if (std.mem.eql(u8, "config_get", field.name)) {
                 val = 0x10;
-            } else if (std.mem.eql(u8, "get:motor.max_current", field.name)) {
-                val = 0x30;
-            } else if (std.mem.eql(
-                u8,
-                "get:hall_sensors[sensor].calibrated_magnet_length.<backward>",
-                field.name,
-            )) {
-                val = 0x60;
             } else if (std.mem.eql(u8, "log_start", field.name)) {
                 val = 0x100;
             }
