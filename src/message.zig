@@ -22,8 +22,70 @@ pub const Message = packed struct {
         start_sequence: void,
         end_sequence: void,
 
-        config_get: Config.FieldKind,
-        config_set: extern struct {
+        config_get: ConfigField,
+        config_set: ConfigField,
+        config_save: void,
+
+        log_start: void,
+        log_stop: void,
+        log_status: packed struct {
+            status: Log.Status,
+            _: u30 = 0,
+            cycles_completed: u32,
+        },
+        log_get_cycles: void,
+        log_set_cycles: u32,
+        log_get_config: void,
+        log_set_config: Log.Config,
+        log_add_config: Log.Config,
+        log_remove_config: Log.Config,
+        log_get_axis: void,
+        log_set_axis: packed struct(u16) {
+            axis_1: bool,
+            axis_2: bool,
+            axis_3: bool,
+            _: u13 = 0,
+        },
+        log_get_vehicle: void,
+        log_set_vehicle: [4]u16,
+        log_get_hall_sensor: void,
+        log_set_hall_sensor: packed struct(u16) {
+            hall_sensor_1: bool,
+            hall_sensor_2: bool,
+            hall_sensor_3: bool,
+            hall_sensor_4: bool,
+            hall_sensor_5: bool,
+            hall_sensor_6: bool,
+            _: u10 = 0,
+        },
+        log_get_start: void,
+        log_set_start: packed struct {
+            vehicle_1: u12,
+            kind: Log.Start,
+            _: u1 = 0,
+            vehicle_2: u12,
+            hall_sensor_1: bool = false,
+            hall_sensor_2: bool = false,
+            combinator_and: bool = false,
+            combinator_or: bool = false,
+            vehicle_3: u12,
+            hall_sensor_3: bool = false,
+            hall_sensor_4: bool = false,
+            _1: u2 = 0,
+            vehicle_4: u12,
+            hall_sensor_5: bool = false,
+            hall_sensor_6: bool = false,
+            _2: u2 = 0,
+        },
+        log_get: packed struct {
+            cycle: u24,
+            data: Log.Tag,
+            id: u3,
+            cycles: u32,
+        },
+        u8: [8]u8,
+
+        pub const ConfigField = extern struct {
             kind: Config.FieldKind,
             index: u16 = 0,
             value: extern union {
@@ -31,7 +93,7 @@ pub const Message = packed struct {
                 u16: u16,
                 u32: u32,
                 f32: f32,
-            },
+            } = undefined,
 
             /// Set the value from Config struct. Valid kind and (if needed)
             /// index must be provided.
@@ -271,67 +333,7 @@ pub const Message = packed struct {
                 }, &config);
                 try std.testing.expectEqual(3, config.id.station);
             }
-        },
-        config_save: void,
-
-        log_start: void,
-        log_stop: void,
-        log_status: packed struct {
-            status: Log.Status,
-            _: u30 = 0,
-            cycles_completed: u32,
-        },
-        log_get_cycles: void,
-        log_set_cycles: u32,
-        log_get_config: void,
-        log_set_config: Log.Config,
-        log_add_config: Log.Config,
-        log_remove_config: Log.Config,
-        log_get_axis: void,
-        log_set_axis: packed struct(u16) {
-            axis_1: bool,
-            axis_2: bool,
-            axis_3: bool,
-            _: u13 = 0,
-        },
-        log_get_vehicle: void,
-        log_set_vehicle: [4]u16,
-        log_get_hall_sensor: void,
-        log_set_hall_sensor: packed struct(u16) {
-            hall_sensor_1: bool,
-            hall_sensor_2: bool,
-            hall_sensor_3: bool,
-            hall_sensor_4: bool,
-            hall_sensor_5: bool,
-            hall_sensor_6: bool,
-            _: u10 = 0,
-        },
-        log_get_start: void,
-        log_set_start: packed struct {
-            vehicle_1: u12,
-            kind: Log.Start,
-            _: u1 = 0,
-            vehicle_2: u12,
-            hall_sensor_1: bool = false,
-            hall_sensor_2: bool = false,
-            combinator_and: bool = false,
-            combinator_or: bool = false,
-            vehicle_3: u12,
-            hall_sensor_3: bool = false,
-            hall_sensor_4: bool = false,
-            _1: u2 = 0,
-            vehicle_4: u12,
-            hall_sensor_5: bool = false,
-            hall_sensor_6: bool = false,
-            _2: u2 = 0,
-        },
-        log_get: packed struct {
-            cycle: u24,
-            data: Log.Tag,
-            id: u3,
-            cycles: u32,
-        },
-        u8: [8]u8,
+        };
     };
 
     pub const Kind = b: {
