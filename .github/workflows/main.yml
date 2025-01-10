@@ -14,8 +14,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [self-hosted]
-    runs-on: ${{ matrix.os }}
+        os: [Linux, Windows]
+    runs-on: [self-hosted, "${{ matrix.os }}"]
     steps:
       - name: Log masks
         run: echo "::add-mask::$NAME_MASK"
@@ -24,8 +24,12 @@ jobs:
         with:
           persist-credentials: false
 
+      - uses: mlugg/setup-zig@v1
+        with: 
+          version: master
+
       - name: Run zig fmt
-        if: matrix.os == 'self-hosted'
+        if: matrix.os == 'Linux'
         run: zig fmt --check .
 
       - name: Run module tests
