@@ -367,7 +367,7 @@ pub const Message = packed struct {
 
     pub fn PayloadType(comptime kind: Kind) type {
         const ti = @typeInfo(Payload).@"union";
-        @setEvalBranchQuota(2000);
+        @setEvalBranchQuota(3000);
         inline for (ti.fields) |field| {
             if (std.mem.eql(u8, field.name, @tagName(kind))) {
                 return field.type;
