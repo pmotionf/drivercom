@@ -4,13 +4,59 @@ const drivercom = @import("drivercom.zig");
 
 pub const MAX_AXES = 3;
 
+pub const FieldKind = enum(u16) {
+    id,
+    station,
+    flags,
+    @"magnet.pitch",
+    @"magnet.length",
+    @"carrier.mass",
+    @"carrier.arrival.threshold.position",
+    @"carrier.arrival.threshold.velocity",
+    mechanical_angle_offset,
+    @"axis.length",
+    @"coil.length",
+    @"coil.max_current",
+    @"coil.continuous_current",
+    @"coil.rs",
+    @"coil.ls",
+    @"coil.kf",
+    @"coil.kbm",
+    zero_position,
+    line_axes,
+    warmup_voltage,
+    @"default_magnet_length.backward",
+    @"default_magnet_length.forward",
+    @"vdc.target",
+    @"vdc.limit.lower",
+    @"vdc.limit.upper",
+    @"axes.gain.current.p",
+    @"axes.gain.current.i",
+    @"axes.gain.current.denominator",
+    @"axes.gain.velocity.p",
+    @"axes.gain.velocity.i",
+    @"axes.gain.velocity.denominator",
+    @"axes.gain.velocity.denominator_pi",
+    @"axes.gain.position.p",
+    @"axes.gain.position.denominator",
+    @"axes.base_position",
+    @"axes.sensor_off.back.position",
+    @"axes.sensor_off.back.section_count",
+    @"axes.sensor_off.front.position",
+    @"axes.sensor_off.front.section_count",
+    @"hall_sensors.magnet_length.backward",
+    @"hall_sensors.magnet_length.forward",
+    @"hall_sensors.ignore_distance.backward",
+    @"hall_sensors.ignore_distance.forward",
+};
+
 /// Driver ID and Driver's CC-Link Station ID..
 id: struct {
     driver: u16,
     station: u16,
 },
 
-flags: SystemFlags,
+flags: Flags,
 
 magnet: struct {
     /// Magnet pole pair pitch in meters.
@@ -48,7 +94,7 @@ motor: struct {
 
 calibrated_home_position: f32,
 
-total_axes: u16,
+total_axes: u32,
 
 warmup_voltage_reference: f32,
 
@@ -126,7 +172,7 @@ pub const HallSensor = struct {
     },
 };
 
-pub const SystemFlags = packed struct {
+pub const Flags = packed struct {
     home_sensor: bool,
     has_neighbor: packed struct(u2) {
         backward: bool,
@@ -143,6 +189,14 @@ pub const SystemFlags = packed struct {
         axis2: bool,
         axis3: bool,
     },
+
+    pub fn toInt(self: Flags) u16 {
+        return @as(u10, @bitCast(self));
+    }
+
+    pub fn fromInt(int: u10) Flags {
+        return @bitCast(int);
+    }
 };
 
 pub fn calcCurrentGain(
