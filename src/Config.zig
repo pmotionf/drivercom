@@ -4,6 +4,9 @@ const drivercom = @import("drivercom.zig");
 
 pub const MAX_AXES = 3;
 
+/// Driver configuration field kind. These kinds are used directly in messages
+/// with driver; their ordering must match firmware field kind ordering.
+/// Names should reflect nested structure within `Config` struct.
 pub const FieldKind = enum(u16) {
     id,
     station,
@@ -50,11 +53,65 @@ pub const FieldKind = enum(u16) {
     @"hall_sensors.ignore_distance.forward",
 };
 
-/// Driver ID and Driver's CC-Link Station ID..
-id: struct {
-    driver: u16,
-    station: u16,
-},
+/// Recursively walk structure fields, checking if leaf fields exist in
+/// `FieldKind` enum.
+fn walkFields(structure: anytype, comptime prefix: []const u8) !void {
+    switch (@typeInfo(structure)) {
+        .@"struct" => |ti| {
+            inline for (ti.fields) |field| {
+                const new_prefix = if (prefix.len > 0)
+                    prefix ++ "." ++ field.name
+                else
+                    field.name;
+
+                const fti = @typeInfo(field.type);
+                switch (fti) {
+                    .@"struct", .array => {
+                        // Special case Config flags field.
+                        if (std.mem.eql(u8, "flags", field.name)) {
+                            try std.testing.expectEqual(
+                                true,
+                                @hasField(FieldKind, new_prefix),
+                            );
+                        } else try walkFields(
+                            field.type,
+                            new_prefix,
+                        );
+                    },
+                    else => {
+                        try std.testing.expectEqual(
+                            true,
+                            @hasField(FieldKind, new_prefix),
+                        );
+                    },
+                }
+            }
+        },
+        .array => |ar| {
+            const cti = @typeInfo(ar.child);
+            switch (cti) {
+                .@"struct", .array => try walkFields(ar.child, prefix),
+                else => {
+                    try std.testing.expectEqual(
+                        true,
+                        @hasField(FieldKind, prefix),
+                    );
+                },
+            }
+        },
+        else => unreachable,
+    }
+}
+
+test FieldKind {
+    try walkFields(@This(), "");
+}
+
+/// Driver ID
+id: u16,
+
+/// CC-Link Station ID
+station: u16,
 
 flags: Flags,
 
@@ -64,21 +121,26 @@ magnet: struct {
     length: f32,
 },
 
-arrival: struct {
-    threshold: struct {
-        position: f32,
-        velocity: f32,
+carrier: struct {
+    /// Carrier mass in KG.
+    mass: f32,
+
+    /// Threshold conditions to determine carrier arrival at a position.
+    arrival: struct {
+        threshold: struct {
+            position: f32,
+            velocity: f32,
+        },
     },
 },
 
-/// Vehicle mass in kg.
-vehicle_mass: f32,
-
 mechanical_angle_offset: f32,
 
-axis_length: f32,
+axis: struct {
+    length: f32,
+},
 
-motor: struct {
+coil: struct {
     /// Motor coil length in meters.
     length: f32,
     max_current: f32,
@@ -92,13 +154,13 @@ motor: struct {
     kbm: f32,
 },
 
-calibrated_home_position: f32,
+zero_position: f32,
 
-total_axes: u32,
+line_axes: u32,
 
-warmup_voltage_reference: f32,
+warmup_voltage: f32,
 
-calibration_magnet_length: struct {
+default_magnet_length: struct {
     backward: f32,
     forward: f32,
 },
@@ -147,22 +209,26 @@ pub const PositionGain = struct {
 };
 
 pub const Axis = struct {
-    current_gain: CurrentGain,
-    velocity_gain: VelocityGain,
-    position_gain: PositionGain,
-    base_position: f32,
-    back_sensor_off: struct {
-        position: i16,
-        section_count: i16,
+    gain: struct {
+        current: CurrentGain,
+        velocity: VelocityGain,
+        position: PositionGain,
     },
-    front_sensor_off: struct {
-        position: i16,
-        section_count: i16,
+    base_position: f32,
+    sensor_off: struct {
+        back: struct {
+            position: i16,
+            section_count: i16,
+        },
+        front: struct {
+            position: i16,
+            section_count: i16,
+        },
     },
 };
 
 pub const HallSensor = struct {
-    calibrated_magnet_length: struct {
+    magnet_length: struct {
         backward: f32,
         forward: f32,
     },
@@ -209,10 +275,10 @@ pub fn calcCurrentGain(
     return .{
         .denominator = denominator,
         .p = @floatCast(
-            drivercom.gain.current.p(self.motor.ls, wcc),
+            drivercom.gain.current.p(self.coil.ls, wcc),
         ),
         .i = @floatCast(
-            drivercom.gain.current.i(self.motor.rs, wcc),
+            drivercom.gain.current.i(self.coil.rs, wcc),
         ),
     };
 }
@@ -226,11 +292,14 @@ pub fn calcVelocityGain(
     std.debug.assert(axis_index < MAX_AXES);
     const axis = self.axes[axis_index];
 
-    const wcc = drivercom.gain.current.wcc(axis.current_gain.denominator);
+    const wcc = drivercom.gain.current.wcc(axis.gain.current.denominator);
     const radius = drivercom.gain.velocity.radius(self.magnet.pitch);
-    const inertia = drivercom.gain.velocity.inertia(self.vehicle_mass, radius);
+    const inertia = drivercom.gain.velocity.inertia(
+        self.carrier.mass,
+        radius,
+    );
     const torque_constant =
-        drivercom.gain.velocity.torqueConstant(self.motor.kf, radius);
+        drivercom.gain.velocity.torqueConstant(self.coil.kf, radius);
     const wsc = drivercom.gain.velocity.wsc(denominator, wcc);
     const wpi = drivercom.gain.velocity.wpi(denominator_pi, wsc);
     const p = drivercom.gain.velocity.p(inertia, torque_constant, wsc);
@@ -251,9 +320,9 @@ pub fn calcPositionGain(
     std.debug.assert(axis_index < MAX_AXES);
     const axis = self.axes[axis_index];
 
-    const wcc = drivercom.gain.current.wcc(axis.current_gain.denominator);
+    const wcc = drivercom.gain.current.wcc(axis.gain.current.denominator);
     const wsc =
-        drivercom.gain.velocity.wsc(axis.velocity_gain.denominator, wcc);
+        drivercom.gain.velocity.wsc(axis.gain.velocity.denominator, wcc);
 
     const wpc = drivercom.gain.position.wpc(denominator, wsc);
     const p = drivercom.gain.position.p(wpc);
