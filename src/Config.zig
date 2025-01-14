@@ -4,53 +4,56 @@ const drivercom = @import("drivercom.zig");
 
 pub const MAX_AXES = 3;
 
-/// Driver configuration field kind. These kinds are used directly in messages
-/// with driver; their ordering must match firmware field kind ordering.
-/// Names should reflect nested structure within `Config` struct.
-pub const FieldKind = enum(u16) {
-    id,
-    station,
-    flags,
-    @"magnet.pitch",
-    @"magnet.length",
-    @"carrier.mass",
-    @"carrier.arrival.threshold.position",
-    @"carrier.arrival.threshold.velocity",
-    mechanical_angle_offset,
-    @"axis.length",
-    @"coil.length",
-    @"coil.max_current",
-    @"coil.continuous_current",
-    @"coil.rs",
-    @"coil.ls",
-    @"coil.kf",
-    @"coil.kbm",
-    zero_position,
-    line_axes,
-    warmup_voltage,
-    @"default_magnet_length.backward",
-    @"default_magnet_length.forward",
-    @"vdc.target",
-    @"vdc.limit.lower",
-    @"vdc.limit.upper",
-    @"axes.gain.current.p",
-    @"axes.gain.current.i",
-    @"axes.gain.current.denominator",
-    @"axes.gain.velocity.p",
-    @"axes.gain.velocity.i",
-    @"axes.gain.velocity.denominator",
-    @"axes.gain.velocity.denominator_pi",
-    @"axes.gain.position.p",
-    @"axes.gain.position.denominator",
-    @"axes.base_position",
-    @"axes.sensor_off.back.position",
-    @"axes.sensor_off.back.section_count",
-    @"axes.sensor_off.front.position",
-    @"axes.sensor_off.front.section_count",
-    @"hall_sensors.magnet_length.backward",
-    @"hall_sensors.magnet_length.forward",
-    @"hall_sensors.ignore_distance.backward",
-    @"hall_sensors.ignore_distance.forward",
+/// Driver configuration field. These fields are used directly in messages
+/// with driver; their ordering matches firmware field kind ordering.
+/// Names reflect nested structure within `Config` struct, and types represent
+/// the type of value in the `Config` struct.
+pub const Field = union(enum(u16)) {
+    id: u16,
+    station: u16,
+    flags: Flags,
+    @"magnet.pitch": f32,
+    @"magnet.length": f32,
+    @"carrier.mass": f32,
+    @"carrier.arrival.threshold.position": f32,
+    @"carrier.arrival.threshold.velocity": f32,
+    mechanical_angle_offset: f32,
+    @"axis.length": f32,
+    @"coil.length": f32,
+    @"coil.max_current": f32,
+    @"coil.continuous_current": f32,
+    @"coil.rs": f32,
+    @"coil.ls": f32,
+    @"coil.kf": f32,
+    @"coil.kbm": f32,
+    zero_position: f32,
+    line_axes: u32,
+    warmup_voltage: f32,
+    @"default_magnet_length.backward": f32,
+    @"default_magnet_length.forward": f32,
+    @"vdc.target": f32,
+    @"vdc.limit.lower": f32,
+    @"vdc.limit.upper": f32,
+    @"axes.gain.current.p": f32,
+    @"axes.gain.current.i": f32,
+    @"axes.gain.current.denominator": u32,
+    @"axes.gain.velocity.p": f32,
+    @"axes.gain.velocity.i": f32,
+    @"axes.gain.velocity.denominator": u32,
+    @"axes.gain.velocity.denominator_pi": u32,
+    @"axes.gain.position.p": f32,
+    @"axes.gain.position.denominator": u32,
+    @"axes.base_position": f32,
+    @"axes.sensor_off.back.position": i16,
+    @"axes.sensor_off.back.section_count": i16,
+    @"axes.sensor_off.front.position": i16,
+    @"axes.sensor_off.front.section_count": i16,
+    @"hall_sensors.magnet_length.backward": f32,
+    @"hall_sensors.magnet_length.forward": f32,
+    @"hall_sensors.ignore_distance.backward": f32,
+    @"hall_sensors.ignore_distance.forward": f32,
+
+    pub const Kind = std.meta.Tag(@This());
 };
 
 /// Recursively walk structure fields, checking if leaf fields exist in
@@ -68,10 +71,14 @@ fn walkFields(structure: anytype, comptime prefix: []const u8) !void {
                 switch (fti) {
                     .@"struct", .array => {
                         // Special case Config flags field.
-                        if (std.mem.eql(u8, "flags", field.name)) {
+                        if (field.type == Flags) {
                             try std.testing.expectEqual(
                                 true,
-                                @hasField(FieldKind, new_prefix),
+                                @hasField(Field, new_prefix),
+                            );
+                            try std.testing.expectEqual(
+                                field.type,
+                                @FieldType(Field, new_prefix),
                             );
                         } else try walkFields(
                             field.type,
@@ -81,7 +88,11 @@ fn walkFields(structure: anytype, comptime prefix: []const u8) !void {
                     else => {
                         try std.testing.expectEqual(
                             true,
-                            @hasField(FieldKind, new_prefix),
+                            @hasField(Field, new_prefix),
+                        );
+                        try std.testing.expectEqual(
+                            field.type,
+                            @FieldType(Field, new_prefix),
                         );
                     },
                 }
@@ -94,7 +105,11 @@ fn walkFields(structure: anytype, comptime prefix: []const u8) !void {
                 else => {
                     try std.testing.expectEqual(
                         true,
-                        @hasField(FieldKind, prefix),
+                        @hasField(Field, prefix),
+                    );
+                    try std.testing.expectEqual(
+                        ar.child,
+                        @FieldType(Field, prefix),
                     );
                 },
             }
@@ -103,7 +118,7 @@ fn walkFields(structure: anytype, comptime prefix: []const u8) !void {
     }
 }
 
-test FieldKind {
+test Field {
     try walkFields(@This(), "");
 }
 
