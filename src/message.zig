@@ -86,7 +86,7 @@ pub const Message = packed struct {
         u8: [8]u8,
 
         pub const ConfigField = extern struct {
-            kind: Config.FieldKind,
+            kind: Config.Field.Kind,
             index: u16 = 0,
             value: extern union {
                 i16: i16,
