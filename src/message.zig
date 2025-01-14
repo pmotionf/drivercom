@@ -97,85 +97,32 @@ pub const Message = packed struct {
 
             /// Set the value from Config struct. Valid kind and (if needed)
             /// index must be provided.
-            pub fn fromConfig(self: *@This(), config: Config) void {
-                switch (self.kind) {
-                    .id => self.value.u16 = config.id,
-                    .station => self.value.u16 = config.station,
-                    .flags => self.value.u16 =
-                        @as(u10, @bitCast(config.flags)),
-                    .@"magnet.pitch" => self.value.f32 = config.magnet.pitch,
-                    .@"magnet.length" => self.value.f32 =
-                        config.magnet.length,
-                    .@"carrier.mass" => self.value.f32 = config.carrier.mass,
-                    .@"carrier.arrival.threshold.position" => self.value.f32 =
-                        config.carrier.arrival.threshold.position,
-                    .@"carrier.arrival.threshold.velocity" => self.value.f32 =
-                        config.carrier.arrival.threshold.velocity,
-                    .mechanical_angle_offset => self.value.f32 =
-                        config.mechanical_angle_offset,
-                    .@"axis.length" => self.value.f32 = config.axis.length,
-                    .@"coil.length" => self.value.f32 = config.coil.length,
-                    .@"coil.max_current" => self.value.f32 =
-                        config.coil.max_current,
-                    .@"coil.continuous_current" => self.value.f32 =
-                        config.coil.continuous_current,
-                    .@"coil.rs" => self.value.f32 = config.coil.rs,
-                    .@"coil.ls" => self.value.f32 = config.coil.ls,
-                    .@"coil.kf" => self.value.f32 = config.coil.kf,
-                    .@"coil.kbm" => self.value.f32 = config.coil.kbm,
-                    .zero_position => self.value.f32 = config.zero_position,
-                    .line_axes => self.value.u32 = config.line_axes,
-                    .warmup_voltage => self.value.f32 =
-                        config.warmup_voltage,
-                    .@"default_magnet_length.backward" => self.value.f32 =
-                        config.default_magnet_length.backward,
-                    .@"default_magnet_length.forward" => self.value.f32 =
-                        config.default_magnet_length.forward,
-                    .@"vdc.target" => self.value.f32 = config.vdc.target,
-                    .@"vdc.limit.lower" => self.value.f32 =
-                        config.vdc.limit.lower,
-                    .@"vdc.limit.upper" => self.value.f32 =
-                        config.vdc.limit.upper,
-                    .@"axes.gain.current.p" => self.value.f32 =
-                        config.axes[self.index].gain.current.p,
-                    .@"axes.gain.current.i" => self.value.f32 =
-                        config.axes[self.index].gain.current.i,
-                    .@"axes.gain.current.denominator" => self.value.u32 =
-                        config.axes[self.index].gain.current.denominator,
-                    .@"axes.gain.velocity.p" => self.value.f32 =
-                        config.axes[self.index].gain.velocity.p,
-                    .@"axes.gain.velocity.i" => self.value.f32 =
-                        config.axes[self.index].gain.velocity.i,
-                    .@"axes.gain.velocity.denominator" => self.value.u32 =
-                        config.axes[self.index].gain.velocity.denominator,
-                    .@"axes.gain.velocity.denominator_pi" => self.value.u32 =
-                        config.axes[self.index].gain.velocity.denominator_pi,
-                    .@"axes.gain.position.p" => self.value.f32 =
-                        config.axes[self.index].gain.position.p,
-                    .@"axes.gain.position.denominator" => self.value.u32 =
-                        config.axes[self.index].gain.position.denominator,
-                    .@"axes.base_position" => self.value.f32 =
-                        config.axes[self.index].base_position,
-                    .@"axes.sensor_off.back.position" => self.value.i16 =
-                        config.axes[self.index].sensor_off.back.position,
-                    .@"axes.sensor_off.back.section_count" => self.value.i16 =
-                        config.axes[self.index].sensor_off.back.section_count,
-                    .@"axes.sensor_off.front.position" => self.value.i16 =
-                        config.axes[self.index].sensor_off.front.position,
-                    .@"axes.sensor_off.front.section_count" => self.value.i16 =
-                        config.axes[self.index].sensor_off.front.section_count,
-                    .@"hall_sensors.magnet_length.backward" => self.value.f32 =
-                        config.hall_sensors[self.index].magnet_length.backward,
-                    .@"hall_sensors.magnet_length.forward" => self.value.f32 =
-                        config.hall_sensors[self.index].magnet_length.forward,
-                    .@"hall_sensors.ignore_distance.backward" => self.value.f32 =
-                        config.hall_sensors[self.index].ignore_distance.backward,
-                    .@"hall_sensors.ignore_distance.forward" => self.value.f32 =
-                        config.hall_sensors[self.index].ignore_distance.forward,
+            pub fn getConfig(self: *@This(), config: Config) void {
+                const field = Config.Field.fromConfig(config, self.kind, .{
+                    .index = self.index,
+                });
+                switch (field) {
+                    inline else => |value| {
+                        const value_type = @TypeOf(value);
+                        // Special case for flags.
+                        if (comptime value_type == Config.Flags) {
+                            self.value.u16 = @as(u10, @bitCast(value));
+                        } else if (comptime value_type == i16) {
+                            self.value.i16 = value;
+                        } else if (comptime value_type == u16) {
+                            self.value.u16 = value;
+                        } else if (comptime value_type == u32) {
+                            self.value.u32 = value;
+                        } else if (comptime value_type == f32) {
+                            self.value.f32 = value;
+                        } else {
+                            @compileError("unsupported Config field type");
+                        }
+                    },
                 }
             }
 
-            test fromConfig {
+            test getConfig {
                 var pl: Payload = .{ .config_set = .{
                     .kind = .station,
                     .value = undefined,
@@ -183,140 +130,51 @@ pub const Message = packed struct {
                 const conf: Config = std.mem.zeroInit(Config, .{
                     .station = 13,
                 });
-                pl.config_set.fromConfig(conf);
+                pl.config_set.getConfig(conf);
                 try std.testing.expectEqual(13, pl.config_set.value.u16);
             }
 
             /// Set the corresponding Config struct value from this message.
             pub fn setConfig(self: @This(), config: *Config) void {
                 switch (self.kind) {
-                    .id => config.id = self.value.u16,
-                    .station => config.station = self.value.u16,
-                    .flags => config.flags = @bitCast(@as(
-                        @typeInfo(Config.Flags).@"struct".backing_integer.?,
-                        @truncate(self.value.u16),
-                    )),
-                    .@"magnet.pitch" => config.magnet.pitch = self.value.f32,
-                    .@"magnet.length" => {
-                        config.magnet.length = self.value.f32;
-                    },
-                    .@"carrier.mass" => config.carrier.mass = self.value.f32,
-                    .@"carrier.arrival.threshold.position" => {
-                        config.carrier.arrival.threshold.position = self.value.f32;
-                    },
-                    .@"carrier.arrival.threshold.velocity" => {
-                        config.carrier.arrival.threshold.velocity = self.value.f32;
-                    },
-                    .mechanical_angle_offset => {
-                        config.mechanical_angle_offset = self.value.f32;
-                    },
-                    .@"axis.length" => config.axis.length = self.value.f32,
-                    .@"coil.length" => config.coil.length = self.value.f32,
-                    .@"coil.max_current" => {
-                        config.coil.max_current = self.value.f32;
-                    },
-                    .@"coil.continuous_current" => {
-                        config.coil.continuous_current = self.value.f32;
-                    },
-                    .@"coil.rs" => config.coil.rs = self.value.f32,
-                    .@"coil.ls" => config.coil.ls = self.value.f32,
-                    .@"coil.kf" => config.coil.kf = self.value.f32,
-                    .@"coil.kbm" => config.coil.kbm = self.value.f32,
-                    .zero_position => {
-                        config.zero_position = self.value.f32;
-                    },
-                    .line_axes => config.line_axes = self.value.u32,
-                    .warmup_voltage => {
-                        config.warmup_voltage = self.value.f32;
-                    },
-                    .@"default_magnet_length.backward" => {
-                        config.default_magnet_length.backward =
-                            self.value.f32;
-                    },
-                    .@"default_magnet_length.forward" => {
-                        config.default_magnet_length.forward =
-                            self.value.f32;
-                    },
-                    .@"vdc.target" => {
-                        config.vdc.target = self.value.f32;
-                    },
-                    .@"vdc.limit.lower" => {
-                        config.vdc.limit.lower = self.value.f32;
-                    },
-                    .@"vdc.limit.upper" => {
-                        config.vdc.limit.upper = self.value.f32;
-                    },
-                    .@"axes.gain.current.p" => {
-                        config.axes[self.index].gain.current.p =
-                            self.value.f32;
-                    },
-                    .@"axes.gain.current.i" => {
-                        config.axes[self.index].gain.current.i =
-                            self.value.f32;
-                    },
-                    .@"axes.gain.current.denominator" => {
-                        config.axes[self.index].gain.current.denominator =
-                            self.value.u32;
-                    },
-                    .@"axes.gain.velocity.p" => {
-                        config.axes[self.index].gain.velocity.p =
-                            self.value.f32;
-                    },
-                    .@"axes.gain.velocity.i" => {
-                        config.axes[self.index].gain.velocity.i =
-                            self.value.f32;
-                    },
-                    .@"axes.gain.velocity.denominator" => {
-                        config.axes[self.index].gain.velocity.denominator =
-                            self.value.u32;
-                    },
-                    .@"axes.gain.velocity.denominator_pi" => {
-                        config.axes[self.index].gain.velocity.denominator_pi =
-                            self.value.u32;
-                    },
-                    .@"axes.gain.position.p" => {
-                        config.axes[self.index].gain.position.p =
-                            self.value.f32;
-                    },
-                    .@"axes.gain.position.denominator" => {
-                        config.axes[self.index].gain.position.denominator =
-                            self.value.u32;
-                    },
-                    .@"axes.base_position" => {
-                        config.axes[self.index].base_position =
-                            self.value.f32;
-                    },
-                    .@"axes.sensor_off.back.position" => {
-                        config.axes[self.index].sensor_off.back.position =
-                            self.value.i16;
-                    },
-                    .@"axes.sensor_off.back.section_count" => {
-                        config.axes[self.index].sensor_off.back.section_count =
-                            self.value.i16;
-                    },
-                    .@"axes.sensor_off.front.position" => {
-                        config.axes[self.index].sensor_off.front.position =
-                            self.value.i16;
-                    },
-                    .@"axes.sensor_off.front.section_count" => {
-                        config.axes[self.index].sensor_off.front.section_count =
-                            self.value.i16;
-                    },
-                    .@"hall_sensors.magnet_length.backward" => {
-                        config.hall_sensors[self.index].magnet_length.backward =
-                            self.value.f32;
-                    },
-                    .@"hall_sensors.magnet_length.forward" => {
-                        config.hall_sensors[self.index].magnet_length.forward =
-                            self.value.f32;
-                    },
-                    .@"hall_sensors.ignore_distance.backward" => {
-                        config.hall_sensors[self.index].ignore_distance.backward =
-                            self.value.f32;
-                    },
-                    .@"hall_sensors.ignore_distance.forward" => {
-                        config.hall_sensors[self.index].ignore_distance.forward =
-                            self.value.f32;
+                    inline else => |kind| {
+                        const name = @tagName(kind);
+                        const value_type = @FieldType(Config.Field, name);
+                        const field: Config.Field = b: {
+                            // Special case for flags.
+                            if (comptime value_type == Config.Flags) {
+                                break :b .{ .flags = Config.Flags.fromInt(
+                                    @truncate(self.value.u16),
+                                ) };
+                            } else if (comptime value_type == i16) {
+                                break :b @unionInit(
+                                    Config.Field,
+                                    name,
+                                    self.value.i16,
+                                );
+                            } else if (comptime value_type == u16) {
+                                break :b @unionInit(
+                                    Config.Field,
+                                    name,
+                                    self.value.u16,
+                                );
+                            } else if (comptime value_type == u32) {
+                                break :b @unionInit(
+                                    Config.Field,
+                                    name,
+                                    self.value.u32,
+                                );
+                            } else if (comptime value_type == f32) {
+                                break :b @unionInit(
+                                    Config.Field,
+                                    name,
+                                    self.value.f32,
+                                );
+                            } else {
+                                @compileError("unsupported Config field type");
+                            }
+                        };
+                        field.setConfig(config, .{ .index = self.index });
                     },
                 }
             }

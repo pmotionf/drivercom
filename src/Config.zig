@@ -104,6 +104,40 @@ pub const Field = union(enum(u16)) {
         try std.testing.expectEqual(config.carrier.mass, mass);
     }
 
+    /// Set a field in provided Config struct with value in Field.
+    pub fn setConfig(self: Field, config: *Config, opts: struct {
+        index: usize = 0,
+    }) void {
+        switch (self) {
+            inline else => |value, kind| {
+                const name = @tagName(kind);
+                const nested = comptime std.mem.indexOfScalar(u8, name, '.');
+                if (comptime nested) |index| {
+                    if (comptime std.mem.eql(
+                        u8,
+                        "hall_sensors",
+                        name[0..index],
+                    )) {
+                        const hall_sensor: *HallSensor =
+                            &config.hall_sensors[opts.index];
+                        setInner(hall_sensor, value, name[index + 1 ..]);
+                    } else if (comptime std.mem.eql(
+                        u8,
+                        "axes",
+                        name[0..index],
+                    )) {
+                        const axis: *Axis = &config.axes[opts.index];
+                        setInner(axis, value, name[index + 1 ..]);
+                    } else {
+                        setInner(config, value, name);
+                    }
+                } else {
+                    setInner(config, value, name);
+                }
+            },
+        }
+    }
+
     pub fn fromConfig(
         config: Config,
         field: Field.Kind,
@@ -437,6 +471,49 @@ pub const Flags = packed struct {
         return @bitCast(int);
     }
 };
+
+/// Set value in provided field with value from Config.
+pub fn setField(self: Config, field: *Field, opts: struct {
+    index: usize = 0,
+}) void {
+    switch (field.*) {
+        inline else => |*value, kind| {
+            const name = @tagName(kind);
+            const nested = comptime std.mem.indexOfScalar(u8, name, '.');
+            if (comptime nested) |index| {
+                if (comptime std.mem.eql(
+                    u8,
+                    "hall_sensors",
+                    name[0..index],
+                )) {
+                    value.* = Field.getInner(
+                        self.hall_sensors[opts.index],
+                        @FieldType(Field, name),
+                        name[index + 1 ..],
+                    );
+                } else if (comptime std.mem.eql(
+                    u8,
+                    "axes",
+                    name[0..index],
+                )) {
+                    value.* = Field.getInner(
+                        self.axes[opts.index],
+                        @FieldType(Field, name),
+                        name[index + 1 ..],
+                    );
+                } else {
+                    value.* = Field.getInner(
+                        self,
+                        @FieldType(Field, name),
+                        name,
+                    );
+                }
+            } else {
+                value.* = Field.getInner(self, @FieldType(Field, name), name);
+            }
+        },
+    }
+}
 
 pub fn calcCurrentGain(
     self: *const @This(),
