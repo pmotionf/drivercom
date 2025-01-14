@@ -4,6 +4,8 @@ const drivercom = @import("drivercom.zig");
 
 pub const MAX_AXES = 3;
 
+const Config = @This();
+
 /// Driver configuration field. These fields are used directly in messages
 /// with driver; their ordering matches firmware field kind ordering.
 /// Names reflect nested structure within `Config` struct, and types represent
@@ -54,6 +56,162 @@ pub const Field = union(enum(u16)) {
     @"hall_sensors.ignore_distance.forward": f32,
 
     pub const Kind = std.meta.Tag(@This());
+
+    fn setInner(
+        parent: anytype,
+        value: anytype,
+        comptime access: []const u8,
+    ) void {
+        const nested = comptime std.mem.indexOfScalar(u8, access, '.');
+        if (nested) |index| {
+            setInner(
+                &@field(parent, access[0..index]),
+                value,
+                access[index + 1 ..],
+            );
+        } else {
+            @field(parent, access) = value;
+        }
+    }
+
+    test setInner {
+        var config: Config = undefined;
+        setInner(&config, 13.6, "carrier.mass");
+        try std.testing.expectEqual(13.6, config.carrier.mass);
+    }
+
+    fn getInner(
+        parent: anytype,
+        comptime return_type: type,
+        comptime access: []const u8,
+    ) return_type {
+        const nested = comptime std.mem.indexOfScalar(u8, access, '.');
+        if (nested) |index| {
+            return getInner(
+                @field(parent, access[0..index]),
+                return_type,
+                access[index + 1 ..],
+            );
+        } else {
+            return @field(parent, access);
+        }
+    }
+
+    test getInner {
+        var config: Config = undefined;
+        config.carrier.mass = 13.2;
+        const mass: f32 = getInner(config, f32, "carrier.mass");
+        try std.testing.expectEqual(config.carrier.mass, mass);
+    }
+
+    pub fn fromConfig(
+        config: Config,
+        field: Field.Kind,
+        opts: struct {
+            index: usize = 0,
+        },
+    ) Field {
+        switch (field) {
+            inline else => |kind| {
+                const name = @tagName(kind);
+                const nested = comptime std.mem.indexOfScalar(u8, name, '.');
+                if (comptime nested) |index| {
+                    if (comptime std.mem.eql(
+                        u8,
+                        "hall_sensors",
+                        name[0..index],
+                    )) {
+                        return @unionInit(Field, name, getInner(
+                            config.hall_sensors[opts.index],
+                            @FieldType(Field, name),
+                            name[index + 1 ..],
+                        ));
+                    } else if (comptime std.mem.eql(
+                        u8,
+                        "axes",
+                        name[0..index],
+                    )) {
+                        return @unionInit(Field, name, getInner(
+                            config.axes[opts.index],
+                            @FieldType(Field, name),
+                            name[index + 1 ..],
+                        ));
+                    }
+                }
+                return @unionInit(Field, name, getInner(
+                    config,
+                    @FieldType(Field, name),
+                    name,
+                ));
+            },
+        }
+    }
+
+    test fromConfig {
+        var config: Config = std.mem.zeroInit(Config, .{});
+        config.axes[1].base_position = 32.5;
+
+        const field = fromConfig(
+            config,
+            .@"axes.base_position",
+            .{ .index = 1 },
+        );
+
+        try std.testing.expectEqual(
+            config.axes[1].base_position,
+            field.@"axes.base_position",
+        );
+    }
+
+    pub fn toConfig(
+        field: Field,
+        opts: struct {
+            /// Existing Config, used as base for returned "modified" Config
+            config: Config = std.mem.zeroInit(Config, .{}),
+            index: usize = 0,
+        },
+    ) Config {
+        var config: Config = opts.config;
+        switch (field) {
+            inline else => |value, kind| {
+                const name = @tagName(kind);
+                const nested = comptime std.mem.indexOfScalar(u8, name, '.');
+                if (comptime nested) |index| {
+                    if (comptime std.mem.eql(
+                        u8,
+                        "hall_sensors",
+                        name[0..index],
+                    )) {
+                        const hall_sensor: *HallSensor =
+                            &config.hall_sensors[opts.index];
+                        setInner(hall_sensor, value, name[index + 1 ..]);
+                    } else if (comptime std.mem.eql(
+                        u8,
+                        "axes",
+                        name[0..index],
+                    )) {
+                        const axis: *Axis = &config.axes[opts.index];
+                        setInner(axis, value, name[index + 1 ..]);
+                    } else {
+                        setInner(&config, value, name);
+                    }
+                } else {
+                    setInner(&config, value, name);
+                }
+            },
+        }
+        return config;
+    }
+
+    test toConfig {
+        var config: Config = std.mem.zeroInit(Config, .{ .id = 3 });
+        const field: Field = .{ .station = 15 };
+
+        config = field.toConfig(.{ .config = config });
+
+        try std.testing.expectEqual(3, config.id);
+        try std.testing.expectEqual(15, config.station);
+    }
 };
 
 /// Recursively walk structure fields, checking if leaf fields exist in
