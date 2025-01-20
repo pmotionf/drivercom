@@ -1,4 +1,5 @@
 const std = @import("std");
+const drivercom = @import("drivercom.zig");
 
 cycles: u32 = 0,
 config: Config = .{},
@@ -170,13 +171,14 @@ test tagParse {
 
 pub fn TagType(comptime tag: Tag) type {
     return switch (tag) {
-        .@"driver.cycle",
-        .@"driver.cycle_time",
-        .@"axis.vehicle_id",
         .@"driver.com_bwd_sent",
         .@"driver.com_bwd_arrived",
         .@"driver.com_fwd_sent",
         .@"driver.com_fwd_arrived",
+        => drivercom.DriverMessage,
+        .@"driver.cycle",
+        .@"driver.cycle_time",
+        .@"axis.vehicle_id",
         .@"driver.com_bwd_sent_cycles",
         .@"driver.com_fwd_sent_cycles",
         => u16,

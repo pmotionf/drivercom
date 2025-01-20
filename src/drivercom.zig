@@ -63,6 +63,24 @@ pub const gain = struct {
     };
 };
 
+pub const DriverMessage = enum(u16) {
+    none,
+    update,
+    poss_req,
+    poss_rsp,
+    ack_sens,
+    upt_info,
+    prof_req,
+    prof_ack,
+    rstrt_req,
+    rstrt_ack,
+    mpos_req,
+    mpos_rsp,
+    prof_noti,
+    cali_noti,
+    update_cali_home,
+};
+
 test {
     std.testing.refAllDeclsRecursive(@This());
 }
