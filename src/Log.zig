@@ -47,9 +47,10 @@ pub const Config = packed struct(u32) {
         reference_current_q: bool = false,
         vehicle_id: bool = false,
         vehicle_position: bool = false,
+        vehicle_state: bool = false,
         average_angle_diff: bool = false,
     } = .{},
-    _: u8 = 0,
+    _: u7 = 0,
 };
 
 pub const Start = enum(u3) {
@@ -104,6 +105,7 @@ pub fn tagSize(tag: Tag) u3 {
         .@"driver.com_fwd_arrived",
         .@"driver.com_bwd_sent_cycles",
         .@"driver.com_fwd_sent_cycles",
+        .@"axis.vehicle_state",
         => 2,
         .@"sensor.angle",
         .@"sensor.unwrapped_angle",
@@ -143,6 +145,7 @@ pub fn tagParse(comptime tag: Tag, data: []const u8) TagType(tag) {
         .@"driver.com_fwd_arrived",
         .@"driver.com_bwd_sent_cycles",
         .@"driver.com_fwd_sent_cycles",
+        .@"axis.vehicle_state",
         => {
             return std.mem.bytesToValue(TagType(tag), data);
         },
@@ -176,6 +179,8 @@ pub fn TagType(comptime tag: Tag) type {
         .@"driver.com_fwd_sent",
         .@"driver.com_fwd_arrived",
         => drivercom.DriverMessage,
+        .@"axis.vehicle_state",
+        => drivercom.VehicleState,
         .@"driver.cycle",
         .@"driver.cycle_time",
         .@"axis.vehicle_id",
