@@ -81,7 +81,7 @@ pub const DriverMessage = enum(u16) {
     update_cali_home,
 };
 
-pub const VehicleState = enum(u16) {
+pub const CarrierState = enum(u16) {
     none_choice = 0,
     warmup_choice = 1,
     warmup_comp_choice,

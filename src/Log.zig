@@ -5,12 +5,12 @@ cycles: u32 = 0,
 config: Config = .{},
 axis: [3]bool = .{false} ** 3,
 hall_sensor: [6]bool = .{false} ** 6,
-vehicle: [4]u12 = .{0} ** 4,
+carrier: [4]u12 = .{0} ** 4,
 start: struct {
     kind: Start = .immediate,
     combinator: Start.Combinator = .@"or",
     hall_sensor: [6]bool = .{false} ** 6,
-    vehicle: [4]u12 = .{0} ** 4,
+    carrier: [4]u12 = .{0} ** 4,
 } = .{},
 
 pub const Config = packed struct(u32) {
@@ -45,9 +45,9 @@ pub const Config = packed struct(u32) {
         current_q: bool = false,
         reference_current_d: bool = false,
         reference_current_q: bool = false,
-        vehicle_id: bool = false,
-        vehicle_position: bool = false,
-        vehicle_state: bool = false,
+        carrier_id: bool = false,
+        carrier_position: bool = false,
+        carrier_state: bool = false,
         average_angle_diff: bool = false,
     } = .{},
     _: u7 = 0,
@@ -57,8 +57,8 @@ pub const Start = enum(u3) {
     immediate = 0,
     sensor_on = 1,
     sensor_off = 2,
-    vehicle_present = 3,
-    vehicle_absent = 4,
+    carrier_present = 3,
+    carrier_absent = 4,
 
     pub const Combinator = enum(u1) { @"and", @"or" };
 };
@@ -86,7 +86,7 @@ pub const TagKind = enum {
     driver,
     axis,
     sensor,
-    vehicle,
+    carrier,
 };
 
 /// Returns size in bytes of data tag.
@@ -98,14 +98,14 @@ pub fn tagSize(tag: Tag) u3 {
         .@"sensor.alarm",
         .@"sensor.valid",
         .@"sensor.active",
-        .@"axis.vehicle_id",
+        .@"axis.carrier_id",
         .@"driver.com_bwd_sent",
         .@"driver.com_bwd_arrived",
         .@"driver.com_fwd_sent",
         .@"driver.com_fwd_arrived",
         .@"driver.com_bwd_sent_cycles",
         .@"driver.com_fwd_sent_cycles",
-        .@"axis.vehicle_state",
+        .@"axis.carrier_state",
         => 2,
         .@"sensor.angle",
         .@"sensor.unwrapped_angle",
@@ -116,7 +116,7 @@ pub fn tagSize(tag: Tag) u3 {
         .@"axis.current_q",
         .@"axis.reference_current_d",
         .@"axis.reference_current_q",
-        .@"axis.vehicle_position",
+        .@"axis.carrier_position",
         .@"axis.average_angle_diff",
         => 4,
     };
@@ -136,8 +136,8 @@ pub fn tagParse(comptime tag: Tag, data: []const u8) TagType(tag) {
         .@"axis.current_q",
         .@"axis.reference_current_d",
         .@"axis.reference_current_q",
-        .@"axis.vehicle_id",
-        .@"axis.vehicle_position",
+        .@"axis.carrier_id",
+        .@"axis.carrier_position",
         .@"axis.average_angle_diff",
         .@"driver.com_bwd_sent",
         .@"driver.com_bwd_arrived",
@@ -145,7 +145,7 @@ pub fn tagParse(comptime tag: Tag, data: []const u8) TagType(tag) {
         .@"driver.com_fwd_arrived",
         .@"driver.com_bwd_sent_cycles",
         .@"driver.com_fwd_sent_cycles",
-        .@"axis.vehicle_state",
+        .@"axis.carrier_state",
         => {
             return std.mem.bytesToValue(TagType(tag), data);
         },
@@ -179,11 +179,11 @@ pub fn TagType(comptime tag: Tag) type {
         .@"driver.com_fwd_sent",
         .@"driver.com_fwd_arrived",
         => drivercom.DriverMessage,
-        .@"axis.vehicle_state",
-        => drivercom.VehicleState,
+        .@"axis.carrier_state",
+        => drivercom.CarrierState,
         .@"driver.cycle",
         .@"driver.cycle_time",
-        .@"axis.vehicle_id",
+        .@"axis.carrier_id",
         .@"driver.com_bwd_sent_cycles",
         .@"driver.com_fwd_sent_cycles",
         => u16,
@@ -201,7 +201,7 @@ pub fn TagType(comptime tag: Tag) type {
         .@"axis.current_q",
         .@"axis.reference_current_d",
         .@"axis.reference_current_q",
-        .@"axis.vehicle_position",
+        .@"axis.carrier_position",
         .@"axis.average_angle_diff",
         => f32,
     };
@@ -211,7 +211,7 @@ pub fn tagKind(tag: Tag) TagKind {
     if (@tagName(tag)[0] == 'd') return .driver;
     if (@tagName(tag)[0] == 's') return .sensor;
     if (@tagName(tag)[0] == 'a') return .axis;
-    if (@tagName(tag)[0] == 'v') return .vehicle;
+    if (@tagName(tag)[0] == 'v') return .carrier;
 
     unreachable;
 }

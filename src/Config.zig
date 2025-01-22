@@ -404,7 +404,7 @@ pub const VelocityGain = struct {
     denominator_pi: u32,
 
     // radius = magnet pole pair pitch / 2pi
-    // inertia = vehicle mass * radius * radius
+    // inertia = carrier mass * radius * radius
     // torque constant = radius * force constant
 };
 
