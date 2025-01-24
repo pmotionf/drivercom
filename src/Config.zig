@@ -440,7 +440,6 @@ pub const HallSensor = struct {
 };
 
 pub const Flags = packed struct {
-    home_sensor: bool,
     has_neighbor: packed struct(u2) {
         backward: bool,
         forward: bool,
@@ -458,10 +457,10 @@ pub const Flags = packed struct {
     },
 
     pub fn toInt(self: Flags) u16 {
-        return @as(u10, @bitCast(self));
+        return @as(u9, @bitCast(self));
     }
 
-    pub fn fromInt(int: u10) Flags {
+    pub fn fromInt(int: u9) Flags {
         return @bitCast(int);
     }
 };
