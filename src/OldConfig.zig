@@ -6,6 +6,13 @@ pub const MAX_AXES = 3;
 
 const Config = @This();
 
+/// `drivercom` version for this `Config` struct.
+pub const version: std.SemanticVersion = .{
+    .major = 0,
+    .minor = 2,
+    .patch = 0,
+};
+
 /// Driver configuration field. These fields are used directly in messages
 /// with driver; their ordering matches firmware field kind ordering.
 /// Names reflect nested structure within `Config` struct, and types represent
@@ -14,14 +21,9 @@ pub const Field = union(enum(u16)) {
     id: u16,
     station: u16,
     flags: Flags,
-    @"line.axes": u16,
-    @"voltage.target": u16,
-    @"voltage.warmup": u16,
-    @"voltage.limit.lower": u16,
-    @"voltage.limit.upper": u16,
     @"magnet.pitch": f32,
     @"magnet.length": f32,
-    @"carrier.mass": u16,
+    @"carrier.mass": f32,
     @"carrier.arrival.threshold.position": f32,
     @"carrier.arrival.threshold.velocity": f32,
     mechanical_angle_offset: f32,
@@ -33,9 +35,14 @@ pub const Field = union(enum(u16)) {
     @"coil.ls": f32,
     @"coil.kf": f32,
     @"coil.kbm": f32,
-    @"sensor.default_magnet_length": f32,
-    @"sensor.ignore_distance": f32,
     zero_position: f32,
+    line_axes: u32,
+    warmup_voltage: f32,
+    @"default_magnet_length.backward": f32,
+    @"default_magnet_length.forward": f32,
+    @"vdc.target": f32,
+    @"vdc.limit.lower": f32,
+    @"vdc.limit.upper": f32,
     @"axes.gain.current.p": f32,
     @"axes.gain.current.i": f32,
     @"axes.gain.current.denominator": u32,
@@ -52,8 +59,8 @@ pub const Field = union(enum(u16)) {
     @"axes.sensor_off.front.section_count": i16,
     @"hall_sensors.magnet_length.backward": f32,
     @"hall_sensors.magnet_length.forward": f32,
-    @"hall_sensors.position.on.backward": f32,
-    @"hall_sensors.position.on.forward": f32,
+    @"hall_sensors.ignore_distance.backward": f32,
+    @"hall_sensors.ignore_distance.forward": f32,
 
     pub const Kind = std.meta.Tag(@This());
 
@@ -76,8 +83,8 @@ pub const Field = union(enum(u16)) {
 
     test setInner {
         var config: Config = undefined;
-        setInner(&config, 1360, "carrier.mass");
-        try std.testing.expectEqual(1360, config.carrier.mass);
+        setInner(&config, 13.6, "carrier.mass");
+        try std.testing.expectEqual(13.6, config.carrier.mass);
     }
 
     fn getInner(
@@ -99,8 +106,8 @@ pub const Field = union(enum(u16)) {
 
     test getInner {
         var config: Config = undefined;
-        config.carrier.mass = 1320;
-        const mass: u16 = getInner(config, u16, "carrier.mass");
+        config.carrier.mass = 13.2;
+        const mass: f32 = getInner(config, f32, "carrier.mass");
         try std.testing.expectEqual(config.carrier.mass, mass);
     }
 
@@ -322,24 +329,6 @@ station: u16,
 
 flags: Flags,
 
-line: struct {
-    /// Total number of axes in line.
-    axes: u16,
-},
-
-voltage: struct {
-    /// Target DC voltage.
-    target: u16,
-    /// Reference voltage used for warmup to find mechanical angle offset.
-    warmup: u16,
-    limit: struct {
-        /// Lower DC voltage limit, inclusive.
-        lower: u16,
-        /// Upper DC voltage limit, inclusive.
-        upper: u16,
-    },
-},
-
 magnet: struct {
     /// Magnet pole pair pitch in meters.
     pitch: f32,
@@ -347,8 +336,8 @@ magnet: struct {
 },
 
 carrier: struct {
-    /// Carrier mass in decagrams (10 grams, or 1/100 of a kilogram).
-    mass: u16,
+    /// Carrier mass in KG.
+    mass: f32,
 
     /// Threshold conditions to determine carrier arrival at a position.
     arrival: struct {
@@ -379,12 +368,24 @@ coil: struct {
     kbm: f32,
 },
 
-sensor: struct {
-    default_magnet_length: f32,
-    ignore_distance: f32,
+zero_position: f32,
+
+line_axes: u32,
+
+warmup_voltage: f32,
+
+default_magnet_length: struct {
+    backward: f32,
+    forward: f32,
 },
 
-zero_position: f32,
+vdc: struct {
+    target: f32,
+    limit: struct {
+        lower: f32,
+        upper: f32,
+    },
+},
 
 axes: [3]Axis,
 
@@ -410,7 +411,7 @@ pub const VelocityGain = struct {
     denominator_pi: u32,
 
     // radius = magnet pole pair pitch / 2pi
-    // inertia = carrier mass * radius * radius
+    // inertia = vehicle mass * radius * radius
     // torque constant = radius * force constant
 };
 
@@ -445,11 +446,9 @@ pub const HallSensor = struct {
         backward: f32,
         forward: f32,
     },
-    position: struct {
-        on: struct {
-            backward: f32,
-            forward: f32,
-        },
+    ignore_distance: struct {
+        backward: f32,
+        forward: f32,
     },
 };
 
@@ -553,7 +552,7 @@ pub fn calcVelocityGain(
     const wcc = drivercom.gain.current.wcc(axis.gain.current.denominator);
     const radius = drivercom.gain.velocity.radius(self.magnet.pitch);
     const inertia = drivercom.gain.velocity.inertia(
-        @as(f64, @floatFromInt(self.carrier.mass)) / 100.0,
+        self.carrier.mass,
         radius,
     );
     const torque_constant =
@@ -589,96 +588,4 @@ pub fn calcPositionGain(
         .p = @floatCast(p),
         .denominator = denominator,
     };
-}
-
-const OldConfig = @import("OldConfig.zig");
-fn migrateWalkFields(new: anytype, old: anytype) void {
-    const ti = @typeInfo(@typeInfo(@TypeOf(new)).pointer.child);
-    const old_type = @TypeOf(old);
-    const old_ti = @typeInfo(old_type);
-
-    if (comptime std.meta.activeTag(old_ti) != std.meta.activeTag(ti)) return;
-
-    switch (comptime ti) {
-        .@"struct" => |s_ti| {
-            inline for (s_ti.fields) |field| {
-                if (comptime @hasField(old_type, field.name)) {
-                    const child_ti = @typeInfo(field.type);
-                    switch (comptime child_ti) {
-                        .@"struct", .array => {
-                            migrateWalkFields(
-                                &@field(new, field.name),
-                                @field(old, field.name),
-                            );
-                        },
-                        else => {
-                            const oc_type = @TypeOf(@field(old, field.name));
-                            if (comptime field.type == oc_type) {
-                                @field(new, field.name) =
-                                    @field(old, field.name);
-                            }
-                        },
-                    }
-                }
-            }
-        },
-        .array => |a_ti| {
-            inline for (0..@min(a_ti.len, old_ti.array.len)) |i| {
-                const elem_ti = @typeInfo(a_ti.child);
-                switch (comptime elem_ti) {
-                    .@"struct", .array => {
-                        migrateWalkFields(&new[i], old[i]);
-                    },
-                    else => {
-                        if (comptime a_ti.child == old_ti.array.child) {
-                            new[i] = old[i];
-                        }
-                    },
-                }
-            }
-        },
-        else => {
-            @compileError(
-                std.fmt.comptimePrint(
-                    "migrate walked unexpected field kind: {}, {}",
-                    .{
-                        @TypeOf(new),
-                        @TypeOf(old),
-                    },
-                ),
-            );
-        },
-    }
-}
-pub fn migrate(old: OldConfig) Config {
-    var result: Config = undefined;
-    // Migrate identical fields.
-    migrateWalkFields(&result, old);
-
-    // Migrate changed fields.
-    result.carrier.mass = @intFromFloat(old.carrier.mass * 100.0);
-    result.line.axes = @truncate(old.line_axes);
-    result.voltage.target = @intFromFloat(old.vdc.target);
-    result.voltage.limit.lower = @intFromFloat(old.vdc.limit.lower);
-    result.voltage.limit.upper = @intFromFloat(old.vdc.limit.upper);
-    result.voltage.warmup = @intFromFloat(old.warmup_voltage);
-    result.sensor.default_magnet_length = old.default_magnet_length.forward;
-    result.sensor.ignore_distance =
-        old.hall_sensors[0].ignore_distance.forward;
-
-    // Default-initialize new fields.
-    for (&result.hall_sensors) |*hs| {
-        hs.position = std.mem.zeroes(@TypeOf(hs.position));
-    }
-
-    return result;
-}
-
-test migrate {
-    const old = std.mem.zeroes(OldConfig);
-    const new = std.mem.zeroes(Config);
-
-    const migrated = migrate(old);
-
-    try std.testing.expectEqualDeep(new, migrated);
 }
