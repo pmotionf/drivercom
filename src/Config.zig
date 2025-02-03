@@ -46,10 +46,6 @@ pub const Field = union(enum(u16)) {
     @"axes.gain.position.p": f32,
     @"axes.gain.position.denominator": u32,
     @"axes.base_position": f32,
-    @"axes.sensor_off.back.position": i16,
-    @"axes.sensor_off.back.section_count": i16,
-    @"axes.sensor_off.front.position": i16,
-    @"axes.sensor_off.front.section_count": i16,
     @"hall_sensors.magnet_length.backward": f32,
     @"hall_sensors.magnet_length.forward": f32,
     @"hall_sensors.position.on.backward": f32,
@@ -428,16 +424,6 @@ pub const Axis = struct {
         position: PositionGain,
     },
     base_position: f32,
-    sensor_off: struct {
-        back: struct {
-            position: i16,
-            section_count: i16,
-        },
-        front: struct {
-            position: i16,
-            section_count: i16,
-        },
-    },
 };
 
 pub const HallSensor = struct {
