@@ -1,6 +1,6 @@
 .{
     .name = "drivercom",
-    .version = "0.3.0",
+    .version = "0.4.0",
     .minimum_zig_version = "0.14.0-dev.2916+d916954be",
 
     .dependencies = .{},

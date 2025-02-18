@@ -1,7 +1,7 @@
 const std = @import("std");
 
 /// `drivercom` version; always matches version in `build.zig.zon`.
-pub const version = std.SemanticVersion.parse("0.3.0") catch unreachable;
+pub const version = std.SemanticVersion.parse("0.4.0") catch unreachable;
 
 pub const Config = @import("Config.zig");
 pub const OldConfig = @import("OldConfig.zig");
@@ -70,19 +70,17 @@ pub const gain = struct {
 pub const DriverMessage = enum(u16) {
     none,
     update,
-    poss_req,
-    poss_rsp,
-    ack_sens,
-    upt_info,
     prof_req,
-    prof_ack,
     rstrt_req,
     rstrt_ack,
-    mpos_req,
-    mpos_rsp,
     prof_noti,
-    cali_noti,
     update_cali_home,
+    update_mech_angle_offset,
+    cali_on_pos_req,
+    cali_on_pos_rsp,
+    cali_off_pos_req,
+    cali_off_pos_rsp,
+    clear_carrier_info,
 };
 
 pub const CarrierState = enum(u16) {
