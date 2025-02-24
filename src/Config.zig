@@ -24,6 +24,8 @@ pub const Field = union(enum(u16)) {
     @"carrier.mass": u16,
     @"carrier.arrival.threshold.position": f32,
     @"carrier.arrival.threshold.velocity": f32,
+    @"carrier.cas.buffer": u16,
+    @"carrier.cas.acceleration": f32,
     mechanical_angle_offset: f32,
     @"axis.length": f32,
     @"coil.length": f32,
@@ -354,6 +356,12 @@ carrier: struct {
             velocity: f32,
         },
     },
+
+    cas: struct {
+        /// Minimum buffer to maintain between carriers, in millimeters.
+        buffer: u16,
+        acceleration: f32,
+    },
 },
 
 mechanical_angle_offset: f32,
@@ -654,13 +662,17 @@ pub fn migrate(old: OldConfig) Config {
     for (&result.hall_sensors) |*hs| {
         hs.position.off = std.mem.zeroes(@TypeOf(hs.position.off));
     }
+    result.carrier.cas.acceleration = 6.0;
+    result.carrier.cas.buffer = 10;
 
     return result;
 }
 
 test migrate {
     const old = std.mem.zeroes(OldConfig);
-    const new = std.mem.zeroes(Config);
+    var new = std.mem.zeroes(Config);
+    new.carrier.cas.acceleration = 6.0;
+    new.carrier.cas.buffer = 10;
 
     const migrated = migrate(old);
 
