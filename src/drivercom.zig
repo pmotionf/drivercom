@@ -71,8 +71,6 @@ pub const DriverMessage = enum(u16) {
     none,
     update,
     prof_req,
-    rstrt_req,
-    rstrt_ack,
     prof_noti,
     update_cali_home,
     update_mech_angle_offset,
