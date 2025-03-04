@@ -9,7 +9,7 @@ const Config = @This();
 /// `drivercom` version for this `Config` struct.
 pub const version: std.SemanticVersion = .{
     .major = 0,
-    .minor = 2,
+    .minor = 3,
     .patch = 0,
 };
 
@@ -21,9 +21,14 @@ pub const Field = union(enum(u16)) {
     id: u16,
     station: u16,
     flags: Flags,
+    @"line.axes": u16,
+    @"voltage.target": u16,
+    @"voltage.warmup": u16,
+    @"voltage.limit.lower": u16,
+    @"voltage.limit.upper": u16,
     @"magnet.pitch": f32,
     @"magnet.length": f32,
-    @"carrier.mass": f32,
+    @"carrier.mass": u16,
     @"carrier.arrival.threshold.position": f32,
     @"carrier.arrival.threshold.velocity": f32,
     mechanical_angle_offset: f32,
@@ -35,14 +40,9 @@ pub const Field = union(enum(u16)) {
     @"coil.ls": f32,
     @"coil.kf": f32,
     @"coil.kbm": f32,
+    @"sensor.default_magnet_length": f32,
+    @"sensor.ignore_distance": f32,
     zero_position: f32,
-    line_axes: u32,
-    warmup_voltage: f32,
-    @"default_magnet_length.backward": f32,
-    @"default_magnet_length.forward": f32,
-    @"vdc.target": f32,
-    @"vdc.limit.lower": f32,
-    @"vdc.limit.upper": f32,
     @"axes.gain.current.p": f32,
     @"axes.gain.current.i": f32,
     @"axes.gain.current.denominator": u32,
@@ -53,14 +53,10 @@ pub const Field = union(enum(u16)) {
     @"axes.gain.position.p": f32,
     @"axes.gain.position.denominator": u32,
     @"axes.base_position": f32,
-    @"axes.sensor_off.back.position": i16,
-    @"axes.sensor_off.back.section_count": i16,
-    @"axes.sensor_off.front.position": i16,
-    @"axes.sensor_off.front.section_count": i16,
     @"hall_sensors.magnet_length.backward": f32,
     @"hall_sensors.magnet_length.forward": f32,
-    @"hall_sensors.ignore_distance.backward": f32,
-    @"hall_sensors.ignore_distance.forward": f32,
+    @"hall_sensors.position.on.backward": f32,
+    @"hall_sensors.position.on.forward": f32,
 
     pub const Kind = std.meta.Tag(@This());
 
@@ -83,8 +79,8 @@ pub const Field = union(enum(u16)) {
 
     test setInner {
         var config: Config = undefined;
-        setInner(&config, 13.6, "carrier.mass");
-        try std.testing.expectEqual(13.6, config.carrier.mass);
+        setInner(&config, 1360, "carrier.mass");
+        try std.testing.expectEqual(1360, config.carrier.mass);
     }
 
     fn getInner(
@@ -106,8 +102,8 @@ pub const Field = union(enum(u16)) {
 
     test getInner {
         var config: Config = undefined;
-        config.carrier.mass = 13.2;
-        const mass: f32 = getInner(config, f32, "carrier.mass");
+        config.carrier.mass = 1320;
+        const mass: u16 = getInner(config, u16, "carrier.mass");
         try std.testing.expectEqual(config.carrier.mass, mass);
     }
 
@@ -329,6 +325,24 @@ station: u16,
 
 flags: Flags,
 
+line: struct {
+    /// Total number of axes in line.
+    axes: u16,
+},
+
+voltage: struct {
+    /// Target DC voltage.
+    target: u16,
+    /// Reference voltage used for warmup to find mechanical angle offset.
+    warmup: u16,
+    limit: struct {
+        /// Lower DC voltage limit, inclusive.
+        lower: u16,
+        /// Upper DC voltage limit, inclusive.
+        upper: u16,
+    },
+},
+
 magnet: struct {
     /// Magnet pole pair pitch in meters.
     pitch: f32,
@@ -336,8 +350,8 @@ magnet: struct {
 },
 
 carrier: struct {
-    /// Carrier mass in KG.
-    mass: f32,
+    /// Carrier mass in decagrams (10 grams, or 1/100 of a kilogram).
+    mass: u16,
 
     /// Threshold conditions to determine carrier arrival at a position.
     arrival: struct {
@@ -368,24 +382,12 @@ coil: struct {
     kbm: f32,
 },
 
+sensor: struct {
+    default_magnet_length: f32,
+    ignore_distance: f32,
+},
+
 zero_position: f32,
-
-line_axes: u32,
-
-warmup_voltage: f32,
-
-default_magnet_length: struct {
-    backward: f32,
-    forward: f32,
-},
-
-vdc: struct {
-    target: f32,
-    limit: struct {
-        lower: f32,
-        upper: f32,
-    },
-},
 
 axes: [3]Axis,
 
@@ -411,7 +413,7 @@ pub const VelocityGain = struct {
     denominator_pi: u32,
 
     // radius = magnet pole pair pitch / 2pi
-    // inertia = vehicle mass * radius * radius
+    // inertia = carrier mass * radius * radius
     // torque constant = radius * force constant
 };
 
@@ -429,16 +431,6 @@ pub const Axis = struct {
         position: PositionGain,
     },
     base_position: f32,
-    sensor_off: struct {
-        back: struct {
-            position: i16,
-            section_count: i16,
-        },
-        front: struct {
-            position: i16,
-            section_count: i16,
-        },
-    },
 };
 
 pub const HallSensor = struct {
@@ -446,14 +438,15 @@ pub const HallSensor = struct {
         backward: f32,
         forward: f32,
     },
-    ignore_distance: struct {
-        backward: f32,
-        forward: f32,
+    position: struct {
+        on: struct {
+            backward: f32,
+            forward: f32,
+        },
     },
 };
 
 pub const Flags = packed struct {
-    home_sensor: bool,
     has_neighbor: packed struct(u2) {
         backward: bool,
         forward: bool,
@@ -471,10 +464,10 @@ pub const Flags = packed struct {
     },
 
     pub fn toInt(self: Flags) u16 {
-        return @as(u10, @bitCast(self));
+        return @as(u9, @bitCast(self));
     }
 
-    pub fn fromInt(int: u10) Flags {
+    pub fn fromInt(int: u9) Flags {
         return @bitCast(int);
     }
 };
@@ -552,7 +545,7 @@ pub fn calcVelocityGain(
     const wcc = drivercom.gain.current.wcc(axis.gain.current.denominator);
     const radius = drivercom.gain.velocity.radius(self.magnet.pitch);
     const inertia = drivercom.gain.velocity.inertia(
-        self.carrier.mass,
+        @as(f64, @floatFromInt(self.carrier.mass)) / 100.0,
         radius,
     );
     const torque_constant =

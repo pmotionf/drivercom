@@ -24,6 +24,8 @@ pub const Field = union(enum(u16)) {
     @"carrier.mass": u16,
     @"carrier.arrival.threshold.position": f32,
     @"carrier.arrival.threshold.velocity": f32,
+    @"carrier.cas.buffer": u16,
+    @"carrier.cas.acceleration": f32,
     mechanical_angle_offset: f32,
     @"axis.length": f32,
     @"coil.length": f32,
@@ -45,11 +47,12 @@ pub const Field = union(enum(u16)) {
     @"axes.gain.velocity.denominator_pi": u32,
     @"axes.gain.position.p": f32,
     @"axes.gain.position.denominator": u32,
-    @"axes.base_position": f32,
     @"hall_sensors.magnet_length.backward": f32,
     @"hall_sensors.magnet_length.forward": f32,
     @"hall_sensors.position.on.backward": f32,
     @"hall_sensors.position.on.forward": f32,
+    @"hall_sensors.position.off.backward": f32,
+    @"hall_sensors.position.off.forward": f32,
 
     pub const Kind = std.meta.Tag(@This());
 
@@ -179,17 +182,17 @@ pub const Field = union(enum(u16)) {
 
     test fromConfig {
         var config: Config = std.mem.zeroInit(Config, .{});
-        config.axes[1].base_position = 32.5;
+        config.axes[1].gain.position.p = 32.6;
 
         const field = fromConfig(
             config,
-            .@"axes.base_position",
+            .@"axes.gain.position.p",
             .{ .index = 1 },
         );
 
         try std.testing.expectEqual(
-            config.axes[1].base_position,
-            field.@"axes.base_position",
+            config.axes[1].gain.position.p,
+            field.@"axes.gain.position.p",
         );
     }
 
@@ -353,6 +356,12 @@ carrier: struct {
             velocity: f32,
         },
     },
+
+    cas: struct {
+        /// Minimum buffer to maintain between carriers, in millimeters.
+        buffer: u16,
+        acceleration: f32,
+    },
 },
 
 mechanical_angle_offset: f32,
@@ -423,7 +432,6 @@ pub const Axis = struct {
         velocity: VelocityGain,
         position: PositionGain,
     },
-    base_position: f32,
 };
 
 pub const HallSensor = struct {
@@ -433,6 +441,10 @@ pub const HallSensor = struct {
     },
     position: struct {
         on: struct {
+            backward: f32,
+            forward: f32,
+        },
+        off: struct {
             backward: f32,
             forward: f32,
         },
@@ -637,31 +649,30 @@ fn migrateWalkFields(new: anytype, old: anytype) void {
 }
 pub fn migrate(old: OldConfig) Config {
     var result: Config = undefined;
+    if (comptime @import("builtin").is_test) {
+        @memset(std.mem.asBytes(&result), 0xFF);
+    }
+
     // Migrate identical fields.
     migrateWalkFields(&result, old);
 
     // Migrate changed fields.
-    result.carrier.mass = @intFromFloat(old.carrier.mass * 100.0);
-    result.line.axes = @truncate(old.line_axes);
-    result.voltage.target = @intFromFloat(old.vdc.target);
-    result.voltage.limit.lower = @intFromFloat(old.vdc.limit.lower);
-    result.voltage.limit.upper = @intFromFloat(old.vdc.limit.upper);
-    result.voltage.warmup = @intFromFloat(old.warmup_voltage);
-    result.sensor.default_magnet_length = old.default_magnet_length.forward;
-    result.sensor.ignore_distance =
-        old.hall_sensors[0].ignore_distance.forward;
 
     // Default-initialize new fields.
     for (&result.hall_sensors) |*hs| {
-        hs.position = std.mem.zeroes(@TypeOf(hs.position));
+        hs.position.off = std.mem.zeroes(@TypeOf(hs.position.off));
     }
+    result.carrier.cas.acceleration = 6.0;
+    result.carrier.cas.buffer = 10;
 
     return result;
 }
 
 test migrate {
     const old = std.mem.zeroes(OldConfig);
-    const new = std.mem.zeroes(Config);
+    var new = std.mem.zeroes(Config);
+    new.carrier.cas.acceleration = 6.0;
+    new.carrier.cas.buffer = 10;
 
     const migrated = migrate(old);
 

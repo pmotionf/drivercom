@@ -1,7 +1,7 @@
 const std = @import("std");
 
 /// `drivercom` version; always matches version in `build.zig.zon`.
-pub const version = std.SemanticVersion.parse("0.3.0") catch unreachable;
+pub const version = std.SemanticVersion.parse("0.4.0") catch unreachable;
 
 pub const Config = @import("Config.zig");
 pub const OldConfig = @import("OldConfig.zig");
@@ -70,60 +70,50 @@ pub const gain = struct {
 pub const DriverMessage = enum(u16) {
     none,
     update,
-    poss_req,
-    poss_rsp,
-    ack_sens,
-    upt_info,
     prof_req,
-    prof_ack,
-    rstrt_req,
-    rstrt_ack,
-    mpos_req,
-    mpos_rsp,
     prof_noti,
-    cali_noti,
     update_cali_home,
+    update_mech_angle_offset,
+    cali_on_pos_req,
+    cali_on_pos_rsp,
+    cali_off_pos_req,
+    cali_off_pos_rsp,
+    clear_carrier_info,
 };
 
 pub const CarrierState = enum(u16) {
-    none_choice = 0,
-    warmup_choice = 1,
-    warmup_comp_choice,
-    warmup_fault_choice,
-    curr_bias_choice,
-    curr_bias_comp_choice, // 5
-    pos_prof_choice = 29,
-    pos_prof_comp_choice, // 30
-    fwd_cali_choice = 32,
-    fwd_cali_comp_choice,
-    bwd_isol_choice,
-    bwd_isol_comp_choice, // 35
-    fwd_rstrt_choice,
-    fwd_rstrt_comp_choice,
-    bwd_rstrt_choice,
-    bwd_rstrt_comp_choice,
-    speed_prof_choice, // 40
-    speed_prof_comp_choice,
-    fwd_slave_choice = 43,
-    fwd_slave_comp_choice,
-    bwd_slave_choice, // 45
-    bwd_slave_comp_choice,
-    fwd_isol_choice,
-    fwd_isol_comp_choice,
+    None = 0x0,
 
-    overcharge_choice = 50, // 50
-    comerr_choice,
+    WarmupProgressing,
+    WarmupCompleted,
 
-    fwd_pull_choice,
-    fwd_pull_comp_choice,
-    fwd_pull_fault_choice,
-    bwd_pull_choice, // 55
-    bwd_pull_comp_choice,
-    bwd_pull_fault_choice,
-    bwd_cali_choice,
-    bwd_cali_comp_choice,
-    bwd_cali_fault_choice, // 60
-    fwd_cali_fault_choice,
+    PosMoveProgressing = 0x4,
+    PosMoveCompleted,
+    SpdMoveProgressing,
+    SpdMoveCompleted,
+    Auxiliary,
+    AuxiliaryCompleted,
+
+    ForwardCalibrationProgressing = 0xA,
+    ForwardCalibrationCompleted,
+    BackwardCalibrationProgressing,
+    BackwardCalibrationCompleted,
+
+    ForwardIsolationProgressing = 0x10,
+    ForwardIsolationCompleted,
+    BackwardIsolationProgressing,
+    BackwardIsolationCompleted,
+    ForwardRestartProgressing,
+    ForwardRestartCompleted,
+    BackwardRestartProgressing,
+    BackwardRestartCompleted,
+
+    PullForward = 0x1A,
+    PullForwardCompleted,
+    PullBackward,
+    PullBackwardCompleted,
+
+    Overcurrent = 0x1F,
 };
 
 test {
