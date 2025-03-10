@@ -101,6 +101,12 @@ pub const Field = union(enum(u16)) {
         config.carrier.mass = 1320;
         const mass: u16 = getInner(config, u16, "carrier.mass");
         try std.testing.expectEqual(config.carrier.mass, mass);
+
+        config.hall_sensors[3].position.off.forward = 17.48;
+        try std.testing.expectEqual(
+            config.hall_sensors[3].position.off.forward,
+            getInner(config.hall_sensors[3], f32, "position.off.forward"),
+        );
     }
 
     /// Set a field in provided Config struct with value in Field.
@@ -182,18 +188,33 @@ pub const Field = union(enum(u16)) {
 
     test fromConfig {
         var config: Config = std.mem.zeroInit(Config, .{});
-        config.axes[1].gain.position.p = 32.6;
+        {
+            config.axes[1].gain.position.p = 32.6;
+            const field = fromConfig(
+                config,
+                .@"axes.gain.position.p",
+                .{ .index = 1 },
+            );
 
-        const field = fromConfig(
-            config,
-            .@"axes.gain.position.p",
-            .{ .index = 1 },
-        );
+            try std.testing.expectEqual(
+                config.axes[1].gain.position.p,
+                field.@"axes.gain.position.p",
+            );
+        }
 
-        try std.testing.expectEqual(
-            config.axes[1].gain.position.p,
-            field.@"axes.gain.position.p",
-        );
+        {
+            config.hall_sensors[4].position.on.forward = 0.9534;
+            const field = fromConfig(
+                config,
+                .@"hall_sensors.position.on.forward",
+                .{ .index = 4 },
+            );
+
+            try std.testing.expectEqual(
+                config.hall_sensors[4].position.on.forward,
+                field.@"hall_sensors.position.on.forward",
+            );
+        }
     }
 
     pub fn toConfig(
