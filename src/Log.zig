@@ -49,8 +49,10 @@ pub const Config = packed struct(u32) {
         carrier_position: bool = false,
         carrier_state: bool = false,
         average_angle_diff: bool = false,
+        carrier_reference_velocity: bool = false,
+        carrier_velocity: bool = false,
     } = .{},
-    _: u7 = 0,
+    _: u5 = 0,
 };
 
 pub const Start = enum(u3) {
@@ -118,6 +120,8 @@ pub fn tagSize(tag: Tag) u3 {
         .@"axis.reference_current_q",
         .@"axis.carrier_position",
         .@"axis.average_angle_diff",
+        .@"axis.carrier_reference_velocity",
+        .@"axis.carrier_velocity",
         => 4,
     };
 }
@@ -146,6 +150,8 @@ pub fn tagParse(comptime tag: Tag, data: []const u8) TagType(tag) {
         .@"driver.com_bwd_sent_cycles",
         .@"driver.com_fwd_sent_cycles",
         .@"axis.carrier_state",
+        .@"axis.carrier_reference_velocity",
+        .@"axis.carrier_velocity",
         => {
             return std.mem.bytesToValue(TagType(tag), data);
         },
@@ -203,6 +209,8 @@ pub fn TagType(comptime tag: Tag) type {
         .@"axis.reference_current_q",
         .@"axis.carrier_position",
         .@"axis.average_angle_diff",
+        .@"axis.carrier_reference_velocity",
+        .@"axis.carrier_velocity",
         => f32,
     };
 }
