@@ -1,7 +1,7 @@
 const std = @import("std");
 
 /// `drivercom` version; always matches version in `build.zig.zon`.
-pub const version = std.SemanticVersion.parse("0.4.0") catch unreachable;
+pub const version = std.SemanticVersion.parse("0.4.1") catch unreachable;
 
 pub const Config = @import("Config.zig");
 pub const OldConfig = @import("OldConfig.zig");
