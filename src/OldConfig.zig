@@ -10,7 +10,7 @@ const Config = @This();
 /// `drivercom` version for this `Config` struct.
 pub const version: std.SemanticVersion = .{
     .major = 0,
-    .minor = 3,
+    .minor = 4,
     .patch = 0,
 };
 /// Driver configuration field. These fields are used directly in messages
