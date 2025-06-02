@@ -4,6 +4,7 @@ const drivercom = @import("drivercom.zig");
 
 pub const MAX_AXES = 3;
 
+const NewConfig = @import("Config.zig");
 const Config = @This();
 
 /// `drivercom` version for this `Config` struct.
@@ -12,7 +13,6 @@ pub const version: std.SemanticVersion = .{
     .minor = 3,
     .patch = 0,
 };
-
 /// Driver configuration field. These fields are used directly in messages
 /// with driver; their ordering matches firmware field kind ordering.
 /// Names reflect nested structure within `Config` struct, and types represent
@@ -31,6 +31,8 @@ pub const Field = union(enum(u16)) {
     @"carrier.mass": u16,
     @"carrier.arrival.threshold.position": f32,
     @"carrier.arrival.threshold.velocity": f32,
+    @"carrier.cas.buffer": u16,
+    @"carrier.cas.acceleration": f32,
     mechanical_angle_offset: f32,
     @"axis.length": f32,
     @"coil.length": f32,
@@ -52,11 +54,12 @@ pub const Field = union(enum(u16)) {
     @"axes.gain.velocity.denominator_pi": u32,
     @"axes.gain.position.p": f32,
     @"axes.gain.position.denominator": u32,
-    @"axes.base_position": f32,
     @"hall_sensors.magnet_length.backward": f32,
     @"hall_sensors.magnet_length.forward": f32,
     @"hall_sensors.position.on.backward": f32,
     @"hall_sensors.position.on.forward": f32,
+    @"hall_sensors.position.off.backward": f32,
+    @"hall_sensors.position.off.forward": f32,
 
     pub const Kind = std.meta.Tag(@This());
 
@@ -105,6 +108,12 @@ pub const Field = union(enum(u16)) {
         config.carrier.mass = 1320;
         const mass: u16 = getInner(config, u16, "carrier.mass");
         try std.testing.expectEqual(config.carrier.mass, mass);
+
+        config.hall_sensors[3].position.off.forward = 17.48;
+        try std.testing.expectEqual(
+            config.hall_sensors[3].position.off.forward,
+            getInner(config.hall_sensors[3], f32, "position.off.forward"),
+        );
     }
 
     /// Set a field in provided Config struct with value in Field.
@@ -186,18 +195,33 @@ pub const Field = union(enum(u16)) {
 
     test fromConfig {
         var config: Config = std.mem.zeroInit(Config, .{});
-        config.axes[1].base_position = 32.5;
+        {
+            config.axes[1].gain.position.p = 32.6;
+            const field = fromConfig(
+                config,
+                .@"axes.gain.position.p",
+                .{ .index = 1 },
+            );
 
-        const field = fromConfig(
-            config,
-            .@"axes.base_position",
-            .{ .index = 1 },
-        );
+            try std.testing.expectEqual(
+                config.axes[1].gain.position.p,
+                field.@"axes.gain.position.p",
+            );
+        }
 
-        try std.testing.expectEqual(
-            config.axes[1].base_position,
-            field.@"axes.base_position",
-        );
+        {
+            config.hall_sensors[4].position.on.forward = 0.9534;
+            const field = fromConfig(
+                config,
+                .@"hall_sensors.position.on.forward",
+                .{ .index = 4 },
+            );
+
+            try std.testing.expectEqual(
+                config.hall_sensors[4].position.on.forward,
+                field.@"hall_sensors.position.on.forward",
+            );
+        }
     }
 
     pub fn toConfig(
@@ -360,6 +384,12 @@ carrier: struct {
             velocity: f32,
         },
     },
+
+    cas: struct {
+        /// Minimum buffer to maintain between carriers, in millimeters.
+        buffer: u16,
+        acceleration: f32,
+    },
 },
 
 mechanical_angle_offset: f32,
@@ -393,36 +423,9 @@ axes: [3]Axis,
 
 hall_sensors: [6]HallSensor,
 
-pub const CurrentGain = struct {
-    /// Current P-gain. By default, inductance * Wcc.
-    p: f32,
-    /// Current I-gain. By default, resistance * Wcc.
-    i: f32,
-    /// Wcc denominator. Wcc = 2pi * (15000 / denominator).
-    denominator: u32,
-};
-
-pub const VelocityGain = struct {
-    /// Speed P-gain. By default, inertia * Wsc / torque constant.
-    p: f32,
-    /// Speed I-gain. By default, Wpi * p.
-    i: f32,
-    /// Wsc denominator. Wsc = Wcc / denominator.
-    denominator: u32,
-    /// Wpi denominator. Wpi = Wsc / denominator_pi.
-    denominator_pi: u32,
-
-    // radius = magnet pole pair pitch / 2pi
-    // inertia = carrier mass * radius * radius
-    // torque constant = radius * force constant
-};
-
-pub const PositionGain = struct {
-    /// Position P-gain. By default, Wpc.
-    p: f32,
-    /// Wpc denominator. Wpc = Wsc / denominator.
-    denominator: u32,
-};
+pub const CurrentGain = NewConfig.CurrentGain;
+pub const VelocityGain = NewConfig.VelocityGain;
+pub const PositionGain = NewConfig.PositionGain;
 
 pub const Axis = struct {
     gain: struct {
@@ -430,7 +433,6 @@ pub const Axis = struct {
         velocity: VelocityGain,
         position: PositionGain,
     },
-    base_position: f32,
 };
 
 pub const HallSensor = struct {
@@ -440,6 +442,10 @@ pub const HallSensor = struct {
     },
     position: struct {
         on: struct {
+            backward: f32,
+            forward: f32,
+        },
+        off: struct {
             backward: f32,
             forward: f32,
         },
@@ -513,72 +519,4 @@ pub fn setField(self: Config, field: *Field, opts: struct {
             }
         },
     }
-}
-
-pub fn calcCurrentGain(
-    self: *const @This(),
-    axis_index: usize,
-    denominator: u32,
-) CurrentGain {
-    std.debug.assert(axis_index < MAX_AXES);
-    const wcc = drivercom.gain.current.wcc(denominator);
-    return .{
-        .denominator = denominator,
-        .p = @floatCast(
-            drivercom.gain.current.p(self.coil.ls, wcc),
-        ),
-        .i = @floatCast(
-            drivercom.gain.current.i(self.coil.rs, wcc),
-        ),
-    };
-}
-
-pub fn calcVelocityGain(
-    self: *const @This(),
-    axis_index: usize,
-    denominator: u32,
-    denominator_pi: u32,
-) VelocityGain {
-    std.debug.assert(axis_index < MAX_AXES);
-    const axis = self.axes[axis_index];
-
-    const wcc = drivercom.gain.current.wcc(axis.gain.current.denominator);
-    const radius = drivercom.gain.velocity.radius(self.magnet.pitch);
-    const inertia = drivercom.gain.velocity.inertia(
-        @as(f64, @floatFromInt(self.carrier.mass)) / 100.0,
-        radius,
-    );
-    const torque_constant =
-        drivercom.gain.velocity.torqueConstant(self.coil.kf, radius);
-    const wsc = drivercom.gain.velocity.wsc(denominator, wcc);
-    const wpi = drivercom.gain.velocity.wpi(denominator_pi, wsc);
-    const p = drivercom.gain.velocity.p(inertia, torque_constant, wsc);
-
-    return .{
-        .p = @floatCast(p),
-        .i = @floatCast(drivercom.gain.velocity.i(p, wpi)),
-        .denominator = denominator,
-        .denominator_pi = denominator_pi,
-    };
-}
-
-pub fn calcPositionGain(
-    self: *const @This(),
-    axis_index: usize,
-    denominator: u32,
-) PositionGain {
-    std.debug.assert(axis_index < MAX_AXES);
-    const axis = self.axes[axis_index];
-
-    const wcc = drivercom.gain.current.wcc(axis.gain.current.denominator);
-    const wsc =
-        drivercom.gain.velocity.wsc(axis.gain.velocity.denominator, wcc);
-
-    const wpc = drivercom.gain.position.wpc(denominator, wsc);
-    const p = drivercom.gain.position.p(wpc);
-
-    return .{
-        .p = @floatCast(p),
-        .denominator = denominator,
-    };
 }
