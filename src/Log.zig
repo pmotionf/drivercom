@@ -34,7 +34,6 @@ pub const Config = packed struct(u32) {
         active: bool = false,
         angle: bool = false,
         average_angle: bool = false,
-        unwrapped_angle: bool = false,
         distance: bool = false,
         velocity: bool = false,
     } = .{},
@@ -52,7 +51,7 @@ pub const Config = packed struct(u32) {
         carrier_reference_velocity: bool = false,
         carrier_velocity: bool = false,
     } = .{},
-    _: u5 = 0,
+    _: u6 = 0,
 };
 
 pub const Start = enum(u3) {
@@ -110,7 +109,6 @@ pub fn tagSize(tag: Tag) u3 {
         .@"axis.carrier_state",
         => 2,
         .@"sensor.angle",
-        .@"sensor.unwrapped_angle",
         .@"sensor.distance",
         .@"sensor.average_angle",
         .@"sensor.velocity",
@@ -133,7 +131,6 @@ pub fn tagParse(comptime tag: Tag, data: []const u8) TagType(tag) {
         .@"driver.cycle_time",
         .@"sensor.angle",
         .@"sensor.average_angle",
-        .@"sensor.unwrapped_angle",
         .@"sensor.distance",
         .@"sensor.velocity",
         .@"axis.current_d",
@@ -200,7 +197,6 @@ pub fn TagType(comptime tag: Tag) type {
         .@"driver.vdc",
         .@"sensor.angle",
         .@"sensor.average_angle",
-        .@"sensor.unwrapped_angle",
         .@"sensor.distance",
         .@"sensor.velocity",
         .@"axis.current_d",
