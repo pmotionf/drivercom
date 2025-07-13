@@ -30,31 +30,26 @@ pub fn build(b: *std.Build) void {
     test_step.dependOn(&run_mod_unit_tests.step);
 
     if (library) |l| {
+        const lib_mod = b.createModule(.{
+            .root_source_file = b.path("src/library.zig"),
+            .target = target,
+            .optimize = optimize,
+        });
+        lib_mod.addImport("drivercom", mod);
+
         // Library Artifact
         {
-            const lib = if (l == .static) b.addStaticLibrary(.{
+            const lib = b.addLibrary(.{
                 .name = "drivercom",
-                .root_source_file = b.path("src/library.zig"),
-                .target = target,
-                .optimize = optimize,
-            }) else b.addSharedLibrary(.{
-                .name = "drivercom",
-                .root_source_file = b.path("src/library.zig"),
-                .target = target,
-                .optimize = optimize,
+                .root_module = lib_mod,
+                .linkage = l,
             });
-            lib.root_module.addImport("drivercom", mod);
             b.installArtifact(lib);
         }
 
         // Library Tests
         {
-            const lib_unit_tests = b.addTest(.{
-                .root_source_file = b.path("src/library.zig"),
-                .target = target,
-                .optimize = optimize,
-            });
-            lib_unit_tests.root_module.addImport("drivercom", mod);
+            const lib_unit_tests = b.addTest(.{ .root_module = lib_mod });
             const run_lib_unit_tests = b.addRunArtifact(lib_unit_tests);
             test_step.dependOn(&run_lib_unit_tests.step);
         }
