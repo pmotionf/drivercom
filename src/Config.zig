@@ -61,8 +61,6 @@ pub const Field = union(enum(u16)) {
     @"hall_sensors.magnet_length.forward": f32,
     @"hall_sensors.position.on.backward": f32,
     @"hall_sensors.position.on.forward": f32,
-    @"hall_sensors.position.off.backward": f32,
-    @"hall_sensors.position.off.forward": f32,
 
     pub const Kind = std.meta.Tag(@This());
 
@@ -112,10 +110,10 @@ pub const Field = union(enum(u16)) {
         const mass: u16 = getInner(config, u16, "carrier.mass");
         try std.testing.expectEqual(config.carrier.mass, mass);
 
-        config.hall_sensors[3].position.off.forward = 17.48;
+        config.hall_sensors[3].position.on.forward = 17.48;
         try std.testing.expectEqual(
-            config.hall_sensors[3].position.off.forward,
-            getInner(config.hall_sensors[3], f32, "position.off.forward"),
+            config.hall_sensors[3].position.on.forward,
+            getInner(config.hall_sensors[3], f32, "position.on.forward"),
         );
     }
 
@@ -471,10 +469,6 @@ pub const HallSensor = struct {
             backward: f32,
             forward: f32,
         },
-        off: struct {
-            backward: f32,
-            forward: f32,
-        },
     },
 };
 
@@ -494,12 +488,17 @@ pub const Flags = packed struct {
         axis2: bool,
         axis3: bool,
     },
+    swap_sensors: packed struct(u3) {
+        axis1: bool,
+        axis2: bool,
+        axis3: bool,
+    },
 
     pub fn toInt(self: Flags) u16 {
-        return @as(u9, @bitCast(self));
+        return @as(u12, @bitCast(self));
     }
 
-    pub fn fromInt(int: u9) Flags {
+    pub fn fromInt(int: u12) Flags {
         return @bitCast(int);
     }
 };
@@ -678,21 +677,11 @@ pub fn migrate(old: OldConfig) Config {
     migrateWalkFields(&result, old);
 
     // Migrate changed fields.
-    result.coil.center.kf = old.coil.kf;
-    result.coil.between.kf = old.coil.kf;
-    result.axis.center.gain.current = old.axes[0].gain.current;
-    result.axis.center.gain.velocity = old.axes[0].gain.velocity;
-    result.axis.center.gain.position = old.axes[0].gain.position;
-    result.axis.between.gain.current = old.axes[1].gain.current;
-    result.axis.between.gain.velocity = old.axes[1].gain.velocity;
-    result.axis.between.gain.position = old.axes[1].gain.position;
 
     // Default-initialize new fields.
-    for (&result.hall_sensors) |*hs| {
-        hs.position.off = std.mem.zeroes(@TypeOf(hs.position.off));
-    }
-    result.carrier.cas.acceleration = 6.0;
-    result.carrier.cas.buffer = 10;
+    result.flags.swap_sensors.axis1 = false;
+    result.flags.swap_sensors.axis2 = false;
+    result.flags.swap_sensors.axis3 = false;
 
     return result;
 }
@@ -700,8 +689,9 @@ pub fn migrate(old: OldConfig) Config {
 test migrate {
     const old = std.mem.zeroes(OldConfig);
     var new = std.mem.zeroes(Config);
-    new.carrier.cas.acceleration = 6.0;
-    new.carrier.cas.buffer = 10;
+    new.flags.swap_sensors.axis1 = false;
+    new.flags.swap_sensors.axis2 = false;
+    new.flags.swap_sensors.axis3 = false;
 
     const migrated = migrate(old);
 

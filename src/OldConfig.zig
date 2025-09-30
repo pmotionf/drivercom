@@ -40,20 +40,30 @@ pub const Field = union(enum(u16)) {
     @"coil.continuous_current": f32,
     @"coil.rs": f32,
     @"coil.ls": f32,
-    @"coil.kf": f32,
+    @"coil.center.kf": f32,
+    @"coil.between.kf": f32,
     @"coil.kbm": f32,
     @"sensor.default_magnet_length": f32,
     @"sensor.ignore_distance": f32,
     zero_position: f32,
-    @"axes.gain.current.p": f32,
-    @"axes.gain.current.i": f32,
-    @"axes.gain.current.denominator": u32,
-    @"axes.gain.velocity.p": f32,
-    @"axes.gain.velocity.i": f32,
-    @"axes.gain.velocity.denominator": u32,
-    @"axes.gain.velocity.denominator_pi": u32,
-    @"axes.gain.position.p": f32,
-    @"axes.gain.position.denominator": u32,
+    @"axis.center.gain.current.p": f32,
+    @"axis.center.gain.current.i": f32,
+    @"axis.center.gain.current.denominator": u32,
+    @"axis.center.gain.velocity.p": f32,
+    @"axis.center.gain.velocity.i": f32,
+    @"axis.center.gain.velocity.denominator": u32,
+    @"axis.center.gain.velocity.denominator_pi": u32,
+    @"axis.center.gain.position.p": f32,
+    @"axis.center.gain.position.denominator": u32,
+    @"axis.between.gain.current.p": f32,
+    @"axis.between.gain.current.i": f32,
+    @"axis.between.gain.current.denominator": u32,
+    @"axis.between.gain.velocity.p": f32,
+    @"axis.between.gain.velocity.i": f32,
+    @"axis.between.gain.velocity.denominator": u32,
+    @"axis.between.gain.velocity.denominator_pi": u32,
+    @"axis.between.gain.position.p": f32,
+    @"axis.between.gain.position.denominator": u32,
     @"hall_sensors.magnet_length.backward": f32,
     @"hall_sensors.magnet_length.forward": f32,
     @"hall_sensors.position.on.backward": f32,
@@ -133,13 +143,6 @@ pub const Field = union(enum(u16)) {
                         const hall_sensor: *HallSensor =
                             &config.hall_sensors[opts.index];
                         setInner(hall_sensor, value, name[index + 1 ..]);
-                    } else if (comptime std.mem.eql(
-                        u8,
-                        "axes",
-                        name[0..index],
-                    )) {
-                        const axis: *Axis = &config.axes[opts.index];
-                        setInner(axis, value, name[index + 1 ..]);
                     } else {
                         setInner(config, value, name);
                     }
@@ -196,16 +199,16 @@ pub const Field = union(enum(u16)) {
     test fromConfig {
         var config: Config = std.mem.zeroInit(Config, .{});
         {
-            config.axes[1].gain.position.p = 32.6;
+            config.axis.center.gain.position.p = 32.6;
             const field = fromConfig(
                 config,
-                .@"axes.gain.position.p",
-                .{ .index = 1 },
+                .@"axis.center.gain.position.p",
+                .{},
             );
 
             try std.testing.expectEqual(
-                config.axes[1].gain.position.p,
-                field.@"axes.gain.position.p",
+                config.axis.center.gain.position.p,
+                field.@"axis.center.gain.position.p",
             );
         }
 
@@ -246,13 +249,6 @@ pub const Field = union(enum(u16)) {
                         const hall_sensor: *HallSensor =
                             &config.hall_sensors[opts.index];
                         setInner(hall_sensor, value, name[index + 1 ..]);
-                    } else if (comptime std.mem.eql(
-                        u8,
-                        "axes",
-                        name[0..index],
-                    )) {
-                        const axis: *Axis = &config.axes[opts.index];
-                        setInner(axis, value, name[index + 1 ..]);
                     } else {
                         setInner(&config, value, name);
                     }
@@ -274,72 +270,6 @@ pub const Field = union(enum(u16)) {
         try std.testing.expectEqual(15, config.station);
     }
 };
-
-/// Recursively walk structure fields, checking if leaf fields exist in
-/// `FieldKind` enum.
-fn walkFields(structure: anytype, comptime prefix: []const u8) !void {
-    switch (@typeInfo(structure)) {
-        .@"struct" => |ti| {
-            inline for (ti.fields) |field| {
-                const new_prefix = if (prefix.len > 0)
-                    prefix ++ "." ++ field.name
-                else
-                    field.name;
-
-                const fti = @typeInfo(field.type);
-                switch (fti) {
-                    .@"struct", .array => {
-                        // Special case Config flags field.
-                        if (field.type == Flags) {
-                            try std.testing.expectEqual(
-                                true,
-                                @hasField(Field, new_prefix),
-                            );
-                            try std.testing.expectEqual(
-                                field.type,
-                                @FieldType(Field, new_prefix),
-                            );
-                        } else try walkFields(
-                            field.type,
-                            new_prefix,
-                        );
-                    },
-                    else => {
-                        try std.testing.expectEqual(
-                            true,
-                            @hasField(Field, new_prefix),
-                        );
-                        try std.testing.expectEqual(
-                            field.type,
-                            @FieldType(Field, new_prefix),
-                        );
-                    },
-                }
-            }
-        },
-        .array => |ar| {
-            const cti = @typeInfo(ar.child);
-            switch (cti) {
-                .@"struct", .array => try walkFields(ar.child, prefix),
-                else => {
-                    try std.testing.expectEqual(
-                        true,
-                        @hasField(Field, prefix),
-                    );
-                    try std.testing.expectEqual(
-                        ar.child,
-                        @FieldType(Field, prefix),
-                    );
-                },
-            }
-        },
-        else => unreachable,
-    }
-}
-
-test Field {
-    try walkFields(@This(), "");
-}
 
 /// Driver ID
 id: u16,
@@ -396,6 +326,20 @@ mechanical_angle_offset: f32,
 
 axis: struct {
     length: f32,
+    center: struct {
+        gain: struct {
+            current: CurrentGain,
+            velocity: VelocityGain,
+            position: PositionGain,
+        },
+    },
+    between: struct {
+        gain: struct {
+            current: CurrentGain,
+            velocity: VelocityGain,
+            position: PositionGain,
+        },
+    },
 },
 
 coil: struct {
@@ -407,8 +351,14 @@ coil: struct {
     rs: f32,
     /// Inductance.
     ls: f32,
-    /// Force constant.
-    kf: f32,
+    center: struct {
+        /// Force constant.
+        kf: f32,
+    },
+    between: struct {
+        /// Force constant.
+        kf: f32,
+    },
     kbm: f32,
 },
 
@@ -419,21 +369,7 @@ sensor: struct {
 
 zero_position: f32,
 
-axes: [3]Axis,
-
 hall_sensors: [6]HallSensor,
-
-pub const CurrentGain = NewConfig.CurrentGain;
-pub const VelocityGain = NewConfig.VelocityGain;
-pub const PositionGain = NewConfig.PositionGain;
-
-pub const Axis = struct {
-    gain: struct {
-        current: CurrentGain,
-        velocity: VelocityGain,
-        position: PositionGain,
-    },
-};
 
 pub const HallSensor = struct {
     magnet_length: struct {
@@ -520,3 +456,7 @@ pub fn setField(self: Config, field: *Field, opts: struct {
         },
     }
 }
+
+pub const CurrentGain = NewConfig.CurrentGain;
+pub const VelocityGain = NewConfig.VelocityGain;
+pub const PositionGain = NewConfig.PositionGain;

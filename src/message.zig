@@ -106,7 +106,7 @@ pub const Message = packed struct {
                         const value_type = @TypeOf(value);
                         // Special case for flags.
                         if (comptime value_type == Config.Flags) {
-                            self.value.u16 = @as(u9, @bitCast(value));
+                            self.value.u16 = @as(u12, @bitCast(value));
                         } else if (comptime value_type == i16) {
                             self.value.i16 = value;
                         } else if (comptime value_type == u16) {
