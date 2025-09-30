@@ -2,7 +2,7 @@
     .name = .drivercom,
     .version = "0.5.1",
     .fingerprint = 0xc1b53adfd36fc2f0,
-    .minimum_zig_version = "0.14.0-dev.2916+d916954be",
+    .minimum_zig_version = "0.15.1",
     .paths = .{
         "build.zig",
         "build.zig.zon",
