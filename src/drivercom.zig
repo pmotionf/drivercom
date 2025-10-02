@@ -71,7 +71,11 @@ pub const gain = struct {
 pub const DriverMessage = enum(u16) {
     none,
     update,
-    prof_req,
+    set_aux,
+    set_move,
+    set_carrier_id,
+    set_isol_bwd,
+    set_isol_fwd,
     prof_noti,
     update_cali_home,
     update_mech_angle_offset,
@@ -88,12 +92,8 @@ pub const CarrierState = enum(u16) {
     WarmupProgressing,
     WarmupCompleted,
 
-    PosMoveProgressing = 0x4,
-    PosMoveCompleted,
-    SpdMoveProgressing,
-    SpdMoveCompleted,
+    Move = 0x4,
     Auxiliary,
-    AuxiliaryCompleted,
 
     ForwardCalibrationProgressing = 0xA,
     ForwardCalibrationCompleted,
@@ -104,17 +104,10 @@ pub const CarrierState = enum(u16) {
     ForwardIsolationCompleted,
     BackwardIsolationProgressing,
     BackwardIsolationCompleted,
-    ForwardRestartProgressing,
-    ForwardRestartCompleted,
-    BackwardRestartProgressing,
-    BackwardRestartCompleted,
 
-    PullForward = 0x19,
-    PullForwardCompleted,
+    PullForward = 0x1A,
     PullBackward,
-    PullBackwardCompleted,
     Push,
-    PushCompleted,
 
     Overcurrent = 0x1F,
 };
