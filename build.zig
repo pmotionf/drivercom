@@ -16,12 +16,18 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
+    const mmc_api = b.dependency("mmc_api", .{
+        .target = target,
+        .optimize = optimize,
+    });
+
     const mod = b.addModule("drivercom", .{
         .root_source_file = b.path("src/drivercom.zig"),
         .target = target,
         .optimize = optimize,
     });
     mod.addImport("build.zig.zon", build_zig_zon);
+    mod.addImport("mmc_api", mmc_api.module("mmc-api"));
 
     const mod_unit_tests = b.addTest(.{ .root_module = mod });
     const run_mod_unit_tests = b.addRunArtifact(mod_unit_tests);

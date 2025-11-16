@@ -86,31 +86,7 @@ pub const DriverMessage = enum(u16) {
     clear_carrier_info,
 };
 
-pub const CarrierState = enum(u16) {
-    None = 0x0,
-
-    WarmupProgressing,
-    WarmupCompleted,
-
-    Move = 0x4,
-    Auxiliary,
-
-    ForwardCalibrationProgressing = 0xA,
-    ForwardCalibrationCompleted,
-    BackwardCalibrationProgressing,
-    BackwardCalibrationCompleted,
-
-    ForwardIsolationProgressing = 0x10,
-    ForwardIsolationCompleted,
-    BackwardIsolationProgressing,
-    BackwardIsolationCompleted,
-
-    PullForward = 0x1A,
-    PullBackward,
-    Push,
-
-    Overcurrent = 0x1F,
-};
+pub const CarrierState = @import("mmc_api").cclink.Wr.Carrier.State;
 
 test {
     std.testing.refAllDeclsRecursive(@This());
