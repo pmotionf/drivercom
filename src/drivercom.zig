@@ -86,7 +86,8 @@ pub const DriverMessage = enum(u16) {
     clear_carrier_info,
 };
 
-pub const CarrierState = @import("mmc_api").cclink.Wr.Carrier.State;
+pub const CarrierState =
+    @Type(@typeInfo(@import("mmc_api").cclink.Wr.Carrier.State));
 
 test {
     std.testing.refAllDeclsRecursive(@This());
