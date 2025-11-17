@@ -10,13 +10,10 @@ const Config = @This();
 /// `drivercom` version for this `Config` struct.
 pub const version: std.SemanticVersion = .{
     .major = 0,
-    .minor = 4,
+    .minor = 5,
     .patch = 0,
 };
-/// Driver configuration field. These fields are used directly in messages
-/// with driver; their ordering matches firmware field kind ordering.
-/// Names reflect nested structure within `Config` struct, and types represent
-/// the type of value in the `Config` struct.
+
 pub const Field = union(enum(u16)) {
     id: u16,
     station: u16,
@@ -68,207 +65,8 @@ pub const Field = union(enum(u16)) {
     @"hall_sensors.magnet_length.forward": f32,
     @"hall_sensors.position.on.backward": f32,
     @"hall_sensors.position.on.forward": f32,
-    @"hall_sensors.position.off.backward": f32,
-    @"hall_sensors.position.off.forward": f32,
 
     pub const Kind = std.meta.Tag(@This());
-
-    fn setInner(
-        parent: anytype,
-        value: anytype,
-        comptime access: []const u8,
-    ) void {
-        const nested = comptime std.mem.indexOfScalar(u8, access, '.');
-        if (nested) |index| {
-            setInner(
-                &@field(parent, access[0..index]),
-                value,
-                access[index + 1 ..],
-            );
-        } else {
-            @field(parent, access) = value;
-        }
-    }
-
-    test setInner {
-        var config: Config = undefined;
-        setInner(&config, 1360, "carrier.mass");
-        try std.testing.expectEqual(1360, config.carrier.mass);
-    }
-
-    fn getInner(
-        parent: anytype,
-        comptime return_type: type,
-        comptime access: []const u8,
-    ) return_type {
-        const nested = comptime std.mem.indexOfScalar(u8, access, '.');
-        if (nested) |index| {
-            return getInner(
-                @field(parent, access[0..index]),
-                return_type,
-                access[index + 1 ..],
-            );
-        } else {
-            return @field(parent, access);
-        }
-    }
-
-    test getInner {
-        var config: Config = undefined;
-        config.carrier.mass = 1320;
-        const mass: u16 = getInner(config, u16, "carrier.mass");
-        try std.testing.expectEqual(config.carrier.mass, mass);
-
-        config.hall_sensors[3].position.off.forward = 17.48;
-        try std.testing.expectEqual(
-            config.hall_sensors[3].position.off.forward,
-            getInner(config.hall_sensors[3], f32, "position.off.forward"),
-        );
-    }
-
-    /// Set a field in provided Config struct with value in Field.
-    pub fn setConfig(self: Field, config: *Config, opts: struct {
-        index: usize = 0,
-    }) void {
-        switch (self) {
-            inline else => |value, kind| {
-                const name = @tagName(kind);
-                const nested = comptime std.mem.indexOfScalar(u8, name, '.');
-                if (comptime nested) |index| {
-                    if (comptime std.mem.eql(
-                        u8,
-                        "hall_sensors",
-                        name[0..index],
-                    )) {
-                        const hall_sensor: *HallSensor =
-                            &config.hall_sensors[opts.index];
-                        setInner(hall_sensor, value, name[index + 1 ..]);
-                    } else {
-                        setInner(config, value, name);
-                    }
-                } else {
-                    setInner(config, value, name);
-                }
-            },
-        }
-    }
-
-    pub fn fromConfig(
-        config: Config,
-        field: Field.Kind,
-        opts: struct {
-            index: usize = 0,
-        },
-    ) Field {
-        switch (field) {
-            inline else => |kind| {
-                const name = @tagName(kind);
-                const nested = comptime std.mem.indexOfScalar(u8, name, '.');
-                if (comptime nested) |index| {
-                    if (comptime std.mem.eql(
-                        u8,
-                        "hall_sensors",
-                        name[0..index],
-                    )) {
-                        return @unionInit(Field, name, getInner(
-                            config.hall_sensors[opts.index],
-                            @FieldType(Field, name),
-                            name[index + 1 ..],
-                        ));
-                    } else if (comptime std.mem.eql(
-                        u8,
-                        "axes",
-                        name[0..index],
-                    )) {
-                        return @unionInit(Field, name, getInner(
-                            config.axes[opts.index],
-                            @FieldType(Field, name),
-                            name[index + 1 ..],
-                        ));
-                    }
-                }
-                return @unionInit(Field, name, getInner(
-                    config,
-                    @FieldType(Field, name),
-                    name,
-                ));
-            },
-        }
-    }
-
-    test fromConfig {
-        var config: Config = std.mem.zeroInit(Config, .{});
-        {
-            config.axis.center.gain.position.p = 32.6;
-            const field = fromConfig(
-                config,
-                .@"axis.center.gain.position.p",
-                .{},
-            );
-
-            try std.testing.expectEqual(
-                config.axis.center.gain.position.p,
-                field.@"axis.center.gain.position.p",
-            );
-        }
-
-        {
-            config.hall_sensors[4].position.on.forward = 0.9534;
-            const field = fromConfig(
-                config,
-                .@"hall_sensors.position.on.forward",
-                .{ .index = 4 },
-            );
-
-            try std.testing.expectEqual(
-                config.hall_sensors[4].position.on.forward,
-                field.@"hall_sensors.position.on.forward",
-            );
-        }
-    }
-
-    pub fn toConfig(
-        field: Field,
-        opts: struct {
-            /// Existing Config, used as base for returned "modified" Config
-            config: Config = std.mem.zeroInit(Config, .{}),
-            index: usize = 0,
-        },
-    ) Config {
-        var config: Config = opts.config;
-        switch (field) {
-            inline else => |value, kind| {
-                const name = @tagName(kind);
-                const nested = comptime std.mem.indexOfScalar(u8, name, '.');
-                if (comptime nested) |index| {
-                    if (comptime std.mem.eql(
-                        u8,
-                        "hall_sensors",
-                        name[0..index],
-                    )) {
-                        const hall_sensor: *HallSensor =
-                            &config.hall_sensors[opts.index];
-                        setInner(hall_sensor, value, name[index + 1 ..]);
-                    } else {
-                        setInner(&config, value, name);
-                    }
-                } else {
-                    setInner(&config, value, name);
-                }
-            },
-        }
-        return config;
-    }
-
-    test toConfig {
-        var config: Config = std.mem.zeroInit(Config, .{ .id = 3 });
-        const field: Field = .{ .station = 15 };
-
-        config = field.toConfig(.{ .config = config });
-
-        try std.testing.expectEqual(3, config.id);
-        try std.testing.expectEqual(15, config.station);
-    }
 };
 
 /// Driver ID
@@ -381,10 +179,6 @@ pub const HallSensor = struct {
             backward: f32,
             forward: f32,
         },
-        off: struct {
-            backward: f32,
-            forward: f32,
-        },
     },
 };
 
@@ -404,58 +198,20 @@ pub const Flags = packed struct {
         axis2: bool,
         axis3: bool,
     },
+    swap_sensors: packed struct(u3) {
+        axis1: bool,
+        axis2: bool,
+        axis3: bool,
+    },
 
     pub fn toInt(self: Flags) u16 {
-        return @as(u9, @bitCast(self));
+        return @as(u12, @bitCast(self));
     }
 
-    pub fn fromInt(int: u9) Flags {
+    pub fn fromInt(int: u12) Flags {
         return @bitCast(int);
     }
 };
-
-/// Set value in provided field with value from Config.
-pub fn setField(self: Config, field: *Field, opts: struct {
-    index: usize = 0,
-}) void {
-    switch (field.*) {
-        inline else => |*value, kind| {
-            const name = @tagName(kind);
-            const nested = comptime std.mem.indexOfScalar(u8, name, '.');
-            if (comptime nested) |index| {
-                if (comptime std.mem.eql(
-                    u8,
-                    "hall_sensors",
-                    name[0..index],
-                )) {
-                    value.* = Field.getInner(
-                        self.hall_sensors[opts.index],
-                        @FieldType(Field, name),
-                        name[index + 1 ..],
-                    );
-                } else if (comptime std.mem.eql(
-                    u8,
-                    "axes",
-                    name[0..index],
-                )) {
-                    value.* = Field.getInner(
-                        self.axes[opts.index],
-                        @FieldType(Field, name),
-                        name[index + 1 ..],
-                    );
-                } else {
-                    value.* = Field.getInner(
-                        self,
-                        @FieldType(Field, name),
-                        name,
-                    );
-                }
-            } else {
-                value.* = Field.getInner(self, @FieldType(Field, name), name);
-            }
-        },
-    }
-}
 
 pub const CurrentGain = NewConfig.CurrentGain;
 pub const VelocityGain = NewConfig.VelocityGain;

@@ -61,6 +61,7 @@ pub const Field = union(enum(u16)) {
     @"hall_sensors.magnet_length.forward": f32,
     @"hall_sensors.position.on.backward": f32,
     @"hall_sensors.position.on.forward": f32,
+    @"hall_sensors.position.offset": f32,
 
     pub const Kind = std.meta.Tag(@This());
 
@@ -469,6 +470,7 @@ pub const HallSensor = struct {
             backward: f32,
             forward: f32,
         },
+        offset: f32,
     },
 };
 
@@ -682,6 +684,9 @@ pub fn migrate(old: OldConfig) Config {
     result.flags.swap_sensors.axis1 = false;
     result.flags.swap_sensors.axis2 = false;
     result.flags.swap_sensors.axis3 = false;
+    for (&result.hall_sensors) |*sensor| {
+        sensor.position.offset = 0.0;
+    }
 
     return result;
 }
