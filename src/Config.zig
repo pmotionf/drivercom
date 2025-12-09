@@ -339,22 +339,22 @@ pub const Info = struct {
         .description = "Lorem ipsum dolor sit amet.",
     },
 
-    flags: Type = struct {
+    flags: struct {
         has_neighbor: struct {
             backward: Type = "bool",
             __backward: Meta = .{
                 .description = "Lorem ipsum dolor sit amet.",
             },
-            forward: type = "bool",
+            forward: Type = "bool",
             __forward: Meta = .{
                 .description = "Lorem ipsum dolor sit amet.",
             },
-        },
+        } = .{},
 
-        uses_axis: Type = struct {
+        uses_axis: struct {
             axis2: Type = "bool",
             axis3: Type = "bool",
-        },
+        } = .{},
         __uses_axis: Meta = .{
             .description = "Lorem ipsum dolor sit amet.",
         },
@@ -369,33 +369,33 @@ pub const Info = struct {
             .description = "Lorem ipsum dolor sit amet.",
         },
 
-        flip_sensors: Type = struct {
+        flip_sensors: struct {
             axis1: Type = "bool",
             axis2: Type = "bool",
             axis3: Type = "bool",
-        },
+        } = .{},
         __flip_sensors: Meta = .{
             .description = "Lorem ipsum dolor sit amet.",
         },
 
-        swap_sensor: Type = struct {
+        swap_sensor: struct {
             axis1: Type = "bool",
             axis2: Type = "bool",
             axis3: Type = "bool",
-        },
+        } = .{},
         __swap_sensor: Meta = .{
             .description = "Lorem ipsum dolor sit amet.",
         },
-    },
+    } = .{},
 
-    line: Type = struct {
+    line: struct {
         axis: Type = "u16",
         __axis: Meta = .{
             .description = "Lorem ipsum dolor sit amet.",
         },
-    },
+    } = .{},
 
-    voltage: Type = struct {
+    voltage: struct {
         target: Type = "u16",
         __target: Meta = .{
             .description = "Lorem ipsum dolor sit amet.",
@@ -406,7 +406,7 @@ pub const Info = struct {
             .description = "Lorem ipsum dolor sit amet.",
             .unit = "V",
         },
-        limit: Type = struct {
+        limit: struct {
             lower: Type = "u16",
             __lower: Meta = .{
                 .description = "Lorem ipsum dolor sit amet.",
@@ -417,10 +417,10 @@ pub const Info = struct {
                 .description = "Lorem ipsum dolor sit amet.",
                 .unit = "V",
             },
-        },
-    },
+        } = .{},
+    } = .{},
 
-    magnet: Type = struct {
+    magnet: struct {
         pitch: Type = "f32",
         __pitch: Meta = .{
             .description = "Lorem ipsum dolor sit amet.",
@@ -431,16 +431,16 @@ pub const Info = struct {
             .description = "Lorem ipsum dolor sit amet.",
             .unit = "mm",
         },
-    },
+    } = .{},
 
-    carrier: Type = struct {
+    carrier: struct {
         mass: Type = "u16",
         __mass: Meta = .{
             .description = "Lorem ipsum dolor sit amet.",
             .unit = "mm",
         },
-        arrival: Type = struct {
-            threshold: Type = struct {
+        arrival: struct {
+            threshold: struct {
                 velocity: Type = "f32",
                 __velocity: Meta = .{
                     .description = "Lorem ipsum dolor sit amet.",
@@ -451,11 +451,11 @@ pub const Info = struct {
                     .description = "Lorem ipsum dolor sit amet.",
                     .unit = "mm",
                 },
-            },
-        },
-    },
+            } = .{},
+        } = .{},
+    } = .{},
 
-    cas: Type = struct {
+    cas: struct {
         buffer: Type = "u16",
         __buffer: Meta = .{
             .description = "Lorem ipsum dolor sit amet.",
@@ -466,19 +466,19 @@ pub const Info = struct {
             .description = "Lorem ipsum dolor sit amet.",
             .unit = "mm/s",
         },
-    },
+    } = .{},
 
     mechanical_angle_offset: Type = "f32",
 
-    axis: Type = struct {
+    axis: struct {
         length: Type = "f32",
         __length: Meta = .{
             .description = "Lorem ipsum dolor sit amet.",
             .unit = "mm",
         },
-        center: Type = struct {
-            gain: Type = struct {
-                current: Type = struct {
+        center: struct {
+            gain: struct {
+                current: struct {
                     p: Type = "f32",
                     __p: Meta = .{
                         .description = "Lorem ipsum dolor sit amet.",
@@ -494,64 +494,8 @@ pub const Info = struct {
                         .description = "Lorem ipsum dolor sit amet.",
                         // .unit = "mm",
                     },
-                },
-                velocity: Type = struct {
-                    p: Type = "f32",
-                    __p: Meta = .{
-                        .description = "Lorem ipsum dolor sit amet.",
-                        // .unit = "mm",
-                    },
-                    i: Type = "f32",
-                    __i: Meta = .{
-                        .description = "Lorem ipsum dolor sit amet.",
-                        // .unit = "mm",
-                    },
-                    denominator: Type = "u32",
-                    __denominator: Meta = .{
-                        .description = "Lorem ipsum dolor sit amet.",
-                        // .unit = "mm",
-                    },
-
-                    denominator_pi: Type = "u32",
-                    __denominator_pi: Meta = .{
-                        .description = "Lorem ipsum dolor sit amet.",
-                        // .unit = "mm",
-                    },
-                },
-                position: Type = struct {
-                    p: Type = "f32",
-                    __p: Meta = .{
-                        .description = "Lorem ipsum dolor sit amet.",
-                        // .unit = "mm",
-                    },
-                    denominator: Type = "u32",
-                    __denominator: Meta = .{
-                        .description = "Lorem ipsum dolor sit amet.",
-                        // .unit = "mm",
-                    },
-                },
-            },
-        },
-        between: Type = struct {
-            gain: Type = struct {
-                current: Type = struct {
-                    p: Type = "f32",
-                    __p: Meta = .{
-                        .description = "Lorem ipsum dolor sit amet.",
-                        // .unit = "mm",
-                    },
-                    i: Type = "f32",
-                    __i: Meta = .{
-                        .description = "Lorem ipsum dolor sit amet.",
-                        // .unit = "mm",
-                    },
-                    denominator: Type = "u32",
-                    __denominator: Meta = .{
-                        .description = "Lorem ipsum dolor sit amet.",
-                        // .unit = "mm",
-                    },
-                },
-                velocity: Type = struct {
+                } = .{},
+                velocity: struct {
                     p: Type = "f32",
                     __p: Meta = .{
                         .description = "Lorem ipsum dolor sit amet.",
@@ -573,8 +517,8 @@ pub const Info = struct {
                         .description = "Lorem ipsum dolor sit amet.",
                         // .unit = "mm",
                     },
-                },
-                position: Type = struct {
+                } = .{},
+                position: struct {
                     p: Type = "f32",
                     __p: Meta = .{
                         .description = "Lorem ipsum dolor sit amet.",
@@ -585,12 +529,68 @@ pub const Info = struct {
                         .description = "Lorem ipsum dolor sit amet.",
                         // .unit = "mm",
                     },
-                },
-            },
-        },
-    },
+                } = .{},
+            } = .{},
+        } = .{},
+        between: struct {
+            gain: struct {
+                current: struct {
+                    p: Type = "f32",
+                    __p: Meta = .{
+                        .description = "Lorem ipsum dolor sit amet.",
+                        // .unit = "mm",
+                    },
+                    i: Type = "f32",
+                    __i: Meta = .{
+                        .description = "Lorem ipsum dolor sit amet.",
+                        // .unit = "mm",
+                    },
+                    denominator: Type = "u32",
+                    __denominator: Meta = .{
+                        .description = "Lorem ipsum dolor sit amet.",
+                        // .unit = "mm",
+                    },
+                } = .{},
+                velocity: struct {
+                    p: Type = "f32",
+                    __p: Meta = .{
+                        .description = "Lorem ipsum dolor sit amet.",
+                        // .unit = "mm",
+                    },
+                    i: Type = "f32",
+                    __i: Meta = .{
+                        .description = "Lorem ipsum dolor sit amet.",
+                        // .unit = "mm",
+                    },
+                    denominator: Type = "u32",
+                    __denominator: Meta = .{
+                        .description = "Lorem ipsum dolor sit amet.",
+                        // .unit = "mm",
+                    },
 
-    coil: Type = struct {
+                    denominator_pi: Type = "u32",
+                    __denominator_pi: Meta = .{
+                        .description = "Lorem ipsum dolor sit amet.",
+                        // .unit = "mm",
+                    },
+                } = .{},
+                position: struct {
+                    p: Type = "f32",
+                    __p: Meta = .{
+                        .description = "Lorem ipsum dolor sit amet.",
+                        // .unit = "mm",
+                    },
+                    denominator: Type = "u32",
+                    __denominator: Meta = .{
+                        .description = "Lorem ipsum dolor sit amet.",
+                        // .unit = "mm",
+                    },
+                } = .{},
+            } = .{},
+        } = .{},
+    } = .{},
+
+    coil: struct {
         length: Type = "f32",
         __length: Meta = .{
             .description = "Lorem ipsum dolor sit amet.",
@@ -616,21 +616,21 @@ pub const Info = struct {
             .description = "Lorem ipsum dolor sit amet.",
             // .unit = "mm",
         },
-        center: Type = struct {
+        center: struct {
             kf: Type = "f32",
             __kf: Meta = .{
                 .description = "Lorem ipsum dolor sit amet.",
                 // .unit = "mm",
             },
-        },
+        } = .{},
         kdm: Type = "f32",
         __kdm: Meta = .{
             .description = "Lorem ipsum dolor sit amet.",
             // .unit = "mm",
         },
-    },
+    } = .{},
 
-    sonsor: Type = struct {
+    sonsor: struct {
         default_magnet_length: Type = "f32",
         __default_magnet_length: Meta = .{
             .description = "Lorem ipsum dolor sit amet.",
@@ -641,7 +641,7 @@ pub const Info = struct {
             .description = "Lorem ipsum dolor sit amet.",
             .unit = "mm",
         },
-    },
+    } = .{},
 
     zero_position: Type = "f32",
     __zero_position: Meta = .{
@@ -650,7 +650,7 @@ pub const Info = struct {
     },
 
     hall_sensors: []const struct {
-        magnet_length: Type = struct {
+        magnet_length: struct {
             backward: Type = "f32",
             __backward: Meta = .{
                 .description = "Lorem ipsum dolor sit amet.",
@@ -661,9 +661,9 @@ pub const Info = struct {
                 .description = "Lorem ipsum dolor sit amet.",
                 .unit = "mm",
             },
-        },
-        position: Type = struct {
-            on: Type = struct {
+        } = .{},
+        position: struct {
+            on: struct {
                 backward: Type = "f32",
                 __backward: Meta = .{
                     .description = "Lorem ipsum dolor sit amet.",
@@ -674,8 +674,8 @@ pub const Info = struct {
                     .description = "Lorem ipsum dolor sit amet.",
                     .unit = "mm",
                 },
-            },
-        },
+            } = .{},
+        } = .{},
     } = &.{
         .{}, .{}, .{}, .{}, .{}, .{},
     },
