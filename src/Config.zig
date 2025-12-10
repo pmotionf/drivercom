@@ -404,12 +404,12 @@ pub const Info = struct {
             ,
         },
 
-        swap_sensor: struct {
+        swap_sensors: struct {
             axis1: Type = "bool",
             axis2: Type = "bool",
             axis3: Type = "bool",
         } = .{},
-        __swap_sensor: Meta = .{
+        __swap_sensors: Meta = .{
             .description =
             \\Switch order of the two sensors in Axis.
             ,
@@ -417,8 +417,8 @@ pub const Info = struct {
     } = .{},
 
     line: struct {
-        axis: Type = "u16",
-        __axis: Meta = .{
+        axes: Type = "u16",
+        __axes: Meta = .{
             .description =
             \\Total number of Axes used in this Line.
             ,
@@ -497,27 +497,27 @@ pub const Info = struct {
                 },
             } = .{},
         } = .{},
-    } = .{},
 
-    cas: struct {
-        buffer: Type = "u16",
-        __buffer: Meta = .{
-            .description =
-            \\Minimum distance between two Carriers before CAS (collision
-            \\avoidance system) triggers.
-            ,
-            .unit_short = "mm",
-            .unit_long = "Millimeter",
-        },
-        acceleration: Type = "f32",
-        __acceleration: Meta = .{
-            .description =
-            \\Acceleration used to stop Carrier movement when CAS (collision
-            \\avoidance system) triggers.
-            ,
-            .unit_short = "mm/s",
-            .unit_long = "Millimeters per Second",
-        },
+        cas: struct {
+            buffer: Type = "u16",
+            __buffer: Meta = .{
+                .description =
+                \\Minimum distance between two Carriers before CAS (collision
+                \\avoidance system) triggers.
+                ,
+                .unit_short = "mm",
+                .unit_long = "Millimeter",
+            },
+            acceleration: Type = "f32",
+            __acceleration: Meta = .{
+                .description =
+                \\Acceleration used to stop Carrier movement when CAS (collision
+                \\avoidance system) triggers.
+                ,
+                .unit_short = "mm/s",
+                .unit_long = "Millimeters per Second",
+            },
+        } = .{},
     } = .{},
 
     mechanical_angle_offset: Type = "f32",
