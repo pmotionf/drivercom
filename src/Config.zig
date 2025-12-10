@@ -331,24 +331,38 @@ test Field {
 pub const Info = struct {
     id: Type = "u16",
     __id: Meta = .{
-        .description = "Lorem ipsum dolor sit amet.",
+        .description =
+        \\ID is a identifier number and unique per line.
+        \\The first driver in the line should have ID number 1.
+        \\Each connected driver should have consecutively increasing values.
+        ,
     },
 
     station: Type = "u16",
     __station: Meta = .{
-        .description = "Lorem ipsum dolor sit amet.",
+        .description =
+        \\CC-Link Station ID is a identifier number and unique per track.
+        ,
     },
 
     flags: struct {
         has_neighbor: struct {
             backward: Type = "bool",
             __backward: Meta = .{
-                .description = "Lorem ipsum dolor sit amet.",
+                .description =
+                \\States whether there is a driver immediately behind
+                \\this driver (i.e., a record exists with ID = this
+                \\driver’s ID − 1). True if such a driver exists;
+                \\false otherwise.
+                ,
             },
             forward: Type = "bool",
-            __forward: Meta = .{
-                .description = "Lorem ipsum dolor sit amet.",
-            },
+            __forward: Meta = .{ .description = 
+            \\States whether there is a driver immediately infront
+            \\this driver (i.e., a record exists with ID = this
+            \\driver’s ID + 1). True if such a driver exists;
+            \\false otherwise.
+        },
         } = .{},
 
         uses_axis: struct {
@@ -356,17 +370,29 @@ pub const Info = struct {
             axis3: Type = "bool",
         } = .{},
         __uses_axis: Meta = .{
-            .description = "Lorem ipsum dolor sit amet.",
+            // \\2 must be set before 3 , drivers in the middle of the line
+            // \\must have 2 and3 true. only tail can have one one or two.
+            .description =
+            \\States how many axis are available for the given driver.
+            \\Axis2 must be set true before axis3.
+            ,
         },
 
         calibration_completed: Type = "bool",
         __calibration_completed: Meta = .{
-            .description = "Lorem ipsum dolor sit amet.",
+            // "calibratrion cmd was it run at least once",
+            .description =
+            \\Indicates whether calibration has been
+            \\run at least once for this driver.
+            ,
         },
 
         rockwell_magnet: Type = "bool",
         __rockwell_magnet: Meta = .{
-            .description = "Lorem ipsum dolor sit amet.",
+            // "this has to be true when rockwell inc. magnets are used.",
+            .description =
+            \\Set to true when Rockwell magnets are used for this driver.
+            ,
         },
 
         flip_sensors: struct {
@@ -375,7 +401,7 @@ pub const Info = struct {
             axis3: Type = "bool",
         } = .{},
         __flip_sensors: Meta = .{
-            .description = "Lorem ipsum dolor sit amet.",
+            .description = "Flips the sensor readings by 180 degrees. ",
         },
 
         swap_sensor: struct {
@@ -384,34 +410,36 @@ pub const Info = struct {
             axis3: Type = "bool",
         } = .{},
         __swap_sensor: Meta = .{
-            .description = "Lorem ipsum dolor sit amet.",
+            .description = "Swaps the sensors readings on the sides of a coil",
         },
     } = .{},
 
     line: struct {
         axis: Type = "u16",
         __axis: Meta = .{
-            .description = "Lorem ipsum dolor sit amet.",
+            .description =
+            \\Total number of axes available in this production line
+            ,
         },
     } = .{},
 
     voltage: struct {
         target: Type = "u16",
         __target: Meta = .{
-            .description = "Lorem ipsum dolor sit amet.",
+            .description = "for the coils, the voltage that it should run on",
             .unit_short = "V",
             .unit_long = "Volt",
         },
         warumup: Type = "u16",
         __warumup: Meta = .{
-            .description = "Lorem ipsum dolor sit amet.",
+            .description = "hsould be applied when apply angle offset",
             .unit_short = "V",
             .unit_long = "Volt",
         },
         limit: struct {
             lower: Type = "u16",
             __lower: Meta = .{
-                .description = "Lorem ipsum dolor sit amet.",
+                .description = "min volt thresh befor alarm",
                 .unit_short = "V",
                 .unit_long = "Volt",
             },
