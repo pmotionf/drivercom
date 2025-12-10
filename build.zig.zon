@@ -1,6 +1,6 @@
 .{
     .name = .drivercom,
-    .version = "0.5.3",
+    .version = "0.5.4",
     .fingerprint = 0xc1b53adfd36fc2f0,
     .minimum_zig_version = "0.15.1",
     .dependencies = .{
