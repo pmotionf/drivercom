@@ -328,6 +328,351 @@ test Field {
     try walkFields(@This(), "");
 }
 
+pub const Info = struct {
+    id: Type = "u16",
+    __id: Meta = .{
+        .description =
+        \\ID is an identifier number and unique per Line.
+        \\First Driver in Line must have ID number 1.
+        \\Each Driver in Line must have consecutively increasing IDs.
+        ,
+    },
+
+    station: Type = "u16",
+    __station: Meta = .{
+        .description =
+        \\CC-Link Station ID. Identifier number, unique per Track.
+        ,
+    },
+
+    flags: struct {
+        has_neighbor: struct {
+            backward: Type = "bool",
+            __backward: Meta = .{
+                .description =
+                \\True if this Driver ID is greater than 1.
+                ,
+            },
+            forward: Type = "bool",
+            __forward: Meta = .{
+                .description =
+                \\True if this Driver ID is less than number of Drivers in this
+                \\Line.
+                ,
+            },
+        } = .{},
+
+        uses_axis: struct {
+            axis2: Type = "bool",
+            axis3: Type = "bool",
+            __axis2: Meta = .{
+                .description =
+                \\Whether this Driver uses second Axis.
+                ,
+            },
+            __axis3: Meta = .{
+                .description =
+                \\Whether this Driver uses third Axis.
+                \\`axis2` must be true if using third Axis.
+                ,
+            },
+        } = .{},
+        __uses_axis: Meta = .{
+            .description =
+            \\Axes used by this driver.
+            ,
+        },
+
+        calibration_completed: Type = "bool",
+        __calibration_completed: Meta = .{ .hidden = true },
+
+        rockwell_magnet: Type = "bool",
+        __rockwell_magnet: Meta = .{
+            .description =
+            \\True if Carriers are Rockwell magnets in this Line.
+            ,
+        },
+
+        flip_sensors: struct {
+            axis1: Type = "bool",
+            axis2: Type = "bool",
+            axis3: Type = "bool",
+        } = .{},
+        __flip_sensors: Meta = .{
+            .description =
+            \\Invert Carrier movement direction readings.
+            ,
+        },
+
+        swap_sensors: struct {
+            axis1: Type = "bool",
+            axis2: Type = "bool",
+            axis3: Type = "bool",
+        } = .{},
+        __swap_sensors: Meta = .{
+            .description =
+            \\Switch order of the two sensors in Axis.
+            ,
+        },
+    } = .{},
+
+    line: struct {
+        axes: Type = "u16",
+        __axes: Meta = .{
+            .description =
+            \\Total number of Axes used in this Line.
+            ,
+        },
+    } = .{},
+
+    voltage: struct {
+        target: Type = "u16",
+        __target: Meta = .{
+            .description = "Supplied voltage for motor coils.",
+            .unit_short = "V",
+            .unit_long = "Volt",
+        },
+        warmup: Type = "u16",
+        __warmup: Meta = .{
+            .description = "Voltage applied to find sensor angle offset.",
+            .unit_short = "V",
+            .unit_long = "Volt",
+        },
+        limit: struct {
+            lower: Type = "u16",
+            __lower: Meta = .{
+                .description = "Minimum voltage threshold before alarm.",
+                .unit_short = "V",
+                .unit_long = "Volt",
+            },
+            upper: Type = "u16",
+            __upper: Meta = .{
+                .description = "Maximum voltage threshold before alarm.",
+                .unit_short = "V",
+                .unit_long = "Volt",
+            },
+        } = .{},
+    } = .{},
+
+    magnet: struct {
+        pitch: Type = "f32",
+        __pitch: Meta = .{
+            .description = "Pole pitch of Carrier magnet.",
+            .unit_short = "m",
+            .unit_long = "Meter",
+        },
+        length: Type = "f32",
+        __length: Meta = .{
+            .description = "Length of Carrier magnet.",
+            .unit_short = "m",
+            .unit_long = "Meter",
+        },
+    } = .{},
+
+    carrier: struct {
+        mass: Type = "u16",
+        __mass: Meta = .{
+            .description = "Mass of Carrier.",
+            .unit_short = "dag",
+            .unit_long = "Decagram",
+        },
+        arrival: struct {
+            threshold: struct {
+                velocity: Type = "f32",
+                __velocity: Meta = .{
+                    .description =
+                    \\Upper velocity threshold for Carrier movement completion.
+                    ,
+                    .unit_short = "m/s",
+                    .unit_long = "Meters per Second",
+                },
+                position: Type = "f32",
+                __position: Meta = .{
+                    .description =
+                    \\Absolute position error tolerance for Carrier movement
+                    \\completion.
+                    ,
+                    .unit_short = "m",
+                    .unit_long = "Meter",
+                },
+            } = .{},
+        } = .{},
+
+        cas: struct {
+            buffer: Type = "u16",
+            __buffer: Meta = .{
+                .description =
+                \\Minimum distance between two Carriers before CAS (collision
+                \\avoidance system) triggers.
+                ,
+                .unit_short = "mm",
+                .unit_long = "Millimeter",
+            },
+            acceleration: Type = "f32",
+            __acceleration: Meta = .{
+                .description =
+                \\Acceleration used to stop Carrier movement when CAS (collision
+                \\avoidance system) triggers.
+                ,
+                .unit_short = "m/s^2",
+                .unit_long = "Meters per Second squared",
+            },
+        } = .{},
+    } = .{},
+
+    mechanical_angle_offset: Type = "f32",
+
+    axis: struct {
+        length: Type = "f32",
+        __length: Meta = .{
+            .description = "Distance between each Axis' coil centers.",
+            .unit_short = "m",
+            .unit_long = "Meter",
+        },
+        center: struct {
+            gain: struct {
+                current: struct {
+                    p: Type = "f32",
+                    i: Type = "f32",
+                    denominator: Type = "u32",
+                } = .{},
+                velocity: struct {
+                    p: Type = "f32",
+                    i: Type = "f32",
+                    denominator: Type = "u32",
+                    denominator_pi: Type = "u32",
+                } = .{},
+                position: struct {
+                    p: Type = "f32",
+                    denominator: Type = "u32",
+                } = .{},
+            } = .{},
+        } = .{},
+        between: struct {
+            gain: struct {
+                current: struct {
+                    p: Type = "f32",
+                    i: Type = "f32",
+                    denominator: Type = "u32",
+                } = .{},
+                velocity: struct {
+                    p: Type = "f32",
+                    i: Type = "f32",
+                    denominator: Type = "u32",
+                    denominator_pi: Type = "u32",
+                } = .{},
+                position: struct {
+                    p: Type = "f32",
+                    denominator: Type = "u32",
+                } = .{},
+            } = .{},
+        } = .{},
+    } = .{},
+
+    coil: struct {
+        length: Type = "f32",
+        __length: Meta = .{
+            .description = "Length of motor coil.",
+            .unit_short = "m",
+            .unit_long = "Meter",
+        },
+        max_current: Type = "f32",
+        __max_current: Meta = .{
+            .unit_short = "A",
+            .unit_long = "Ampere",
+        },
+        continuous_current: Type = "f32",
+        __continuous_current: Meta = .{
+            .unit_short = "A",
+            .unit_long = "Ampere",
+        },
+        rs: Type = "f32",
+        __rs: Meta = .{
+            .unit_short = "Ω",
+            .unit_long = "Ohm (Line to Neutral)",
+        },
+        ls: Type = "f32",
+        __ls: Meta = .{
+            .unit_short = "H",
+            .unit_long = "Henry (Line to Neutral)",
+        },
+        center: struct {
+            kf: Type = "f32",
+            __kf: Meta = .{
+                .unit_short = "N/A_rms",
+            },
+        } = .{},
+        between: struct {
+            kf: Type = "f32",
+            __kf: Meta = .{
+                .unit_short = "N/A_rms",
+            },
+        } = .{},
+        kbm: Type = "f32",
+        __kbm: Meta = .{
+            .unit_short = "V/(m/s)",
+        },
+    } = .{},
+
+    sensor: struct {
+        default_magnet_length: Type = "f32",
+        __default_magnet_length: Meta = .{
+            .unit_short = "m",
+            .unit_long = "Meter",
+        },
+        ignore_distance: Type = "f32",
+        __ignore_distance: Meta = .{
+            .unit_short = "m",
+            .unit_long = "Meter",
+        },
+    } = .{},
+
+    zero_position: Type = "f32",
+    __zero_position: Meta = .{
+        .unit_short = "m",
+        .unit_long = "Meter",
+    },
+
+    hall_sensors: []const struct {
+        magnet_length: struct {
+            backward: Type = "f32",
+            __backward: Meta = .{
+                .unit_short = "m",
+                .unit_long = "Meter",
+            },
+            forward: Type = "f32",
+            __forward: Meta = .{
+                .unit_short = "m",
+                .unit_long = "Meter",
+            },
+        } = .{},
+        position: struct {
+            on: struct {
+                backward: Type = "f32",
+                __backward: Meta = .{
+                    .unit_short = "m",
+                    .unit_long = "Meter",
+                },
+                forward: Type = "f32",
+                __forward: Meta = .{
+                    .unit_short = "m",
+                    .unit_long = "Meter",
+                },
+            } = .{},
+        } = .{},
+    } = &.{
+        .{}, .{}, .{}, .{}, .{}, .{},
+    },
+
+    pub const Type = []const u8;
+    pub const Meta = struct {
+        hidden: bool = false,
+        description: ?[]const u8 = null,
+        unit_short: ?[]const u8 = null,
+        unit_long: ?[]const u8 = null,
+    };
+};
+
 /// Driver ID
 id: u16,
 
