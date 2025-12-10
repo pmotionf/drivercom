@@ -514,8 +514,8 @@ pub const Info = struct {
                 \\Acceleration used to stop Carrier movement when CAS (collision
                 \\avoidance system) triggers.
                 ,
-                .unit_short = "mm/s",
-                .unit_long = "Millimeters per Second",
+                .unit_short = "m/s^2",
+                .unit_long = "Meters per Second squared",
             },
         } = .{},
     } = .{},
