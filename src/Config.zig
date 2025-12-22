@@ -328,6 +328,7 @@ test Field {
     try walkFields(@This(), "");
 }
 
+/// Provides field type of config fields and its metadata.
 pub const Info = struct {
     id: Type = "u16",
     __id: Meta = .{
