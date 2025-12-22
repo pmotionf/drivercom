@@ -328,6 +328,8 @@ test Field {
     try walkFields(@This(), "");
 }
 
+/// Provides metadata for the field, including its type, description,
+/// visibility, and unit information.
 pub const Info = struct {
     id: Type = "u16",
     __id: Meta = .{
