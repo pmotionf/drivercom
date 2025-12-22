@@ -54,6 +54,55 @@ pub const Config = packed struct(u32) {
     _: u6 = 0,
 };
 
+/// Provides metadata for the field, type.
+pub const Info = struct {
+    // Driver log.
+    driver: struct {
+        cycle: Type = "bool",
+        cycle_time: Type = "bool",
+        vdc: Type = "bool",
+        com_bwd_sent: Type = "bool",
+        com_bwd_arrived: Type = "bool",
+        com_fwd_sent: Type = "bool",
+        com_fwd_arrived: Type = "bool",
+        com_bwd_sent_cycles: Type = "bool",
+        com_fwd_sent_cycles: Type = "bool",
+    } = .{},
+
+    // Sensor log.
+    sensor: struct {
+        alarm: Type = "bool",
+        valid: Type = "bool",
+        active: Type = "bool",
+        angle: Type = "bool",
+        average_angle: Type = "bool",
+        distance: Type = "bool",
+        velocity: Type = "bool",
+    } = .{},
+
+    // Axis log.
+    axis: struct {
+        current_d: Type = "bool",
+        current_q: Type = "bool",
+        reference_current_d: Type = "bool",
+        reference_current_q: Type = "bool",
+        carrier_id: Type = "bool",
+        carrier_position: Type = "bool",
+        carrier_state: Type = "bool",
+        average_angle_diff: Type = "bool",
+        carrier_reference_velocity: Type = "bool",
+        carrier_velocity: Type = "bool",
+    } = .{},
+    // _: u6 = 0,
+    pub const Type = []const u8;
+    pub const Meta = struct {
+        hidden: bool = false,
+        description: ?[]const u8 = null,
+        unit_short: ?[]const u8 = null,
+        unit_long: ?[]const u8 = null,
+    };
+};
+
 pub const Start = enum(u3) {
     immediate = 0,
     sensor_on = 1,
