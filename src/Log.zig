@@ -96,6 +96,7 @@ pub const Info = struct {
             carrier_velocity: Type = "bool",
         } = .{},
         // _: u6 = 0,
+        _: Type = u6,
     } = .{},
 
     axis: [3][]const u8 = .{"bool"} ** 3,
