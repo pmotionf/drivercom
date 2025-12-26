@@ -56,44 +56,59 @@ pub const Config = packed struct(u32) {
 
 /// Provides metadata for the field, type.
 pub const Info = struct {
-    // Driver log.
-    driver: struct {
-        cycle: Type = "bool",
-        cycle_time: Type = "bool",
-        vdc: Type = "bool",
-        com_bwd_sent: Type = "bool",
-        com_bwd_arrived: Type = "bool",
-        com_fwd_sent: Type = "bool",
-        com_fwd_arrived: Type = "bool",
-        com_bwd_sent_cycles: Type = "bool",
-        com_fwd_sent_cycles: Type = "bool",
+    cycles: Type = "u32",
+    config: struct {
+        // Driver log.
+        driver: struct {
+            cycle: Type = "bool",
+            cycle_time: Type = "bool",
+            vdc: Type = "bool",
+            com_bwd_sent: Type = "bool",
+            com_bwd_arrived: Type = "bool",
+            com_fwd_sent: Type = "bool",
+            com_fwd_arrived: Type = "bool",
+            com_bwd_sent_cycles: Type = "bool",
+            com_fwd_sent_cycles: Type = "bool",
+        } = .{},
+
+        // Sensor log.
+        sensor: struct {
+            alarm: Type = "bool",
+            valid: Type = "bool",
+            active: Type = "bool",
+            angle: Type = "bool",
+            average_angle: Type = "bool",
+            distance: Type = "bool",
+            velocity: Type = "bool",
+        } = .{},
+
+        // Axis log.
+        axis: struct {
+            current_d: Type = "bool",
+            current_q: Type = "bool",
+            reference_current_d: Type = "bool",
+            reference_current_q: Type = "bool",
+            carrier_id: Type = "bool",
+            carrier_position: Type = "bool",
+            carrier_state: Type = "bool",
+            average_angle_diff: Type = "bool",
+            carrier_reference_velocity: Type = "bool",
+            carrier_velocity: Type = "bool",
+        } = .{},
+        // _: u6 = 0,
     } = .{},
 
-    // Sensor log.
-    sensor: struct {
-        alarm: Type = "bool",
-        valid: Type = "bool",
-        active: Type = "bool",
-        angle: Type = "bool",
-        average_angle: Type = "bool",
-        distance: Type = "bool",
-        velocity: Type = "bool",
+    axis: [3][]const u8 = .{"bool"} ** 3,
+    hall_sensor: [6][]const u8 = .{"bool"} ** 6,
+    carrier: [4][]const u8 = .{"u12"} ** 4,
+
+    start: struct {
+        kind: Type = "enum",
+        combinator: Type = "enum",
+        hall_sensor: [6][]const u8 = .{"bool"} ** 6,
+        carrier: [4][]const u8 = .{"u12"} ** 4,
     } = .{},
 
-    // Axis log.
-    axis: struct {
-        current_d: Type = "bool",
-        current_q: Type = "bool",
-        reference_current_d: Type = "bool",
-        reference_current_q: Type = "bool",
-        carrier_id: Type = "bool",
-        carrier_position: Type = "bool",
-        carrier_state: Type = "bool",
-        average_angle_diff: Type = "bool",
-        carrier_reference_velocity: Type = "bool",
-        carrier_velocity: Type = "bool",
-    } = .{},
-    // _: u6 = 0,
     pub const Type = []const u8;
     pub const Meta = struct {
         hidden: bool = false,
