@@ -57,9 +57,19 @@ pub const Config = packed struct(u32) {
 /// Provides metadata for the field, type.
 pub const Info = struct {
     cycles: Type = "u32",
+    __cycles: Meta = .{
+        .description =
+        \\Operating frequency, 15000 cycles per second.
+        ,
+    },
     config: struct {
         // Driver log.
         driver: struct {
+            driver: Meta = .{
+                .description =
+                \\Driver properties to be logged.
+                ,
+            },
             cycle: Type = "bool",
             cycle_time: Type = "bool",
             vdc: Type = "bool",
@@ -73,6 +83,11 @@ pub const Info = struct {
 
         // Sensor log.
         sensor: struct {
+            __sensor: Meta = .{
+                .description =
+                \\Sensor properties to be logged.
+                ,
+            },
             alarm: Type = "bool",
             valid: Type = "bool",
             active: Type = "bool",
@@ -84,6 +99,11 @@ pub const Info = struct {
 
         // Axis log.
         axis: struct {
+            __axis: Meta = .{
+                .description =
+                \\Axis properties to be logged.
+                ,
+            },
             current_d: Type = "bool",
             current_q: Type = "bool",
             reference_current_d: Type = "bool",
@@ -100,15 +120,54 @@ pub const Info = struct {
     } = .{},
 
     axis: [3][]const u8 = .{"bool"} ** 3,
+    __axis: Meta = .{
+        .description =
+        \\Axis available to Driver.
+        ,
+    },
     hall_sensor: [6][]const u8 = .{"bool"} ** 6,
+    __hall_sensor: Meta = .{
+        \\Driver Hall Sensor states.
+        ,
+    },
     carrier: [4][]const u8 = .{"u12"} ** 4,
+    __carrier: Meta = .{
+        .description =
+        \\ID of the availabe Carriers of Driver.
+        ,
+    },
 
     start: struct {
         kind: Type = "enum",
+        __kind: Meta = .{
+            .description =
+            \\Kind of starting condition.
+            ,
+        },
         combinator: Type = "enum",
+        __combinator: Meta = .{
+            .description =
+            \\How conditions are combined.
+            ,
+        },
         hall_sensor: [6][]const u8 = .{"bool"} ** 6,
+        __hall_sensor: Meta = .{
+            .description =
+            \\Which Hall Sensors must be in the set state.
+            ,
+        },
         carrier: [4][]const u8 = .{"u12"} ** 4,
+        __carrier: Meta = .{
+            .description =
+            \\Which Carrier must be in the set state.
+            ,
+        },
     } = .{},
+    __start: Meta = .{
+        .description =
+        \\Conditions required to start logging.
+        ,
+    },
 
     pub const Type = []const u8;
     pub const Meta = struct {
