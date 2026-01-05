@@ -59,7 +59,8 @@ pub const Info = struct {
     cycles: Type = "u32",
     __cycles: Meta = .{
         .description =
-        \\Operating frequency, 15000 cycles per second.
+        \\Duration of logging process.
+        \\15000 cycles per second.
         ,
     },
     config: struct {
@@ -122,18 +123,18 @@ pub const Info = struct {
     axis: [3][]const u8 = .{"bool"} ** 3,
     __axis: Meta = .{
         .description =
-        \\Axis available to Driver.
+        \\Axes to be included in the logging process.
         ,
     },
     hall_sensor: [6][]const u8 = .{"bool"} ** 6,
     __hall_sensor: Meta = .{
-        \\Driver Hall Sensor states.
+        \\Hall Sensors to be included in the logging process.
         ,
     },
     carrier: [4][]const u8 = .{"u12"} ** 4,
     __carrier: Meta = .{
         .description =
-        \\ID of the availabe Carriers of Driver.
+        \\Carriers IDs to be included in the logging process.
         ,
     },
 
@@ -141,7 +142,7 @@ pub const Info = struct {
         kind: Type = "enum",
         __kind: Meta = .{
             .description =
-            \\Kind of starting condition.
+            \\Conditions to start logging process.
             ,
         },
         combinator: Type = "enum",
@@ -153,19 +154,19 @@ pub const Info = struct {
         hall_sensor: [6][]const u8 = .{"bool"} ** 6,
         __hall_sensor: Meta = .{
             .description =
-            \\Which Hall Sensors must be in the set state.
+            \\Hall Sensors state to start logging.
             ,
         },
         carrier: [4][]const u8 = .{"u12"} ** 4,
         __carrier: Meta = .{
             .description =
-            \\Which Carrier must be in the set state.
+            \\Carrier state to start logging.
             ,
         },
     } = .{},
     __start: Meta = .{
         .description =
-        \\Conditions required to start logging.
+        \\Configuration to start logging process.
         ,
     },
 
