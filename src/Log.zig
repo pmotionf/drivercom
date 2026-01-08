@@ -133,6 +133,7 @@ pub const Info = struct {
     },
     carrier: [4][]const u8 = .{"u12"} ** 4,
     __carrier: Meta = .{
+        .hidden = true,
         .description =
         \\Carriers IDs to be included in the logging process.
         ,
@@ -159,6 +160,7 @@ pub const Info = struct {
         },
         carrier: [4][]const u8 = .{"u12"} ** 4,
         __carrier: Meta = .{
+            .hidden = true,
             .description =
             \\Carrier state to start logging.
             ,
