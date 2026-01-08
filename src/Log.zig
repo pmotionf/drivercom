@@ -54,6 +54,132 @@ pub const Config = packed struct(u32) {
     _: u6 = 0,
 };
 
+/// Provides metadata for the field, type.
+pub const Info = struct {
+    cycles: []const u8 = "u32",
+    __cycles: Meta = .{
+        .description =
+        \\Duration of logging process.
+        \\15000 cycles per second.
+        ,
+    },
+    config: struct {
+        // Driver log.
+        driver: struct {
+            driver: Meta = .{
+                .description =
+                \\Driver properties to be logged.
+                ,
+            },
+            cycle: []const u8 = "bool",
+            cycle_time: []const u8 = "bool",
+            vdc: []const u8 = "bool",
+            com_bwd_sent: []const u8 = "bool",
+            com_bwd_arrived: []const u8 = "bool",
+            com_fwd_sent: []const u8 = "bool",
+            com_fwd_arrived: []const u8 = "bool",
+            com_bwd_sent_cycles: []const u8 = "bool",
+            com_fwd_sent_cycles: []const u8 = "bool",
+        } = .{},
+
+        // Sensor log.
+        sensor: struct {
+            __sensor: Meta = .{
+                .description =
+                \\Sensor properties to be logged.
+                ,
+            },
+            alarm: []const u8 = "bool",
+            valid: []const u8 = "bool",
+            active: []const u8 = "bool",
+            angle: []const u8 = "bool",
+            average_angle: []const u8 = "bool",
+            distance: []const u8 = "bool",
+            velocity: []const u8 = "bool",
+        } = .{},
+
+        // Axis log.
+        axis: struct {
+            __axis: Meta = .{
+                .description =
+                \\Axis properties to be logged.
+                ,
+            },
+            current_d: []const u8 = "bool",
+            current_q: []const u8 = "bool",
+            reference_current_d: []const u8 = "bool",
+            reference_current_q: []const u8 = "bool",
+            carrier_id: []const u8 = "bool",
+            carrier_position: []const u8 = "bool",
+            carrier_state: []const u8 = "bool",
+            average_angle_diff: []const u8 = "bool",
+            carrier_reference_velocity: []const u8 = "bool",
+            carrier_velocity: []const u8 = "bool",
+        } = .{},
+        _: []const u8 = "u6",
+    } = .{},
+
+    axis: [3][]const u8 = .{"bool"} ** 3,
+    __axis: Meta = .{
+        .description =
+        \\Axes to be included in the logging process.
+        ,
+    },
+    hall_sensor: [6][]const u8 = .{"bool"} ** 6,
+    __hall_sensor: Meta = .{
+        .description =
+        \\Hall Sensors to be included in the logging process.
+        ,
+    },
+    carrier: [4][]const u8 = .{"u12"} ** 4,
+    __carrier: Meta = .{
+        .hidden = true,
+        .description =
+        \\Carriers IDs to be included in the logging process.
+        ,
+    },
+
+    start: struct {
+        kind: []const u8 = "enum",
+        __kind: Meta = .{
+            .description =
+            \\Conditions to start logging process.
+            ,
+        },
+        combinator: []const u8 = "enum",
+        __combinator: Meta = .{
+            .description =
+            \\How conditions are combined.
+            ,
+        },
+        hall_sensor: [6][]const u8 = .{"bool"} ** 6,
+        __hall_sensor: Meta = .{
+            .description =
+            \\Hall Sensors state to start logging.
+            ,
+        },
+        carrier: [4][]const u8 = .{"u12"} ** 4,
+        __carrier: Meta = .{
+            .hidden = true,
+            .description =
+            \\Carrier state to start logging.
+            ,
+        },
+    } = .{},
+    __start: Meta = .{
+        .description =
+        \\Configuration to start logging process.
+        ,
+    },
+
+    pub const Meta = struct {
+        hidden: bool = false,
+        description: ?[]const u8 = null,
+        unit_short: ?[]const u8 = null,
+        unit_long: ?[]const u8 = null,
+    };
+};
+
 pub const Start = enum(u3) {
     immediate = 0,
     sensor_on = 1,
