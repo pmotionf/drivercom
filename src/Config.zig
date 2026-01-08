@@ -504,8 +504,7 @@ pub const Info = struct {
             buffer: Type = "u16",
             __buffer: Meta = .{
                 .description =
-                \\Minimum distance between two Carriers before CAS (collision
-                \\avoidance system) triggers.
+                \\Minimum distance between two Carriers before CAS triggers.
                 ,
                 .unit_short = "mm",
                 .unit_long = "Millimeter",
@@ -513,13 +512,13 @@ pub const Info = struct {
             acceleration: Type = "f32",
             __acceleration: Meta = .{
                 .description =
-                \\Acceleration used to stop Carrier movement when CAS (collision
-                \\avoidance system) triggers.
+                \\Acceleration used to stop Carrier movement when CAS triggers.
                 ,
-                .unit_short = "m/s^2",
+                .unit_short = "m/s²",
                 .unit_long = "Meters per Second squared",
             },
         } = .{},
+        __cas: Meta = .{ .description = "Collision Avoidance System" },
     } = .{},
 
     mechanical_angle_offset: Type = "f32",

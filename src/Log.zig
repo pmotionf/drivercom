@@ -56,7 +56,7 @@ pub const Config = packed struct(u32) {
 
 /// Provides metadata for the field, type.
 pub const Info = struct {
-    cycles: Type = "u32",
+    cycles: []const u8 = "u32",
     __cycles: Meta = .{
         .description =
         \\Duration of logging process.
@@ -71,15 +71,15 @@ pub const Info = struct {
                 \\Driver properties to be logged.
                 ,
             },
-            cycle: Type = "bool",
-            cycle_time: Type = "bool",
-            vdc: Type = "bool",
-            com_bwd_sent: Type = "bool",
-            com_bwd_arrived: Type = "bool",
-            com_fwd_sent: Type = "bool",
-            com_fwd_arrived: Type = "bool",
-            com_bwd_sent_cycles: Type = "bool",
-            com_fwd_sent_cycles: Type = "bool",
+            cycle: []const u8 = "bool",
+            cycle_time: []const u8 = "bool",
+            vdc: []const u8 = "bool",
+            com_bwd_sent: []const u8 = "bool",
+            com_bwd_arrived: []const u8 = "bool",
+            com_fwd_sent: []const u8 = "bool",
+            com_fwd_arrived: []const u8 = "bool",
+            com_bwd_sent_cycles: []const u8 = "bool",
+            com_fwd_sent_cycles: []const u8 = "bool",
         } = .{},
 
         // Sensor log.
@@ -89,13 +89,13 @@ pub const Info = struct {
                 \\Sensor properties to be logged.
                 ,
             },
-            alarm: Type = "bool",
-            valid: Type = "bool",
-            active: Type = "bool",
-            angle: Type = "bool",
-            average_angle: Type = "bool",
-            distance: Type = "bool",
-            velocity: Type = "bool",
+            alarm: []const u8 = "bool",
+            valid: []const u8 = "bool",
+            active: []const u8 = "bool",
+            angle: []const u8 = "bool",
+            average_angle: []const u8 = "bool",
+            distance: []const u8 = "bool",
+            velocity: []const u8 = "bool",
         } = .{},
 
         // Axis log.
@@ -105,19 +105,18 @@ pub const Info = struct {
                 \\Axis properties to be logged.
                 ,
             },
-            current_d: Type = "bool",
-            current_q: Type = "bool",
-            reference_current_d: Type = "bool",
-            reference_current_q: Type = "bool",
-            carrier_id: Type = "bool",
-            carrier_position: Type = "bool",
-            carrier_state: Type = "bool",
-            average_angle_diff: Type = "bool",
-            carrier_reference_velocity: Type = "bool",
-            carrier_velocity: Type = "bool",
+            current_d: []const u8 = "bool",
+            current_q: []const u8 = "bool",
+            reference_current_d: []const u8 = "bool",
+            reference_current_q: []const u8 = "bool",
+            carrier_id: []const u8 = "bool",
+            carrier_position: []const u8 = "bool",
+            carrier_state: []const u8 = "bool",
+            average_angle_diff: []const u8 = "bool",
+            carrier_reference_velocity: []const u8 = "bool",
+            carrier_velocity: []const u8 = "bool",
         } = .{},
-        // _: u6 = 0,
-        _: Type = u6,
+        _: []const u8 = "u6",
     } = .{},
 
     axis: [3][]const u8 = .{"bool"} ** 3,
@@ -128,6 +127,7 @@ pub const Info = struct {
     },
     hall_sensor: [6][]const u8 = .{"bool"} ** 6,
     __hall_sensor: Meta = .{
+        .description =
         \\Hall Sensors to be included in the logging process.
         ,
     },
@@ -139,13 +139,13 @@ pub const Info = struct {
     },
 
     start: struct {
-        kind: Type = "enum",
+        kind: []const u8 = "enum",
         __kind: Meta = .{
             .description =
             \\Conditions to start logging process.
             ,
         },
-        combinator: Type = "enum",
+        combinator: []const u8 = "enum",
         __combinator: Meta = .{
             .description =
             \\How conditions are combined.
@@ -170,7 +170,6 @@ pub const Info = struct {
         ,
     },
 
-    pub const Type = []const u8;
     pub const Meta = struct {
         hidden: bool = false,
         description: ?[]const u8 = null,
