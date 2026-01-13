@@ -59,64 +59,194 @@ pub const Info = struct {
     cycles: []const u8 = "u32",
     __cycles: Meta = .{
         .description =
-        \\Duration of logging process.
-        \\15000 cycles per second.
+        \\Duration of logging process (15000 cycles per second).
         ,
     },
     config: struct {
         // Driver log.
         driver: struct {
-            driver: Meta = .{
+            cycle: []const u8 = "bool",
+            __cycle: Meta = .{
                 .description =
-                \\Driver properties to be logged.
+                \\Number of performed internal loop (resets every 15000 cycles).
                 ,
             },
-            cycle: []const u8 = "bool",
             cycle_time: []const u8 = "bool",
+            __cycle_time: Meta = .{
+                .description =
+                \\Number of performed internal loop per one control loop.
+                ,
+            },
             vdc: []const u8 = "bool",
+            __vdc: Meta = .{
+                .description =
+                \\Supplied voltage to Driver.
+                ,
+            },
             com_bwd_sent: []const u8 = "bool",
+            __com_bwd_sent: Meta = .{
+                .description =
+                \\Sent Driver state to backward Driver.
+                ,
+            },
             com_bwd_arrived: []const u8 = "bool",
+            __com_bwd_arrived: Meta = .{
+                .description =
+                \\Driver state of backward Driver.
+                ,
+            },
             com_fwd_sent: []const u8 = "bool",
+            __com_fwd_sent: Meta = .{
+                .description =
+                \\Sent Driver state to forward Driver.
+                ,
+            },
             com_fwd_arrived: []const u8 = "bool",
+            __com_fwd_arrived: Meta = .{
+                .description =
+                \\Driver state of forward Driver.
+                ,
+            },
             com_bwd_sent_cycles: []const u8 = "bool",
+            __com_bwd_sent_cycles: Meta = .{
+                .description =
+                \\Elapsed cycles since last Driver state sent to backward Driver.
+                ,
+            },
             com_fwd_sent_cycles: []const u8 = "bool",
+            __com_fwd_sent_cycles: Meta = .{
+                .description =
+                \\Elapsed cycles since last Driver state sent to forward Driver.
+                ,
+            },
         } = .{},
+        __driver: Meta = .{
+            .description =
+            \\Driver properties to be logged.
+            ,
+        },
 
         // Sensor log.
         sensor: struct {
-            __sensor: Meta = .{
+            alarm: []const u8 = "bool",
+            __alarm: Meta = .{
                 .description =
-                \\Sensor properties to be logged.
+                \\Magnet is detected by Sensor.
                 ,
             },
-            alarm: []const u8 = "bool",
             valid: []const u8 = "bool",
+            __valid: Meta = .{
+                .description =
+                \\Sensor value is valid to be used.
+                ,
+            },
             active: []const u8 = "bool",
+            __active: Meta = .{
+                .description =
+                \\Sensor value is actively used for carrier state.
+                ,
+            },
             angle: []const u8 = "bool",
+            __angle: Meta = .{
+                .description =
+                \\Detected magnet angle by Sensor.
+                ,
+            },
             average_angle: []const u8 = "bool",
+            __average_angle: Meta = .{
+                .description =
+                \\Detected average magnet angle by Sensor.
+                ,
+                .hidden = true,
+            },
             distance: []const u8 = "bool",
+            __distance: Meta = .{
+                .description =
+                \\Distance traveled by detected magnet on Sensor.
+                ,
+            },
             velocity: []const u8 = "bool",
+            __velocity: Meta = .{
+                .description =
+                \\Velocity of traveling magnet on Sensor.
+                ,
+            },
         } = .{},
+        __sensor: Meta = .{
+            .description =
+            \\Sensor properties to be logged.
+            ,
+        },
 
         // Axis log.
         axis: struct {
-            __axis: Meta = .{
+            current_d: []const u8 = "bool",
+            __current_d: Meta = .{
                 .description =
-                \\Axis properties to be logged.
+                \\Supplied d current to Axis' motor.
                 ,
             },
-            current_d: []const u8 = "bool",
             current_q: []const u8 = "bool",
+            __current_q: Meta = .{
+                .description =
+                \\Supplied q current to Axis' motor.
+                ,
+            },
             reference_current_d: []const u8 = "bool",
+            __reference_current_d: Meta = .{
+                .description =
+                \\Reference value for d current to Axis' motor.
+                ,
+            },
             reference_current_q: []const u8 = "bool",
+            __reference_current_q: Meta = .{
+                .description =
+                \\Reference value for q current to Axis' motor.
+                ,
+            },
             carrier_id: []const u8 = "bool",
+            __carrier_id: Meta = .{
+                .description =
+                \\Detected Carrier ID on Axis.
+                ,
+            },
             carrier_position: []const u8 = "bool",
+            __carrier_position: Meta = .{
+                .description =
+                \\Carrier position relative to Line's zero position.
+                ,
+            },
             carrier_state: []const u8 = "bool",
+            __carrier_state: Meta = .{
+                .description =
+                \\State of detected Carrier on Axis.
+                ,
+            },
             average_angle_diff: []const u8 = "bool",
+            __average_angle_diff: Meta = .{
+                .description =
+                \\Average angle difference between two Sensors of Axis.
+                ,
+            },
             carrier_reference_velocity: []const u8 = "bool",
+            __carrier_reference_velocity: Meta = .{
+                .description =
+                \\Reference value for Carrier velocity.
+                ,
+            },
             carrier_velocity: []const u8 = "bool",
+            __carrier_velocity: Meta = .{
+                .description =
+                \\Velocity of detected Carrier on Axis.
+                ,
+            },
         } = .{},
         _: []const u8 = "u6",
+        __axis: Meta = .{
+            .description =
+            \\Axis properties to be logged.
+            ,
+        },
     } = .{},
 
     axis: [3][]const u8 = .{"bool"} ** 3,
@@ -143,26 +273,25 @@ pub const Info = struct {
         kind: []const u8 = "enum",
         __kind: Meta = .{
             .description =
-            \\Conditions to start logging process.
+            \\Event to trigger logging process.
             ,
         },
         combinator: []const u8 = "enum",
         __combinator: Meta = .{
             .description =
-            \\How conditions are combined.
+            \\Specifies if one or all conditions must be met to trigger logging.
             ,
         },
         hall_sensor: [6][]const u8 = .{"bool"} ** 6,
         __hall_sensor: Meta = .{
             .description =
-            \\Hall Sensors state to start logging.
+            \\Hall Sensors used to trigger logging.
             ,
         },
         carrier: [4][]const u8 = .{"u12"} ** 4,
         __carrier: Meta = .{
-            .hidden = true,
             .description =
-            \\Carrier state to start logging.
+            \\Carriers used to trigger logging.
             ,
         },
     } = .{},
