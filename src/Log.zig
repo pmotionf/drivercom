@@ -59,8 +59,7 @@ pub const Info = struct {
     cycles: []const u8 = "u32",
     __cycles: Meta = .{
         .description =
-        \\Duration of logging process.
-        \\15000 cycles per second.
+        \\Duration of logging process (15000 cycles per second).
         ,
     },
     config: struct {
@@ -143,26 +142,25 @@ pub const Info = struct {
         kind: []const u8 = "enum",
         __kind: Meta = .{
             .description =
-            \\Conditions to start logging process.
+            \\Event to trigger logging process.
             ,
         },
         combinator: []const u8 = "enum",
         __combinator: Meta = .{
             .description =
-            \\How conditions are combined.
+            \\Specifies if one or all conditions must be met to trigger logging.
             ,
         },
         hall_sensor: [6][]const u8 = .{"bool"} ** 6,
         __hall_sensor: Meta = .{
             .description =
-            \\Hall Sensors state to start logging.
+            \\Hall Sensors used to trigger logging.
             ,
         },
         carrier: [4][]const u8 = .{"u12"} ** 4,
         __carrier: Meta = .{
-            .hidden = true,
             .description =
-            \\Carrier state to start logging.
+            \\Carriers used to trigger logging.
             ,
         },
     } = .{},
