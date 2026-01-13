@@ -66,11 +66,6 @@ pub const Info = struct {
     config: struct {
         // Driver log.
         driver: struct {
-            driver: Meta = .{
-                .description =
-                \\Driver properties to be logged.
-                ,
-            },
             cycle: []const u8 = "bool",
             cycle_time: []const u8 = "bool",
             vdc: []const u8 = "bool",
@@ -81,14 +76,14 @@ pub const Info = struct {
             com_bwd_sent_cycles: []const u8 = "bool",
             com_fwd_sent_cycles: []const u8 = "bool",
         } = .{},
+        __driver: Meta = .{
+            .description =
+            \\Driver properties to be logged.
+            ,
+        },
 
         // Sensor log.
         sensor: struct {
-            __sensor: Meta = .{
-                .description =
-                \\Sensor properties to be logged.
-                ,
-            },
             alarm: []const u8 = "bool",
             valid: []const u8 = "bool",
             active: []const u8 = "bool",
@@ -97,14 +92,14 @@ pub const Info = struct {
             distance: []const u8 = "bool",
             velocity: []const u8 = "bool",
         } = .{},
+        __sensor: Meta = .{
+            .description =
+            \\Sensor properties to be logged.
+            ,
+        },
 
         // Axis log.
         axis: struct {
-            __axis: Meta = .{
-                .description =
-                \\Axis properties to be logged.
-                ,
-            },
             current_d: []const u8 = "bool",
             current_q: []const u8 = "bool",
             reference_current_d: []const u8 = "bool",
@@ -117,6 +112,11 @@ pub const Info = struct {
             carrier_velocity: []const u8 = "bool",
         } = .{},
         _: []const u8 = "u6",
+        __axis: Meta = .{
+            .description =
+            \\Axis properties to be logged.
+            ,
+        },
     } = .{},
 
     axis: [3][]const u8 = .{"bool"} ** 3,
