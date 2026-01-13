@@ -86,7 +86,7 @@ pub const Info = struct {
             com_bwd_sent: []const u8 = "bool",
             __com_bwd_sent: Meta = .{
                 .description =
-                \\Sent Driver state to backward Driver
+                \\Sent Driver state to backward Driver.
                 ,
             },
             com_bwd_arrived: []const u8 = "bool",
@@ -155,7 +155,7 @@ pub const Info = struct {
             average_angle: []const u8 = "bool",
             __average_angle: Meta = .{
                 .description =
-                \\Detected average magnet angle by Sensor,
+                \\Detected average magnet angle by Sensor.
                 ,
                 .hidden = true,
             },
