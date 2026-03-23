@@ -521,6 +521,12 @@ pub const Info = struct {
     } = .{},
 
     mechanical_angle_offset: Type = "f32",
+    __mechanical_angle_offset: Meta = .{
+        .description =
+        \\Offset between the mechanical position reference and the electrical 
+        \\phase angle.
+        ,
+    },
 
     axis: struct {
         length: Type = "f32",
@@ -578,38 +584,45 @@ pub const Info = struct {
         },
         max_current: Type = "f32",
         __max_current: Meta = .{
+            .description = "Maximum motor coil current.",
             .unit_short = "A",
             .unit_long = "Ampere",
         },
         continuous_current: Type = "f32",
         __continuous_current: Meta = .{
+            .description = "Maximum continuous motor coil current.",
             .unit_short = "A",
             .unit_long = "Ampere",
         },
         rs: Type = "f32",
         __rs: Meta = .{
+            .description = "Linear Motor Resistance",
             .unit_short = "Ω",
             .unit_long = "Ohm (Line to Neutral)",
         },
         ls: Type = "f32",
         __ls: Meta = .{
+            .description = "Linear motor Inductance",
             .unit_short = "H",
             .unit_long = "Henry (Line to Neutral)",
         },
         center: struct {
             kf: Type = "f32",
             __kf: Meta = .{
+                .description = "Force Constant",
                 .unit_short = "N/A_rms",
             },
         } = .{},
         between: struct {
             kf: Type = "f32",
             __kf: Meta = .{
+                .description = "Force Constant",
                 .unit_short = "N/A_rms",
             },
         } = .{},
         kbm: Type = "f32",
         __kbm: Meta = .{
+            .description = "Back EMF Constant",
             .unit_short = "V/(m/s)",
         },
     } = .{},
@@ -617,11 +630,16 @@ pub const Info = struct {
     sensor: struct {
         default_magnet_length: Type = "f32",
         __default_magnet_length: Meta = .{
+            .description = "Default Carrier magnet length",
             .unit_short = "m",
             .unit_long = "Meter",
         },
         ignore_distance: Type = "f32",
         __ignore_distance: Meta = .{
+            .description =
+            \\Dead-Zone boundaries around permanent magnet boundaries where
+            \\sensor data is ignored
+            ,
             .unit_short = "m",
             .unit_long = "Meter",
         },
@@ -629,6 +647,10 @@ pub const Info = struct {
 
     zero_position: Type = "f32",
     __zero_position: Meta = .{
+        .description =
+        \\Distance from the start of the Line to the center of the first motor
+        \\coil.
+        ,
         .unit_short = "m",
         .unit_long = "Meter",
     },
