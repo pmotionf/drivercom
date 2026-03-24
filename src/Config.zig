@@ -648,8 +648,8 @@ pub const Info = struct {
     zero_position: Type = "f32",
     __zero_position: Meta = .{
         .description =
-        \\Distance from the start of the Line to the center of the first motor
-        \\coil.
+        \\Distance from the start of the Line to the center of the first linear
+        \\motor.
         ,
         .unit_short = "m",
         .unit_long = "Meter",
