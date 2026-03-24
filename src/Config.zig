@@ -523,7 +523,7 @@ pub const Info = struct {
     mechanical_angle_offset: Type = "f32",
     __mechanical_angle_offset: Meta = .{
         .description =
-        \\Offset between the mechanical position reference and the electrical 
+        \\Offset between the mechanical position reference and the electrical
         \\phase angle.
         ,
     },
@@ -659,11 +659,17 @@ pub const Info = struct {
         magnet_length: struct {
             backward: Type = "f32",
             __backward: Meta = .{
+                .description =
+                \\Magnet length based on sensor readings in backward direction.
+                ,
                 .unit_short = "m",
                 .unit_long = "Meter",
             },
             forward: Type = "f32",
             __forward: Meta = .{
+                .description =
+                \\Magnet length based on sensor readings in forward direction.
+                ,
                 .unit_short = "m",
                 .unit_long = "Meter",
             },
