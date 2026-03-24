@@ -523,8 +523,8 @@ pub const Info = struct {
     mechanical_angle_offset: Type = "f32",
     __mechanical_angle_offset: Meta = .{
         .description =
-        \\Offset between the mechanical position reference and the electrical
-        \\phase angle.
+        \\Normalized angle offset between the magnet movement direction and
+        \\the sensor installation position.
         ,
     },
 
@@ -596,15 +596,15 @@ pub const Info = struct {
         },
         rs: Type = "f32",
         __rs: Meta = .{
-            .description = "Stator Resistance",
+            .description = "Stator Resistance (line to neutral)",
             .unit_short = "Ω",
-            .unit_long = "Ohm (Line to Neutral)",
+            .unit_long = "Ohm",
         },
         ls: Type = "f32",
         __ls: Meta = .{
-            .description = "Stator Inductance",
+            .description = "Stator Inductance (line to neutral)",
             .unit_short = "H",
-            .unit_long = "Henry (Line to Neutral)",
+            .unit_long = "Henry",
         },
         center: struct {
             kf: Type = "f32",
@@ -637,8 +637,8 @@ pub const Info = struct {
         ignore_distance: Type = "f32",
         __ignore_distance: Meta = .{
             .description =
-            \\Dead-Zone boundaries around permanent magnet boundaries where
-            \\sensor data is ignored
+            \\Distance a magnet needs to travel over the sensor before the
+            \\read data is valid to use.
             ,
             .unit_short = "m",
             .unit_long = "Meter",
@@ -648,8 +648,8 @@ pub const Info = struct {
     zero_position: Type = "f32",
     __zero_position: Meta = .{
         .description =
-        \\Distance from the start of the Line to the center of the first linear
-        \\motor.
+        \\Distance the magnet must travel over the sensor from the backward position
+        \\of Axis 1 until its center aligns with the center of the Axis 1 motor.
         ,
         .unit_short = "m",
         .unit_long = "Meter",
