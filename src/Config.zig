@@ -596,13 +596,13 @@ pub const Info = struct {
         },
         rs: Type = "f32",
         __rs: Meta = .{
-            .description = "Linear Motor Resistance",
+            .description = "Stator Resistance",
             .unit_short = "Ω",
             .unit_long = "Ohm (Line to Neutral)",
         },
         ls: Type = "f32",
         __ls: Meta = .{
-            .description = "Linear motor Inductance",
+            .description = "Stator Inductance",
             .unit_short = "H",
             .unit_long = "Henry (Line to Neutral)",
         },
