@@ -521,6 +521,12 @@ pub const Info = struct {
     } = .{},
 
     mechanical_angle_offset: Type = "f32",
+    __mechanical_angle_offset: Meta = .{
+        .description =
+        \\Normalized angle offset between the magnet movement direction and
+        \\the sensor installation position.
+        ,
+    },
 
     axis: struct {
         length: Type = "f32",
@@ -578,38 +584,45 @@ pub const Info = struct {
         },
         max_current: Type = "f32",
         __max_current: Meta = .{
+            .description = "Maximum motor coil current.",
             .unit_short = "A",
             .unit_long = "Ampere",
         },
         continuous_current: Type = "f32",
         __continuous_current: Meta = .{
+            .description = "Maximum continuous motor coil current.",
             .unit_short = "A",
             .unit_long = "Ampere",
         },
         rs: Type = "f32",
         __rs: Meta = .{
+            .description = "Stator Resistance (line to neutral)",
             .unit_short = "Ω",
-            .unit_long = "Ohm (Line to Neutral)",
+            .unit_long = "Ohm",
         },
         ls: Type = "f32",
         __ls: Meta = .{
+            .description = "Stator Inductance (line to neutral)",
             .unit_short = "H",
-            .unit_long = "Henry (Line to Neutral)",
+            .unit_long = "Henry",
         },
         center: struct {
             kf: Type = "f32",
             __kf: Meta = .{
+                .description = "Force Constant",
                 .unit_short = "N/A_rms",
             },
         } = .{},
         between: struct {
             kf: Type = "f32",
             __kf: Meta = .{
+                .description = "Force Constant",
                 .unit_short = "N/A_rms",
             },
         } = .{},
         kbm: Type = "f32",
         __kbm: Meta = .{
+            .description = "Back EMF Constant",
             .unit_short = "V/(m/s)",
         },
     } = .{},
@@ -617,11 +630,16 @@ pub const Info = struct {
     sensor: struct {
         default_magnet_length: Type = "f32",
         __default_magnet_length: Meta = .{
+            .description = "Default Carrier magnet length",
             .unit_short = "m",
             .unit_long = "Meter",
         },
         ignore_distance: Type = "f32",
         __ignore_distance: Meta = .{
+            .description =
+            \\Distance a magnet needs to travel over the sensor before the
+            \\read data is valid to use.
+            ,
             .unit_short = "m",
             .unit_long = "Meter",
         },
@@ -629,6 +647,10 @@ pub const Info = struct {
 
     zero_position: Type = "f32",
     __zero_position: Meta = .{
+        .description =
+        \\Distance the magnet must travel over the sensor from the backward position
+        \\of Axis 1 until its center aligns with the center of the Axis 1 motor.
+        ,
         .unit_short = "m",
         .unit_long = "Meter",
     },
@@ -637,11 +659,17 @@ pub const Info = struct {
         magnet_length: struct {
             backward: Type = "f32",
             __backward: Meta = .{
+                .description =
+                \\Magnet length based on sensor readings in backward direction.
+                ,
                 .unit_short = "m",
                 .unit_long = "Meter",
             },
             forward: Type = "f32",
             __forward: Meta = .{
+                .description =
+                \\Magnet length based on sensor readings in forward direction.
+                ,
                 .unit_short = "m",
                 .unit_long = "Meter",
             },
