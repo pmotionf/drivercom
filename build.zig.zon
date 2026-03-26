@@ -1,12 +1,12 @@
 .{
     .name = .drivercom,
-    .version = "0.5.5",
+    .version = "0.5.6",
     .fingerprint = 0xc1b53adfd36fc2f0,
     .minimum_zig_version = "0.15.1",
     .dependencies = .{
         .mmc_api = .{
-            .url = "https://github.com/pmotionf/mmc-api/archive/a8c6c5a.tar.gz",
-            .hash = "mmc_api-0.0.0-P5raR7TBCwCDL0CWFA4ciqvKuzTJYgPsv6qGns5gRNCU",
+            .url = "https://github.com/pmotionf/mmc-api/archive/a5ae477.tar.gz",
+            .hash = "mmc_api-0.0.0-P5raR6PqMQCNhJYdOKmP5vgSpJLyTbLIj2jvfAqWlh9A",
         },
     },
     .paths = .{
