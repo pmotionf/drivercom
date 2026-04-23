@@ -1070,3 +1070,7 @@ test migrate {
 
     try std.testing.expectEqualDeep(new, migrated);
 }
+
+test {
+    std.testing.refAllDecls(@This());
+}

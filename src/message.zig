@@ -28,7 +28,7 @@ pub const Message = packed struct {
 
         log_start: void,
         log_stop: void,
-        log_status: packed struct {
+        log_status: packed struct(u64) {
             status: Log.Status,
             _: u30 = 0,
             cycles_completed: u32,
@@ -59,7 +59,7 @@ pub const Message = packed struct {
             _: u10 = 0,
         },
         log_get_start: void,
-        log_set_start: packed struct {
+        log_set_start: packed struct(u64) {
             carrier_1: u12,
             kind: Log.Start,
             _: u1 = 0,
@@ -77,7 +77,7 @@ pub const Message = packed struct {
             hall_sensor_6: bool = false,
             _2: u2 = 0,
         },
-        log_get: packed struct {
+        log_get: packed struct(u64) {
             cycle: u24,
             data: Log.Tag,
             id: u3,
@@ -191,32 +191,23 @@ pub const Message = packed struct {
     };
 
     pub const Kind = b: {
-        var result: std.builtin.Type.Enum = .{
-            .tag_type = u16,
-            .fields = &.{},
-            .decls = &.{},
-            .is_exhaustive = false,
-        };
-
         const ti = @typeInfo(Payload).@"union";
-        var val: u16 = 1;
-        for (ti.fields) |field| {
+        const tag_type = u16;
+        var field_names: [ti.fields.len - 1][]const u8 = undefined;
+        var field_values: [ti.fields.len - 1]tag_type = undefined;
+        var val: tag_type = 1;
+        for (ti.fields, 0..) |field, i| {
             if (std.mem.eql(u8, "u8", field.name)) continue;
             if (std.mem.eql(u8, "config_get", field.name)) {
                 val = 0x10;
             } else if (std.mem.eql(u8, "log_start", field.name)) {
                 val = 0x100;
             }
-            result.fields = result.fields ++ .{
-                std.builtin.Type.EnumField{
-                    .name = field.name,
-                    .value = val,
-                },
-            };
+            field_names[i] = field.name;
+            field_values[i] = val;
             val += 1;
         }
-
-        break :b @Type(.{ .@"enum" = result });
+        break :b @Enum(tag_type, .nonexhaustive, &field_names, &field_values);
     };
 
     pub fn PayloadType(comptime kind: Kind) type {
@@ -285,4 +276,8 @@ comptime {
 
         // const field_ti = @typeInfo(field.type);
     }
+}
+
+test {
+    std.testing.refAllDecls(@This());
 }

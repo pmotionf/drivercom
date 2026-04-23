@@ -327,15 +327,16 @@ pub const Status = enum(u2) {
 };
 
 pub const Tag: type = b: {
-    var result: std.builtin.Type.Enum = .{
-        .tag_type = u5,
-        .fields = &.{},
-        .decls = &.{},
-        .is_exhaustive = true,
-    };
-    var tag_value: u5 = 0;
-    result.fields = result.fields ++ unwrapConfig(Config, &tag_value, "");
-    break :b @Type(.{ .@"enum" = result });
+    const tag_type = u5;
+    var tag_value: tag_type = 0;
+    const enum_fields = unwrapConfig(Config, &tag_value, "");
+    var field_names: [enum_fields.len][]const u8 = undefined;
+    var field_values: [enum_fields.len]tag_type = undefined;
+    for (enum_fields, 0..) |field, i| {
+        field_names[i] = field.name;
+        field_values[i] = field.value;
+    }
+    break :b @Enum(tag_type, .exhaustive, &field_names, &field_values);
 };
 
 pub const TagKind = enum {
@@ -506,4 +507,8 @@ fn unwrapConfig(
         }
     }
     return result;
+}
+
+test {
+    std.testing.refAllDecls(@This());
 }
