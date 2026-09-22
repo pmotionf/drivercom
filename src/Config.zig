@@ -186,9 +186,9 @@ pub const System = union {
     };
 };
 
-pub const SpeedGain = union {
-    set: SpeedGain.Set,
-    get: SpeedGain.Get,
+pub const _SpeedGain = union {
+    set: _SpeedGain.Set,
+    get: _SpeedGain.Get,
 
     const Set = packed struct(u384) {
         axis1: packed struct {
@@ -250,9 +250,9 @@ pub const SpeedGain = union {
     };
 };
 
-pub const PosGain = union {
-    set: PosGain.Set,
-    get: PosGain.Get,
+pub const _PositionGain = union {
+    set: _PositionGain.Set,
+    get: _PositionGain.Get,
 
     const Set = packed struct(u288) {
         p: packed struct {
@@ -298,9 +298,9 @@ pub const PosGain = union {
     };
 };
 
-pub const CurrentGain = union {
-    set: CurrentGain.Set,
-    get: CurrentGain.Get,
+pub const _CurrentGain = union {
+    set: _CurrentGain.Set,
+    get: _CurrentGain.Get,
 
     const Set = packed struct(u320) {
         axis1: packed struct {
@@ -1147,7 +1147,7 @@ zero_position: f32,
 
 hall_sensors: [6]HallSensor,
 
-pub const _CurrentGain = struct {
+pub const CurrentGain = struct {
     /// Current P-gain. By default, inductance * Wcc.
     p: f32,
     /// Current I-gain. By default, resistance * Wcc.
