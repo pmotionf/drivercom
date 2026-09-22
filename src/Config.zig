@@ -237,7 +237,7 @@ pub const State = union {
         _,
     };
 
-    const Get = packed struct(u1608) {
+    pub const Get = packed struct(u1608) {
         /// Byte 7: not read by the host app (status/flag byte).
         _: u8,
         is_servo_on: bool,
