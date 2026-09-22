@@ -298,6 +298,60 @@ pub const PosGain = union {
     };
 };
 
+pub const CurrentGain = union {
+    set: CurrentGain.Set,
+    get: CurrentGain.Get,
+
+    const Set = packed struct(u320) {
+        axis1: packed struct {
+            p: f32,
+            i: f32,
+        },
+        axis2: packed struct {
+            p: f32,
+            i: f32,
+        },
+        axis3: packed struct {
+            p: f32,
+            i: f32,
+        },
+        denominator: packed struct {
+            axis1: u16,
+            axis2: u16,
+            axis3: u16,
+        },
+        /// SHDrv just send 1 without reasons in the code.
+        _const_a: u32 = 1,
+        _const_b: u32 = 1,
+        /// SHDrv just send 100 without reasons in the code.
+        _const_deno: u16 = 100,
+    };
+
+    const Get = packed struct(u312) {
+        /// Byte 7 is not used
+        _: u8,
+        axis1: packed struct {
+            p: f32,
+            i: f32,
+        },
+        axis2: packed struct {
+            p: f32,
+            i: f32,
+        },
+        axis3: packed struct {
+            p: f32,
+            i: f32,
+        },
+        /// Bytes 32..39 are not used.
+        _1: u64,
+        denominator: packed struct {
+            axis1: u16,
+            axis2: u16,
+            axis3: u16,
+        },
+    };
+};
+
 /// Driver configuration field. These fields are used directly in messages
 /// with driver; their ordering matches firmware field kind ordering.
 /// Names reflect nested structure within `Config` struct, and types represent
