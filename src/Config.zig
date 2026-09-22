@@ -11,7 +11,7 @@ pub const System = union {
     set: System.Set,
     get: System.Get,
 
-    const Set = packed struct {
+    pub const Set = packed struct {
         rs: packed struct {
             axis1: f32,
             axis2: f32,
@@ -96,7 +96,7 @@ pub const System = union {
         swap: bool,
         _swap_padding: u7,
     };
-    const Get = packed struct {
+    pub const Get = packed struct {
         /// Bytes 7..31 are not used
         _: u200,
         rs: packed struct {
@@ -186,11 +186,203 @@ pub const System = union {
     };
 };
 
+pub const State = union {
+    get: State.Get,
+
+    pub const Fsm = enum(u8) {
+        none = 0,
+        warm_up = 1,
+        warm_up_comp = 2,
+        warm_up_fault = 3,
+        curr_bias = 4,
+        curr_bias_comp = 5,
+        fwd_ramp = 8,
+        fwd_ramp_comp = 9,
+        fwd_ramp_fault = 10,
+        bwd_ramp = 11,
+        bwd_ramp_comp = 12,
+        bwd_ramp_fault = 13,
+        curr_step = 20,
+        curr_step_comp = 21,
+        curr_step_fault = 22,
+        speed_step = 23,
+        speed_step_comp = 24,
+        speed_step_fault = 25,
+        pos_step = 26,
+        pos_step_comp = 27,
+        pos_step_fault = 28,
+        pos_prof = 29,
+        pos_prof_comp = 30,
+        pos_prof_fault = 31,
+        fwd_calib = 32,
+        fwd_calib_comp = 33,
+        bwd_calib = 34,
+        bwd_calib_comp = 35,
+        speed_prof = 40,
+        speed_prof_comp = 41,
+        speed_prof_fault = 42,
+        fwd_slave = 43,
+        fwd_slave_comp = 44,
+        bwd_slave = 45,
+        bwd_slave_comp = 46,
+        over_charge = 50,
+        synch_com_error = 51,
+        _,
+    };
+
+    pub const Entrance = enum(u8) {
+        none = 0,
+        left = 1,
+        right = 2,
+        _,
+    };
+
+    const Get = packed struct(u1608) {
+        /// Byte 7: not read by the host app (status/flag byte).
+        _: u8,
+        is_servo_on: bool,
+        _is_servo_on_padding: u7,
+        vdc: f32,
+        thermo: f32,
+        slide_no: packed struct {
+            axis1: u8,
+            axis2: u8,
+            axis3: u8,
+        },
+        fwd_lsen_off_pos: packed struct {
+            axis1: f32,
+            axis2: f32,
+            axis3: f32,
+        },
+        /// Stride is 8, not 4: bytes 36..39, 44..47, 52..57 are not read.
+        base_pos: packed struct {
+            axis1: f32,
+            _axis1_padding: u32,
+            axis2: f32,
+            _axis2_padding: u32,
+            axis3: f32,
+            _axis3_padding: u48,
+        },
+        theta_offset: f32,
+        slide_state: packed struct {
+            axis1: Fsm,
+            axis2: Fsm,
+            axis3: Fsm,
+        },
+        is_calibrate: bool,
+        _is_calibrate_padding: u7,
+        bias: packed struct {
+            axis1: packed struct {
+                a: f32,
+                b: f32,
+            },
+            axis2: packed struct {
+                a: f32,
+                b: f32,
+            },
+            axis3: packed struct {
+                a: f32,
+                b: f32,
+            },
+        },
+        sys_version: f32,
+        is_cclink_on: bool,
+        _is_cclink_on_padding: u7,
+        mecha_pos: packed struct {
+            axis1: f32,
+            axis2: f32,
+            axis3: f32,
+        },
+        /// Byte 107: not read.
+        _1: u8,
+        sensor: packed struct {
+            home: u8,
+            id0: u8,
+            id1: u8,
+            id2: u8,
+        },
+        entrance: packed struct {
+            axis1: Entrance,
+            axis2: Entrance,
+            axis3: Entrance,
+        },
+        pitch_cnt: packed struct {
+            axis1: i16,
+            axis2: i16,
+            axis3: i16,
+        },
+        /// Bytes 121..122: not read.
+        _2: u16,
+        enable: packed struct {
+            axis1: bool,
+            _axis1_padding: u7,
+            axis2: bool,
+            _axis2_padding: u7,
+            axis3: bool,
+            _axis3_padding: u7,
+        },
+        /// Bytes 126..129: not read (was CaliHome, commented out).
+        _3: u32,
+        restart_section_cnt: packed struct {
+            axis1: i16,
+            axis2: i16,
+            axis3: i16,
+        },
+        bwd_rsen_off_pos: packed struct {
+            axis1: f32,
+            axis2: f32,
+            axis3: f32,
+        },
+        rsen_off_section_cnt: packed struct {
+            axis1: i16,
+            axis2: i16,
+            axis3: i16,
+        },
+        fwd_syncr_info_req_pos: f32,
+        bwd_syncl_info_req_pos: f32,
+        /// Bytes 162..165: not read.
+        _4: u32,
+        over_charge_state: packed struct {
+            axis1: Fsm,
+            axis2: Fsm,
+            axis3: Fsm,
+        },
+        fwd_rsen_on_pos: packed struct {
+            axis1: f32,
+            axis2: f32,
+            axis3: f32,
+        },
+        fwd_rsen_on_section_cnt: packed struct {
+            axis1: i16,
+            axis2: i16,
+            axis3: i16,
+        },
+        bwd_lsen_on_pos: packed struct {
+            axis1: f32,
+            axis2: f32,
+            axis3: f32,
+        },
+        bwd_lsen_on_section_cnt: packed struct {
+            axis1: i16,
+            axis2: i16,
+            axis3: i16,
+        },
+        primary_axis: packed struct {
+            axis1: bool,
+            _axis1_padding: u7,
+            axis2: bool,
+            _axis2_padding: u7,
+            axis3: bool,
+            _axis3_padding: u7,
+        },
+    };
+};
+
 pub const _SpeedGain = union {
     set: _SpeedGain.Set,
     get: _SpeedGain.Get,
 
-    const Set = packed struct(u384) {
+    pub const Set = packed struct(u384) {
         axis1: packed struct {
             p: f32,
             i: f32,
@@ -221,7 +413,7 @@ pub const _SpeedGain = union {
         _const_d: u16 = 100,
     };
 
-    const Get = packed struct(u376) {
+    pub const Get = packed struct(u376) {
         _: u8,
         axis1: packed struct {
             p: f32,
@@ -254,7 +446,7 @@ pub const _PositionGain = union {
     set: _PositionGain.Set,
     get: _PositionGain.Get,
 
-    const Set = packed struct(u288) {
+    pub const Set = packed struct(u288) {
         p: packed struct {
             axis1: f32,
             axis2: f32,
@@ -276,7 +468,7 @@ pub const _PositionGain = union {
         _const_b: u16 = 100,
     };
 
-    const Get = packed struct(u296) {
+    pub const Get = packed struct(u296) {
         _: u8,
         p: packed struct {
             axis1: f32,
@@ -302,7 +494,7 @@ pub const _CurrentGain = union {
     set: _CurrentGain.Set,
     get: _CurrentGain.Get,
 
-    const Set = packed struct(u320) {
+    pub const Set = packed struct(u320) {
         axis1: packed struct {
             p: f32,
             i: f32,
@@ -327,7 +519,7 @@ pub const _CurrentGain = union {
         _const_deno: u16 = 100,
     };
 
-    const Get = packed struct(u312) {
+    pub const Get = packed struct(u312) {
         /// Byte 7 is not used
         _: u8,
         axis1: packed struct {
