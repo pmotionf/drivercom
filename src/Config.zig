@@ -185,6 +185,71 @@ pub const System = union {
         _swap_padding: u7,
     };
 };
+
+pub const SpeedGain = union {
+    set: SpeedGain.Set,
+    get: SpeedGain.Get,
+
+    const Set = packed struct(u384) {
+        axis1: packed struct {
+            p: f32,
+            i: f32,
+        },
+        axis2: packed struct {
+            p: f32,
+            i: f32,
+        },
+        axis3: packed struct {
+            p: f32,
+            i: f32,
+        },
+        denominator: packed struct {
+            axis1: u16,
+            axis2: u16,
+            axis3: u16,
+        },
+        denominator_pi: packed struct {
+            axis1: u16,
+            axis2: u16,
+            axis3: u16,
+        },
+        /// SHDrv just send 1 without reasons in the code.
+        _const_a: u32 = 1,
+        _const_b: u32 = 1,
+        /// SHDrv just send 100 without reasons in the code.
+        _const_c: u16 = 100,
+        _const_d: u16 = 100,
+    };
+
+    const Get = packed struct(u376) {
+        _: u8,
+        axis1: packed struct {
+            p: f32,
+            i: f32,
+        },
+        axis2: packed struct {
+            p: f32,
+            i: f32,
+        },
+        axis3: packed struct {
+            p: f32,
+            i: f32,
+        },
+        _1: u64,
+        denominator: packed struct {
+            axis1: u16,
+            axis2: u16,
+            axis3: u16,
+        },
+        _2: u16,
+        denominator_pi: packed struct {
+            axis1: u16,
+            axis2: u16,
+            axis3: u16,
+        },
+    };
+};
+
 /// Driver configuration field. These fields are used directly in messages
 /// with driver; their ordering matches firmware field kind ordering.
 /// Names reflect nested structure within `Config` struct, and types represent
