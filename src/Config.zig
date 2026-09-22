@@ -6,6 +6,185 @@ pub const MAX_AXES = 3;
 
 const Config = @This();
 
+/// CTO driver configuration structure.
+pub const System = union {
+    set: System.Set,
+    get: System.Get,
+
+    const Set = packed struct {
+        rs: packed struct {
+            axis1: f32,
+            axis2: f32,
+            axis3: f32,
+        },
+        ls: packed struct {
+            axis1: f32,
+            axis2: f32,
+            axis3: f32,
+        },
+        kf: packed struct {
+            axis1: f32,
+            axis2: f32,
+            axis3: f32,
+        },
+        kbm: packed struct {
+            axis1: f32,
+            axis2: f32,
+            axis3: f32,
+        },
+        max_curr: packed struct {
+            axis1: f32,
+            axis2: f32,
+            axis3: f32,
+        },
+        magnet_pitch: f32,
+        slider_mass: f32,
+        slider_length: f32,
+        axis_length: f32,
+        home_exist: bool,
+        _home_exist_padding: u7,
+        has_neighbor: packed struct {
+            backward: bool,
+            _backward_padding: u7,
+            forward: bool,
+            _forward_padding: u7,
+        },
+        use_axis: packed struct {
+            axis2: bool,
+            _axis2_padding: u7,
+            axis3: bool,
+            _axis3_padding: u7,
+        },
+        /// Driver ID on the line
+        id: u16,
+        /// Whether there is space on the edge of driver during calibration
+        calibration_spare: packed struct {
+            backward: bool,
+            _backward_padding: u7,
+            forward: bool,
+            _forward_padding: u7,
+        },
+        collision_avoidance: bool,
+        _collision_avoidance_padding: u7,
+        _unused: u16,
+        continuous_current: packed struct {
+            axis1: f32,
+            axis2: f32,
+            axis3: f32,
+        },
+        line_axes: u32,
+        voltage_warmup: f32,
+        retry_count: u8,
+        station: u16,
+        cc_link_speed: enum(u8) {
+            @"156 kbps",
+            @"625 kbps",
+            @"2.5 Mbps",
+            @"5 Mbps",
+            @"10 Mbps",
+        },
+        hall_cutoff_freq: f32,
+        overcurrent_timeout: f32,
+        pos_offset: f32,
+        calibration_use: bool,
+        _calibration_use_padding: u7,
+        xts: bool,
+        _xts_use_padding: u7,
+        right_sensor_distance: f32,
+        flip: bool,
+        _flip_padding: u7,
+        swap: bool,
+        _swap_padding: u7,
+    };
+    const Get = packed struct {
+        /// Bytes 7..31 are not used
+        _: u200,
+        rs: packed struct {
+            axis1: f32,
+            axis2: f32,
+            axis3: f32,
+        },
+        ls: packed struct {
+            axis1: f32,
+            axis2: f32,
+            axis3: f32,
+        },
+        kf: packed struct {
+            axis1: f32,
+            axis2: f32,
+            axis3: f32,
+        },
+        kbm: packed struct {
+            axis1: f32,
+            axis2: f32,
+            axis3: f32,
+        },
+        max_curr: packed struct {
+            axis1: f32,
+            axis2: f32,
+            axis3: f32,
+        },
+        magnet_pitch: f32,
+        slider_mass: f32,
+        slider_length: f32,
+        axis_length: f32,
+        home_exist: bool,
+        _home_exist_padding: u7,
+        has_neighbor: packed struct {
+            backward: bool,
+            _backward_padding: u7,
+            forward: bool,
+            _forward_padding: u7,
+        },
+        use_axis: packed struct {
+            axis2: bool,
+            _axis2_padding: u7,
+            axis3: bool,
+            _axis3_padding: u7,
+        },
+        /// Driver ID on the line
+        id: u16,
+        cc_link_speed: enum(u8) {
+            @"156 kbps",
+            @"625 kbps",
+            @"2.5 Mbps",
+            @"5 Mbps",
+            @"10 Mbps",
+        },
+        /// Whether there is space on the edge of driver during calibration
+        calibration_spare: packed struct {
+            backward: bool,
+            _backward_padding: u7,
+            forward: bool,
+            _forward_padding: u7,
+        },
+        collision_avoidance: bool,
+        _collision_avoidance_padding: u7,
+        /// Bytes 119..127 are not used
+        _1: u72,
+        continuous_current: packed struct {
+            axis1: f32,
+            axis2: f32,
+            axis3: f32,
+        },
+        line_axes: u32,
+        voltage_warmup: f32,
+        retry_count: u8,
+        station: u16,
+        overcurrent_timeout: f32,
+        hall_cutoff_freq: f32,
+        pos_offset: f32,
+        calibration_use: bool,
+        _calibration_use_padding: u7,
+        xts: bool,
+        _xts_padding: u7,
+        right_sensor_distance: f32,
+        flip: bool,
+        _flip_padding: u7,
+        swap: bool,
+        _swap_padding: u7,
+    };
+};
 /// Driver configuration field. These fields are used directly in messages
 /// with driver; their ordering matches firmware field kind ordering.
 /// Names reflect nested structure within `Config` struct, and types represent
@@ -801,7 +980,7 @@ zero_position: f32,
 
 hall_sensors: [6]HallSensor,
 
-pub const CurrentGain = struct {
+pub const _CurrentGain = struct {
     /// Current P-gain. By default, inductance * Wcc.
     p: f32,
     /// Current I-gain. By default, resistance * Wcc.
