@@ -5,6 +5,8 @@ pub const version =
     std.SemanticVersion.parse(build.version) catch unreachable;
 
 pub const Config = @import("Config.zig");
+pub const _Config = @import("_Config.zig");
+pub const _Message = @import("_Message.zig");
 pub const OldConfig = @import("OldConfig.zig");
 pub const Log = @import("Log.zig");
 pub const Message = @import("message.zig").Message;
