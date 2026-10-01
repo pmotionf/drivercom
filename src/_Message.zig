@@ -345,32 +345,6 @@ pub const Response = union(Kind) {
     set_gain_speed: Ack,
     set_gain_position: Ack,
 
-    /// Decode response payload from the specified payload buffer
-    fn decode(comptime T: type, payload: []const u8) ParseError!T {
-        // TODO: validate the buffer is only payload, removing any header message
-        // and trailing payload buffer
-        switch (@typeInfo(T)) {
-            .void => return {},
-            .bool => {
-                if (payload.len < 1) return error.InvalidPayload;
-                return payload[0] != 0;
-            },
-            .@"enum" => |e| {
-                if (payload.len < @divExact(@bitSizeOf(e.tag_type), 8)) return error.InvalidPayload;
-                return @enumFromInt(payload[0]);
-            },
-            .@"struct" => {
-                const size = @divExact(@bitSizeOf(T), 8);
-                if (payload.len < size) return error.InvalidPayload;
-                const Backing = std.meta.Int(.unsigned, @bitSizeOf(T));
-                var le: [size]u8 = undefined;
-                @memcpy(&le, payload[0..size]);
-                return byteSwapextern(T, @bitCast(std.mem.readInt(Backing, &le, .little)));
-            },
-            else => @compileError("decodePayload: unsupported type " ++ @typeName(T)),
-        }
-    }
-
     pub const SystemConfig = extern struct {
         /// Bytes 7..31 are not used
         _: [25]u8,
@@ -833,16 +807,6 @@ fn PayloadType(
     return @FieldType(T, @tagName(kind));
 }
 
-// pub fn getPayload(
-//     self: *const Message,
-//     comptime kind: Kind,
-// ) PayloadType(kind) {
-//     const _payload: Payload = @bitCast(self._payload);
-//     return switch (kind) {
-//         inline else => @field(_payload, @tagName(kind)),
-//     };
-// }
-
 /// Calculate bcc based on the buffer. The buffer must be the message excluding
 /// the etx (header) and bcc itself.
 fn getBcc(buf: []const u8) u8 {
@@ -852,53 +816,4 @@ fn getBcc(buf: []const u8) u8 {
         bcc ^= b;
     }
     return bcc;
-}
-
-fn decodePayload(comptime T: type, payload: []const u8) ParseError!T {
-    switch (@typeInfo(T)) {
-        .void => return {},
-        .bool => {
-            if (payload.len < 1) return error.InvalidPayload;
-            return payload[0] != 0;
-        },
-        .@"enum" => |e| {
-            if (payload.len < @divExact(@bitSizeOf(e.tag_type), 8)) return error.InvalidPayload;
-            return @enumFromInt(payload[0]);
-        },
-        .@"struct" => {
-            const size = @divExact(@bitSizeOf(T), 8);
-            if (payload.len < size) return error.InvalidPayload;
-            const Backing = std.meta.Int(.unsigned, @bitSizeOf(T));
-            var le: [size]u8 = undefined;
-            @memcpy(&le, payload[0..size]);
-            return byteSwapextern(T, @bitCast(std.mem.readInt(Backing, &le, .little)));
-        },
-        else => @compileError("decodePayload: unsupported type " ++ @typeName(T)),
-    }
-}
-
-/// Convert every multi-byte field of a extern struct between big- and
-/// little-endian. Recurses into nested extern structs instead of swapping
-/// them as one integer (which would reverse axis1/axis2/axis3), and skips
-/// sub-byte fields such as the `_*_padding: u7` slots.
-fn byteSwapextern(comptime T: type, v: T) T {
-    var out = v;
-    switch (@typeInfo(T)) {
-        .@"struct" => |s| inline for (s.fields) |f| {
-            @field(out, f.name) = byteSwapextern(f.type, @field(v, f.name));
-        },
-        .int => |i| if (i.bits > 8 and i.bits % 8 == 0) {
-            out = @byteSwap(v);
-        },
-        .float => |fl| {
-            const U = std.meta.Int(.unsigned, fl.bits);
-            out = @bitCast(@byteSwap(@as(U, @bitCast(v))));
-        },
-        .@"enum" => |e| if (@bitSizeOf(e.tag_type) > 8) {
-            out = @enumFromInt(@byteSwap(@intFromEnum(v)));
-        },
-        .bool => {},
-        else => @compileError("byteSwapextern: unsupported type " ++ @typeName(T)),
-    }
-    return out;
 }
