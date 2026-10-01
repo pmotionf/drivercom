@@ -42,6 +42,7 @@ pub const Axis = struct {
         speed: SpeedGain,
         position: PositionGain,
     },
+    arrival_threshold: f32,
 };
 
 pub const Flags = struct {
@@ -91,6 +92,5 @@ pub const SpeedGain = struct {
 
 pub const PositionGain = struct {
     p: f32,
-    denominator: f32,
-    arrival_threshold: f32,
+    denominator: u16,
 };
