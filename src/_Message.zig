@@ -63,6 +63,13 @@ pub fn init(
     };
 }
 
+pub fn deinit(self: *Message, gpa: std.mem.Allocator) void {
+    gpa.free(self.payload);
+    self.bcc = undefined;
+    self.etx = undefined;
+    self.header = undefined;
+}
+
 /// Parse incoming response to Message type. Payload are written in Big Endian.
 /// Caller must call `deinit()` to free allocated payload message.
 pub fn parse(
@@ -104,9 +111,30 @@ pub fn setConfig(self: Message, config: *Config) void {
             break :get_driver_config .{ .get_driver_config = payload };
         },
         .get_driver_state => unreachable,
-        .get_gain_current => unreachable,
-        .get_gain_speed => unreachable,
-        .get_gain_position => unreachable,
+        .get_gain_current => get_gain_current: {
+            var payload: Response.CurrentGain = std.mem.bytesToValue(
+                Response.CurrentGain,
+                self.payload,
+            );
+            std.mem.byteSwapAllFields(Response.CurrentGain, &payload);
+            break :get_gain_current .{ .get_gain_current = payload };
+        },
+        .get_gain_speed => get_gain_speed: {
+            var payload: Response.SpeedGain = std.mem.bytesToValue(
+                Response.SpeedGain,
+                self.payload,
+            );
+            std.mem.byteSwapAllFields(Response.SpeedGain, &payload);
+            break :get_gain_speed .{ .get_gain_speed = payload };
+        },
+        .get_gain_position => get_gain_position: {
+            var payload: Response.PositionGain = std.mem.bytesToValue(
+                Response.PositionGain,
+                self.payload,
+            );
+            std.mem.byteSwapAllFields(Response.PositionGain, &payload);
+            break :get_gain_position .{ .get_gain_position = payload };
+        },
         .set_servo_on => unreachable,
         .set_driver_config => unreachable,
         .set_gain_current => unreachable,
@@ -115,11 +143,12 @@ pub fn setConfig(self: Message, config: *Config) void {
         _ => unreachable,
     };
     switch (response) {
-        .get_driver_config => |message| message.setConfig(config),
+        inline .get_driver_config,
+        .get_gain_current,
+        .get_gain_speed,
+        .get_gain_position,
+        => |message| message.setConfig(config),
         .get_driver_state => unreachable, // TODO
-        .get_gain_current => unreachable, // TODO
-        .get_gain_speed => unreachable, // TODO
-        .get_gain_position => unreachable, // TODO
         .set_servo_on,
         .set_driver_config,
         .set_gain_current,
@@ -346,6 +375,54 @@ pub const Response = union(Kind) {
     set_gain_position: Ack,
 
     pub const SystemConfig = extern struct {
+        fn setConfig(self: SystemConfig, config: *Config) void {
+            config.id = self.id;
+            config.station = self.station;
+            config.baud_rate = self.cc_link_speed;
+            config.flags = .{
+                .home_exists = self.home_exist,
+                .has_neighbor = .{
+                    .backward = self.has_neighbor.backward,
+                    .forward = self.has_neighbor.forward,
+                },
+                .use_axis = .{
+                    .axis2 = self.use_axis.axis2,
+                    .axis3 = self.use_axis.axis3,
+                },
+                .calibration_spare = .{
+                    .backward = self.calibration_spare.backward,
+                    .forward = self.calibration_spare.forward,
+                },
+                .collision_avoidance = self.collision_avoidance,
+                .calibration_use = self.calibration_use,
+                .xts = self.xts,
+                .flip = self.flip,
+                .swap = self.swap,
+            };
+            config.line = .{
+                .axes = self.line_axes,
+                .axis_length = self.axis_length,
+                .slider = .{
+                    .mass = self.slider_mass,
+                    .length = self.slider_length,
+                },
+                .magnet_pitch = self.magnet_pitch,
+            };
+            config.voltage_warmup = self.voltage_warmup;
+            config.retry_count = self.retry_count;
+            config.hall_cutoff_freq = self.hall_cutoff_freq;
+            config.overcurrent_timeout = self.overcurrent_timeout;
+            config.pos_offset = self.pos_offset;
+            config.right_sensor_distance = self.right_sensor_distance;
+            for (&config.axes, 0..) |*axis, i| {
+                axis.rs = self.rs.axis(i);
+                axis.ls = self.ls.axis(i);
+                axis.kf = self.kf.axis(i);
+                axis.kbm = self.kbm.axis(i);
+                axis.max_current = self.max_curr.axis(i);
+                axis.continuous_current = self.continuous_current.axis(i);
+            }
+        }
         /// Bytes 7..31 are not used
         _: [25]u8,
         rs: extern struct {
@@ -468,55 +545,6 @@ pub const Response = union(Kind) {
         right_sensor_distance: f32 align(1),
         flip: bool,
         swap: bool,
-
-        fn setConfig(self: SystemConfig, config: *Config) void {
-            config.id = self.id;
-            config.station = self.station;
-            config.baud_rate = self.cc_link_speed;
-            config.flags = .{
-                .home_exists = self.home_exist,
-                .has_neighbor = .{
-                    .backward = self.has_neighbor.backward,
-                    .forward = self.has_neighbor.forward,
-                },
-                .use_axis = .{
-                    .axis2 = self.use_axis.axis2,
-                    .axis3 = self.use_axis.axis3,
-                },
-                .calibration_spare = .{
-                    .backward = self.calibration_spare.backward,
-                    .forward = self.calibration_spare.forward,
-                },
-                .collision_avoidance = self.collision_avoidance,
-                .calibration_use = self.calibration_use,
-                .xts = self.xts,
-                .flip = self.flip,
-                .swap = self.swap,
-            };
-            config.line = .{
-                .axes = self.line_axes,
-                .axis_length = self.axis_length,
-                .slider = .{
-                    .mass = self.slider_mass,
-                    .length = self.slider_length,
-                },
-                .magnet_pitch = self.magnet_pitch,
-            };
-            config.voltage_warmup = self.voltage_warmup;
-            config.retry_count = self.retry_count;
-            config.hall_cutoff_freq = self.hall_cutoff_freq;
-            config.overcurrent_timeout = self.overcurrent_timeout;
-            config.pos_offset = self.pos_offset;
-            config.right_sensor_distance = self.right_sensor_distance;
-            for (&config.axes, 0..) |*axis, i| {
-                axis.rs = self.rs.axis(i);
-                axis.ls = self.ls.axis(i);
-                axis.kf = self.kf.axis(i);
-                axis.kbm = self.kbm.axis(i);
-                axis.max_current = self.max_curr.axis(i);
-                axis.continuous_current = self.continuous_current.axis(i);
-            }
-        }
     };
 
     pub const SystemState = extern struct {
@@ -695,6 +723,35 @@ pub const Response = union(Kind) {
     };
 
     pub const CurrentGain = extern struct {
+        fn setConfig(self: CurrentGain, config: *Config) void {
+            for (&config.axes, 0..) |*ax, i| {
+                const gain = self.axis(@intCast(i));
+                ax.gain.current = .{
+                    .p = gain.p,
+                    .i = gain.i,
+                    .denominator = gain.denominator,
+                };
+            }
+        }
+
+        /// Get the gain based on axis index.
+        fn axis(self: CurrentGain, i: u2) Gain {
+            switch (i) {
+                inline 3 => unreachable,
+                inline else => |idx| {
+                    const axis_name = std.fmt.comptimePrint("axis{}", .{idx + 1});
+                    const pi = @field(self, axis_name);
+                    return .{
+                        .p = pi.p,
+                        .i = pi.i,
+                        .denominator = @field(self.denominator, axis_name),
+                    };
+                },
+            }
+        }
+
+        const Gain = struct { p: f32, i: f32, denominator: u16 };
+
         /// Byte 7 is not used
         _: u8,
         axis1: extern struct {
@@ -719,6 +776,42 @@ pub const Response = union(Kind) {
     };
 
     pub const SpeedGain = extern struct {
+        fn setConfig(self: SpeedGain, config: *Config) void {
+            for (&config.axes, 0..) |*ax, i| {
+                const gain = self.axis(@intCast(i));
+                ax.gain.speed = .{
+                    .p = gain.p,
+                    .i = gain.i,
+                    .denominator = gain.denominator,
+                    .denominator_pi = gain.denominator_pi,
+                };
+            }
+        }
+
+        /// Get the gain based on axis index.
+        fn axis(self: SpeedGain, i: u2) Gain {
+            switch (i) {
+                inline 3 => unreachable,
+                inline else => |idx| {
+                    const axis_name = std.fmt.comptimePrint("axis{}", .{idx + 1});
+                    const pi = @field(self, axis_name);
+                    return .{
+                        .p = pi.p,
+                        .i = pi.i,
+                        .denominator = @field(self.denominator, axis_name),
+                        .denominator_pi = @field(self.denominator_pi, axis_name),
+                    };
+                },
+            }
+        }
+
+        const Gain = struct {
+            p: f32,
+            i: f32,
+            denominator: u16,
+            denominator_pi: u16,
+        };
+
         _: u8,
         axis1: extern struct {
             p: f32 align(1),
@@ -747,6 +840,40 @@ pub const Response = union(Kind) {
     };
 
     pub const PositionGain = extern struct {
+        fn setConfig(self: PositionGain, config: *Config) void {
+            for (&config.axes, 0..) |*ax, i| {
+                const gain = self.axis(@intCast(i));
+                ax.gain.position = .{
+                    .p = gain.p,
+                    .denominator = gain.denominator,
+                };
+                ax.arrival_threshold = gain.arrival_threshold;
+            }
+        }
+
+        /// Get the gain based on axis index.
+        fn axis(self: PositionGain, i: u2) Gain {
+            switch (i) {
+                inline 3 => unreachable,
+                inline else => |idx| {
+                    const axis_name = std.fmt.comptimePrint("axis{}", .{idx + 1});
+                    return .{
+                        .p = @field(self.p, axis_name),
+                        .denominator = @field(self.denominator, axis_name),
+                        .arrival_threshold = @field(
+                            self.arrival_threshold,
+                            axis_name,
+                        ),
+                    };
+                },
+            }
+        }
+
+        const Gain = struct {
+            p: f32,
+            denominator: u16,
+            arrival_threshold: f32,
+        };
         _: u8,
         p: extern struct {
             axis1: f32 align(1),
