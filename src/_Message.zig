@@ -6,6 +6,7 @@
 const std = @import("std");
 const builtin = @import("builtin");
 const Config = @import("_Config.zig");
+const State = @import("State.zig");
 const Message = @This();
 
 const STX = 0x02;
@@ -99,62 +100,34 @@ pub fn parse(
     };
 }
 
-/// This function shall be used only for response message
+/// Set configuration value from the response message.
 pub fn setConfig(self: Message, config: *Config) void {
-    const response: Response = switch (self.header.kind) {
-        .get_driver_config => get_driver_config: {
-            var payload: Response.SystemConfig = std.mem.bytesToValue(
-                Response.SystemConfig,
-                self.payload,
-            );
-            std.mem.byteSwapAllFields(Response.SystemConfig, &payload);
-            break :get_driver_config .{ .get_driver_config = payload };
-        },
-        .get_driver_state => unreachable,
-        .get_gain_current => get_gain_current: {
-            var payload: Response.CurrentGain = std.mem.bytesToValue(
-                Response.CurrentGain,
-                self.payload,
-            );
-            std.mem.byteSwapAllFields(Response.CurrentGain, &payload);
-            break :get_gain_current .{ .get_gain_current = payload };
-        },
-        .get_gain_speed => get_gain_speed: {
-            var payload: Response.SpeedGain = std.mem.bytesToValue(
-                Response.SpeedGain,
-                self.payload,
-            );
-            std.mem.byteSwapAllFields(Response.SpeedGain, &payload);
-            break :get_gain_speed .{ .get_gain_speed = payload };
-        },
-        .get_gain_position => get_gain_position: {
-            var payload: Response.PositionGain = std.mem.bytesToValue(
-                Response.PositionGain,
-                self.payload,
-            );
-            std.mem.byteSwapAllFields(Response.PositionGain, &payload);
-            break :get_gain_position .{ .get_gain_position = payload };
-        },
-        .set_servo_on => unreachable,
-        .set_driver_config => unreachable,
-        .set_gain_current => unreachable,
-        .set_gain_speed => unreachable,
-        .set_gain_position => unreachable,
-        _ => unreachable,
-    };
-    switch (response) {
+    switch (self.header.kind) {
         inline .get_driver_config,
         .get_gain_current,
         .get_gain_speed,
         .get_gain_position,
-        => |message| message.setConfig(config),
-        .get_driver_state => unreachable, // TODO
-        .set_servo_on,
-        .set_driver_config,
-        .set_gain_current,
-        .set_gain_speed,
-        .set_gain_position,
-        => unreachable,
+        => |tag| {
+            const T = PayloadType(tag, .response);
+            var payload: T = std.mem.bytesToValue(T, self.payload);
+            // Change the endianness of the payload
+            std.mem.byteSwapAllFields(T, &payload);
+            payload.setConfig(config);
+        },
+        else => unreachable,
+    }
+}
+
+pub fn setState(self: Message, state: *State) void {
+    switch (self.header.kind) {
+        inline .get_driver_state => |tag| {
+            const T = PayloadType(tag, .response);
+            var payload: T = std.mem.bytesToValue(T, self.payload);
+            // Change the endianness of the payload
+            std.mem.byteSwapAllFields(T, &payload);
+            payload.setState(state);
+        },
+        else => unreachable,
     }
 }
 
@@ -548,52 +521,73 @@ pub const Response = union(Kind) {
     };
 
     pub const SystemState = extern struct {
-        pub const SliderState = enum(u8) {
-            none = 0,
-            warm_up = 1,
-            warm_up_comp = 2,
-            warm_up_fault = 3,
-            curr_bias = 4,
-            curr_bias_comp = 5,
-            fwd_ramp = 8,
-            fwd_ramp_comp = 9,
-            fwd_ramp_fault = 10,
-            bwd_ramp = 11,
-            bwd_ramp_comp = 12,
-            bwd_ramp_fault = 13,
-            curr_step = 20,
-            curr_step_comp = 21,
-            curr_step_fault = 22,
-            speed_step = 23,
-            speed_step_comp = 24,
-            speed_step_fault = 25,
-            pos_step = 26,
-            pos_step_comp = 27,
-            pos_step_fault = 28,
-            pos_prof = 29,
-            pos_prof_comp = 30,
-            pos_prof_fault = 31,
-            fwd_calib = 32,
-            fwd_calib_comp = 33,
-            bwd_calib = 34,
-            bwd_calib_comp = 35,
-            speed_prof = 40,
-            speed_prof_comp = 41,
-            speed_prof_fault = 42,
-            fwd_slave = 43,
-            fwd_slave_comp = 44,
-            bwd_slave = 45,
-            bwd_slave_comp = 46,
-            over_charge = 50,
-            synch_com_error = 51,
-            _,
-        };
-        pub const Entrance = enum(u8) {
-            none = 0,
-            left = 1,
-            right = 2,
-            _,
-        };
+        fn setState(self: SystemState, state: *State) void {
+            state.servo_enabled = self.is_servo_on;
+            state.cc_link_enabled = self.is_cclink_on;
+            state.calibrated = self.is_calibrate;
+            state.vdc = self.vdc;
+            state.thermo = self.thermo;
+            state.theta_offset = self.theta_offset;
+            state.sys_version = self.sys_version;
+            state.synchronization_request_position = .{
+                .forward = self.fwd_syncr_info_req_pos,
+                .backward = self.bwd_syncl_info_req_pos,
+            };
+            state.sensor = .{
+                .home = self.sensor.home,
+                .id0 = self.sensor.id0,
+                .id1 = self.sensor.id1,
+                .id2 = self.sensor.id2,
+            };
+            inline for (&state.axes, 0..) |*axis, i| {
+                const axis_name = std.fmt.comptimePrint("axis{}", .{i + 1});
+                axis.enabled = @field(self.enable, axis_name);
+                axis.primary = @field(self.primary_axis, axis_name);
+                axis.entrance = @field(self.entrance, axis_name);
+                axis.overcharge_state = @field(self.over_charge_state, axis_name);
+                axis.pitch_count = @field(self.pitch_cnt, axis_name);
+                axis.restart_section_count = @field(self.restart_section_cnt, axis_name);
+                axis.base_position = @field(self.base_pos, axis_name);
+                axis.mechanical_position = @field(self.mecha_pos, axis_name);
+                axis.slider = .{
+                    .id = @field(self.slide_no, axis_name),
+                    .state = @field(self.slide_state, axis_name),
+                };
+                axis.sensor = .{
+                    .position = .{
+                        .on = .{
+                            .backward = @field(self.bwd_lsen_on_pos, axis_name),
+                            .forward = @field(self.fwd_rsen_on_pos, axis_name),
+                        },
+                        .off = .{
+                            .backward = @field(self.bwd_rsen_off_pos, axis_name),
+                            .forward = @field(self.fwd_lsen_off_pos, axis_name),
+                        },
+                    },
+                    .section_count = .{
+                        .restart = @field(self.restart_section_cnt, axis_name),
+                        .on = .{
+                            .forward = @field(
+                                self.fwd_rsen_on_section_cnt,
+                                axis_name,
+                            ),
+                            .backward = @field(
+                                self.bwd_lsen_on_section_cnt,
+                                axis_name,
+                            ),
+                        },
+                        .off = .{
+                            .backward = @field(
+                                self.rsen_off_section_cnt,
+                                axis_name,
+                            ),
+                        },
+                    },
+                };
+                const bias = @field(self.bias, axis_name);
+                axis.bias = .{ .a = bias.a, .b = bias.b };
+            }
+        }
         _: u8,
         is_servo_on: bool,
         vdc: f32 align(1),
@@ -618,9 +612,9 @@ pub const Response = union(Kind) {
         },
         theta_offset: f32 align(1),
         slide_state: extern struct {
-            axis1: SliderState,
-            axis2: SliderState,
-            axis3: SliderState,
+            axis1: State.Fsm,
+            axis2: State.Fsm,
+            axis3: State.Fsm,
         },
         is_calibrate: bool,
         bias: extern struct {
@@ -653,9 +647,9 @@ pub const Response = union(Kind) {
             id2: u8,
         },
         entrance: extern struct {
-            axis1: Entrance,
-            axis2: Entrance,
-            axis3: Entrance,
+            axis1: State.Entrance,
+            axis2: State.Entrance,
+            axis3: State.Entrance,
         },
         pitch_cnt: extern struct {
             axis1: i16 align(1),
@@ -691,9 +685,9 @@ pub const Response = union(Kind) {
         /// Bytes 162..165: not read.
         _4: [4]u8,
         over_charge_state: extern struct {
-            axis1: SliderState,
-            axis2: SliderState,
-            axis3: SliderState,
+            axis1: State.Fsm,
+            axis2: State.Fsm,
+            axis3: State.Fsm,
         },
         fwd_rsen_on_pos: extern struct {
             axis1: f32 align(1),
