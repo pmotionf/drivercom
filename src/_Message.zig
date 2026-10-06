@@ -15,7 +15,8 @@ const ETX = 0x03;
 header: Header,
 /// Payload is defined as slice of u8 since the payload is not consistent for
 /// every message. It is preferred over union as union type does not guarantee
-/// memory layout.
+/// memory layout. Payload must be in big endian before calling `write()` and in
+/// big endian after calling `parse()`.
 payload: []u8,
 etx: u8,
 /// Unused when sending message to firmware.
@@ -26,7 +27,7 @@ bcc: u8,
 pub fn write(self: Message, writer: *std.Io.Writer) std.Io.Writer.Error!void {
     const endian: std.builtin.Endian = .big;
     try writer.writeStruct(self.header, endian);
-    try writer.writeSliceEndian(u8, self.payload, endian);
+    try writer.writeAll(self.payload);
     try writer.writeInt(u8, self.etx, endian);
     try writer.writeInt(u8, getBcc(writer.buffered()[1..]), endian);
 }
@@ -38,7 +39,7 @@ pub fn init(
     comptime message_type: Type,
     sequence: u8,
     p: PayloadType(kind, message_type),
-) Message {
+) std.mem.Allocator.Error!Message {
     return .{
         .header = .{
             .stx = STX,
@@ -47,12 +48,22 @@ pub fn init(
             .sequence = sequence,
         },
         .payload = switch (@typeInfo(@TypeOf(p))) {
-            .@"struct" => try gpa.dupe(u8, std.mem.asBytes(p)),
+            .@"struct" => payload: {
+                var payload = p;
+                std.mem.byteSwapAllFields(
+                    PayloadType(kind, message_type),
+                    &payload,
+                );
+                break :payload try gpa.dupe(u8, std.mem.asBytes(&payload));
+            },
             .array => array: {
                 if (p.len > 0) {
                     @compileError("Array message must be zero length");
                 }
                 break :array &p;
+            },
+            .bool => bool: {
+                break :bool try gpa.dupe(u8, std.mem.asBytes(&p));
             },
             else => {
                 @compileError("Unexpected value");
@@ -176,13 +187,61 @@ pub const Request = union(Kind) {
     get_gain_current: [0]u8,
     get_gain_speed: [0]u8,
     get_gain_position: [0]u8,
-    set_servo_on: bool,
+    set_servo: bool,
     set_driver_config: SystemConfig,
     set_gain_current: CurrentGain,
     set_gain_speed: SpeedGain,
     set_gain_position: PositionGain,
 
     pub const SystemConfig = extern struct {
+        pub fn fromConfig(config: Config) SystemConfig {
+            var result: SystemConfig = undefined;
+            inline for (config.axes, 1..) |axis, i| {
+                const axis_name = std.fmt.comptimePrint("axis{}", .{i});
+                @field(result.rs, axis_name) = axis.rs;
+                @field(result.ls, axis_name) = axis.ls;
+                @field(result.kf, axis_name) = axis.kf;
+                @field(result.kbm, axis_name) = axis.kbm;
+                @field(result.max_curr, axis_name) = axis.max_current;
+                @field(
+                    result.continuous_current,
+                    axis_name,
+                ) = axis.continuous_current;
+            }
+            result.magnet_pitch = config.line.magnet_pitch;
+            result.slider_mass = config.line.slider.mass;
+            result.slider_length = config.line.slider.length;
+            result.axis_length = config.line.axis_length;
+            result.home_exist = config.flags.home_exists;
+            result.has_neighbor = .{
+                .backward = config.flags.has_neighbor.backward,
+                .forward = config.flags.has_neighbor.forward,
+            };
+            result.use_axis = .{
+                .axis2 = config.flags.use_axis.axis2,
+                .axis3 = config.flags.use_axis.axis3,
+            };
+            result.id = config.id;
+            result.calibration_spare = .{
+                .backward = config.flags.calibration_spare.backward,
+                .forward = config.flags.calibration_spare.forward,
+            };
+            result.collision_avoidance = config.flags.collision_avoidance;
+            result.line_axes = config.line.axes;
+            result.voltage_warmup = config.voltage_warmup;
+            result.retry_count = config.retry_count;
+            result.station = config.station;
+            result.cc_link_speed = config.baud_rate;
+            result.hall_cutoff_freq = config.hall_cutoff_freq;
+            result.overcurrent_timeout = config.overcurrent_timeout;
+            result.pos_offset = config.pos_offset;
+            result.calibration_use = config.flags.calibration_use;
+            result.xts = config.flags.xts;
+            result.right_sensor_distance = config.right_sensor_distance;
+            result.flip = config.flags.flip;
+            result.swap = config.flags.swap;
+            return result;
+        }
         rs: extern struct {
             axis1: f32 align(1),
             axis2: f32 align(1),
@@ -229,7 +288,7 @@ pub const Request = union(Kind) {
             forward: bool,
         },
         collision_avoidance: bool,
-        _unused: u16 align(1),
+        _unused: u16 align(1) = undefined,
         continuous_current: extern struct {
             axis1: f32 align(1),
             axis2: f32 align(1),
@@ -239,13 +298,7 @@ pub const Request = union(Kind) {
         voltage_warmup: f32 align(1),
         retry_count: u8,
         station: u16 align(1),
-        cc_link_speed: enum(u8) {
-            @"156 kbps",
-            @"625 kbps",
-            @"2.5 Mbps",
-            @"5 Mbps",
-            @"10 Mbps",
-        },
+        cc_link_speed: Config.CcLinkSpeed,
         hall_cutoff_freq: f32 align(1),
         overcurrent_timeout: f32 align(1),
         pos_offset: f32 align(1),
@@ -257,6 +310,22 @@ pub const Request = union(Kind) {
     };
 
     pub const SpeedGain = extern struct {
+        pub fn fromConfig(config: Config) SpeedGain {
+            var result: SpeedGain = undefined;
+            inline for (config.axes, 1..) |axis, i| {
+                const axis_name = std.fmt.comptimePrint("axis{}", .{i});
+                @field(result, axis_name) = .{
+                    .p = axis.gain.speed.p,
+                    .i = axis.gain.speed.i,
+                };
+                @field(result.denominator, axis_name) =
+                    axis.gain.speed.denominator;
+                @field(result.denominator_pi, axis_name) =
+                    axis.gain.speed.denominator_pi;
+            }
+            return result;
+        }
+
         axis1: extern struct {
             p: f32 align(1),
             i: f32 align(1),
@@ -288,6 +357,18 @@ pub const Request = union(Kind) {
     };
 
     pub const PositionGain = extern struct {
+        pub fn fromConfig(config: Config) PositionGain {
+            var result: PositionGain = undefined;
+            inline for (config.axes, 1..) |axis, i| {
+                const axis_name = std.fmt.comptimePrint("axis{}", .{i});
+                @field(result.p, axis_name) = axis.gain.position.p;
+                @field(result.deno_wpc, axis_name) =
+                    axis.gain.position.denominator;
+                @field(result.arrival_threshold, axis_name) =
+                    axis.arrival_threshold;
+            }
+            return result;
+        }
         p: extern struct {
             axis1: f32 align(1),
             axis2: f32 align(1),
@@ -310,6 +391,19 @@ pub const Request = union(Kind) {
     };
 
     pub const CurrentGain = extern struct {
+        pub fn fromConfig(config: Config) CurrentGain {
+            var result: CurrentGain = undefined;
+            inline for (config.axes, 1..) |axis, i| {
+                const axis_name = std.fmt.comptimePrint("axis{}", .{i});
+                @field(result, axis_name) = .{
+                    .p = axis.gain.current.p,
+                    .i = axis.gain.current.i,
+                };
+                @field(result.denominator, axis_name) =
+                    axis.gain.current.denominator;
+            }
+            return result;
+        }
         axis1: extern struct {
             p: f32 align(1),
             i: f32 align(1),
@@ -341,7 +435,7 @@ pub const Response = union(Kind) {
     get_gain_current: CurrentGain,
     get_gain_speed: SpeedGain,
     get_gain_position: PositionGain,
-    set_servo_on: Ack,
+    set_servo: Ack,
     set_driver_config: Ack,
     set_gain_current: Ack,
     set_gain_speed: Ack,
@@ -900,7 +994,7 @@ pub const Kind = enum(u8) {
     get_gain_current,
     get_gain_speed,
     get_gain_position,
-    set_servo_on,
+    set_servo,
     set_driver_config,
     set_gain_current,
     set_gain_speed,
