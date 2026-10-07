@@ -571,7 +571,7 @@ pub const Response = union(Kind) {
     get_section_count: SectionCount,
 
     pub const SystemConfig = extern struct {
-        fn setConfig(self: SystemConfig, config: *Config) void {
+        pub fn setConfig(self: SystemConfig, config: *Config) void {
             config.id = self.id;
             config.station = self.station;
             config.cc_link_speed = self.cc_link_speed;
@@ -744,10 +744,7 @@ pub const Response = union(Kind) {
     };
 
     pub const SystemState = extern struct {
-        /// Fills the driver state, the angle offset, and each axis's base
-        /// position and sensor values. `config.state.section_count` is left
-        /// as is; `get_section_count` fills it.
-        fn setConfig(self: SystemState, config: *Config) void {
+        pub fn setConfig(self: SystemState, config: *Config) void {
             config.angle_offset = self.theta_offset;
             const state = &config.state;
             state.servo_enabled = self.is_servo_on;
@@ -936,7 +933,7 @@ pub const Response = union(Kind) {
     };
 
     pub const CurrentGain = extern struct {
-        fn setConfig(self: CurrentGain, config: *Config) void {
+        pub fn setConfig(self: CurrentGain, config: *Config) void {
             for (&config.axes, 0..) |*ax, i| {
                 const gain = self.axis(@intCast(i));
                 ax.gain.current = .{
@@ -989,7 +986,7 @@ pub const Response = union(Kind) {
     };
 
     pub const SpeedGain = extern struct {
-        fn setConfig(self: SpeedGain, config: *Config) void {
+        pub fn setConfig(self: SpeedGain, config: *Config) void {
             for (&config.axes, 0..) |*ax, i| {
                 const gain = self.axis(@intCast(i));
                 ax.gain.speed = .{
@@ -1053,7 +1050,7 @@ pub const Response = union(Kind) {
     };
 
     pub const PositionGain = extern struct {
-        fn setConfig(self: PositionGain, config: *Config) void {
+        pub fn setConfig(self: PositionGain, config: *Config) void {
             for (&config.axes, 0..) |*ax, i| {
                 const gain = self.axis(@intCast(i));
                 ax.gain.position = .{
@@ -1108,7 +1105,7 @@ pub const Response = union(Kind) {
     };
 
     pub const SectionCount = extern struct {
-        fn setConfig(self: SectionCount, config: *Config) void {
+        pub fn setConfig(self: SectionCount, config: *Config) void {
             const max = self.max_section_cnt;
             config.section_count = .{
                 .skip = self.skip_cnt,
@@ -1230,6 +1227,8 @@ pub const Response = union(Kind) {
     };
 };
 
+/// `get_` prefix gets the information required by the `Config`. `set_` prefix
+/// set the mutable configuration to the firmware.
 pub const Kind = enum(u8) {
     get_driver_config = 0x02,
     get_driver_state,
@@ -1266,4 +1265,18 @@ fn getBcc(buf: []const u8) u8 {
         bcc ^= b;
     }
     return bcc;
+}
+
+test "get_ responses have setConfig and set_ requests have fromConfig" {
+    inline for (@typeInfo(Kind).@"enum".fields) |field| {
+        const kind: Kind = @enumFromInt(field.value);
+        if (comptime std.mem.startsWith(u8, field.name, "get_")) {
+            const T = PayloadType(kind, .response);
+            try std.testing.expect(@hasDecl(T, "setConfig"));
+        }
+        if (comptime std.mem.startsWith(u8, field.name, "set_")) {
+            const T = PayloadType(kind, .request);
+            try std.testing.expect(@hasDecl(T, "fromConfig"));
+        }
+    }
 }
