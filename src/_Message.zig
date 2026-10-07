@@ -6,7 +6,6 @@
 const std = @import("std");
 const builtin = @import("builtin");
 const Config = @import("_Config.zig");
-const State = @import("State.zig");
 const Message = @This();
 
 const STX = 0x02;
@@ -118,25 +117,14 @@ pub fn setConfig(self: Message, config: *Config) void {
         .get_gain_current,
         .get_gain_speed,
         .get_gain_position,
+        .get_driver_state,
+        .get_section_count,
         => |tag| {
             const T = PayloadType(tag, .response);
             var payload: T = std.mem.bytesToValue(T, self.payload);
             // Change the endianness of the payload
             std.mem.byteSwapAllFields(T, &payload);
             payload.setConfig(config);
-        },
-        else => unreachable,
-    }
-}
-
-pub fn setState(self: Message, state: *State) void {
-    switch (self.header.kind) {
-        inline .get_driver_state => |tag| {
-            const T = PayloadType(tag, .response);
-            var payload: T = std.mem.bytesToValue(T, self.payload);
-            // Change the endianness of the payload
-            std.mem.byteSwapAllFields(T, &payload);
-            payload.setState(state);
         },
         else => unreachable,
     }
@@ -187,7 +175,6 @@ pub const Request = union(Kind) {
     get_gain_current: [0]u8,
     get_gain_speed: [0]u8,
     get_gain_position: [0]u8,
-    get_section_count: [0]u8,
     set_servo: bool,
     set_driver_config: SystemConfig,
     set_gain_current: CurrentGain,
@@ -195,6 +182,7 @@ pub const Request = union(Kind) {
     set_gain_position: PositionGain,
     set_angle_offset: AngleOffset,
     set_section_count: SectionCount,
+    get_section_count: [0]u8,
 
     pub const SystemConfig = extern struct {
         pub fn fromConfig(config: Config) SystemConfig {
@@ -234,7 +222,7 @@ pub const Request = union(Kind) {
             result.voltage_warmup = config.voltage_warmup;
             result.retry_count = config.retry_count;
             result.station = config.station;
-            result.cc_link_speed = config.baud_rate;
+            result.cc_link_speed = config.cc_link_speed;
             result.hall_cutoff_freq = config.hall_cutoff_freq;
             result.overcurrent_timeout = config.overcurrent_timeout;
             result.pos_offset = config.pos_offset;
@@ -563,7 +551,6 @@ pub const Response = union(Kind) {
     get_gain_current: CurrentGain,
     get_gain_speed: SpeedGain,
     get_gain_position: PositionGain,
-    get_section_count: SectionCount,
     set_servo: Ack,
     set_driver_config: Ack,
     set_gain_current: Ack,
@@ -571,12 +558,13 @@ pub const Response = union(Kind) {
     set_gain_position: Ack,
     set_angle_offset: Ack,
     set_section_count: Ack,
+    get_section_count: SectionCount,
 
     pub const SystemConfig = extern struct {
         fn setConfig(self: SystemConfig, config: *Config) void {
             config.id = self.id;
             config.station = self.station;
-            config.baud_rate = self.cc_link_speed;
+            config.cc_link_speed = self.cc_link_speed;
             config.flags = .{
                 .home_exists = self.home_exist,
                 .has_neighbor = .{
@@ -746,71 +734,65 @@ pub const Response = union(Kind) {
     };
 
     pub const SystemState = extern struct {
-        fn setState(self: SystemState, state: *State) void {
+        /// Fills the driver state, the angle offset, and each axis's base
+        /// position and sensor values. `config.state.section_count` is left
+        /// as is; `get_section_count` fills it.
+        fn setConfig(self: SystemState, config: *Config) void {
+            config.angle_offset = self.theta_offset;
+            const state = &config.state;
             state.servo_enabled = self.is_servo_on;
             state.cc_link_enabled = self.is_cclink_on;
             state.calibrated = self.is_calibrate;
             state.vdc = self.vdc;
             state.thermo = self.thermo;
-            state.theta_offset = self.theta_offset;
             state.sys_version = self.sys_version;
-            state.synchronization_request_position = .{
-                .forward = self.fwd_syncr_info_req_pos,
-                .backward = self.bwd_syncl_info_req_pos,
-            };
             state.sensor = .{
                 .home = self.sensor.home,
                 .id0 = self.sensor.id0,
                 .id1 = self.sensor.id1,
                 .id2 = self.sensor.id2,
             };
-            inline for (&state.axes, 0..) |*axis, i| {
-                const axis_name = std.fmt.comptimePrint("axis{}", .{i + 1});
-                axis.enabled = @field(self.enable, axis_name);
-                axis.primary = @field(self.primary_axis, axis_name);
-                axis.entrance = @field(self.entrance, axis_name);
-                axis.overcharge_state = @field(self.over_charge_state, axis_name);
-                axis.pitch_count = @field(self.pitch_cnt, axis_name);
-                axis.restart_section_count = @field(self.restart_section_cnt, axis_name);
-                axis.base_position = @field(self.base_pos, axis_name);
-                axis.mechanical_position = @field(self.mecha_pos, axis_name);
-                axis.slider = .{
-                    .id = @field(self.slide_no, axis_name),
-                    .state = @field(self.slide_state, axis_name),
-                };
-                axis.sensor = .{
-                    .position = .{
-                        .on = .{
-                            .backward = @field(self.bwd_lsen_on_pos, axis_name),
-                            .forward = @field(self.fwd_rsen_on_pos, axis_name),
-                        },
-                        .off = .{
-                            .backward = @field(self.bwd_rsen_off_pos, axis_name),
-                            .forward = @field(self.fwd_lsen_off_pos, axis_name),
-                        },
-                    },
-                    .section_count = .{
-                        .restart = @field(self.restart_section_cnt, axis_name),
-                        .on = .{
-                            .forward = @field(
-                                self.fwd_rsen_on_section_cnt,
-                                axis_name,
-                            ),
-                            .backward = @field(
-                                self.bwd_lsen_on_section_cnt,
-                                axis_name,
-                            ),
-                        },
-                        .off = .{
-                            .backward = @field(
-                                self.rsen_off_section_cnt,
-                                axis_name,
-                            ),
-                        },
-                    },
-                };
+            state.synchronization_request_position = .{
+                .forward = self.fwd_syncr_info_req_pos,
+                .backward = self.bwd_syncl_info_req_pos,
+            };
+            inline for (&config.axes, 1..) |*axis, i| {
+                const axis_name = std.fmt.comptimePrint("axis{}", .{i});
                 const bias = @field(self.bias, axis_name);
-                axis.bias = .{ .a = bias.a, .b = bias.b };
+                state.axes[i - 1] = .{
+                    .enabled = @field(self.enable, axis_name),
+                    .primary = @field(self.primary_axis, axis_name),
+                    .slider = .{
+                        .id = @field(self.slide_no, axis_name),
+                        .state = @field(self.slide_state, axis_name),
+                    },
+                    .entrance = @field(self.entrance, axis_name),
+                    .overcharge_state = @field(
+                        self.over_charge_state,
+                        axis_name,
+                    ),
+                    .pitch_count = @field(self.pitch_cnt, axis_name),
+                    .mechanical_position = @field(self.mecha_pos, axis_name),
+                    .bias = .{ .a = bias.a, .b = bias.b },
+                };
+
+                axis.base_position = @field(self.base_pos, axis_name);
+                const position = &axis.sensor.position;
+                position.on.forward = @field(self.fwd_rsen_on_pos, axis_name);
+                position.on.backward = @field(self.bwd_lsen_on_pos, axis_name);
+                position.off.forward =
+                    @field(self.fwd_lsen_off_pos, axis_name);
+                position.off.backward =
+                    @field(self.bwd_rsen_off_pos, axis_name);
+                const section_count = &axis.sensor.section_count;
+                section_count.on.forward =
+                    @field(self.fwd_rsen_on_section_cnt, axis_name);
+                section_count.on.backward =
+                    @field(self.bwd_lsen_on_section_cnt, axis_name);
+                section_count.off.forward =
+                    @field(self.fwd_lsen_off_section_cnt, axis_name);
+                section_count.off.backward =
+                    @field(self.bwd_rsen_off_section_cnt, axis_name);
             }
         }
         _: u8,
@@ -837,9 +819,9 @@ pub const Response = union(Kind) {
         },
         theta_offset: f32 align(1),
         slide_state: extern struct {
-            axis1: State.Fsm,
-            axis2: State.Fsm,
-            axis3: State.Fsm,
+            axis1: Config.Fsm,
+            axis2: Config.Fsm,
+            axis3: Config.Fsm,
         },
         is_calibrate: bool,
         bias: extern struct {
@@ -872,9 +854,9 @@ pub const Response = union(Kind) {
             id2: u8,
         },
         entrance: extern struct {
-            axis1: State.Entrance,
-            axis2: State.Entrance,
-            axis3: State.Entrance,
+            axis1: Config.Entrance,
+            axis2: Config.Entrance,
+            axis3: Config.Entrance,
         },
         pitch_cnt: extern struct {
             axis1: i16 align(1),
@@ -890,7 +872,9 @@ pub const Response = union(Kind) {
         },
         /// Bytes 126..129: not read (was CaliHome, commented out).
         _3: [4]u8,
-        restart_section_cnt: extern struct {
+        /// This field represent two things in SHDrv: RestartSectionCnt and the
+        /// following.
+        fwd_lsen_off_section_cnt: extern struct {
             axis1: i16 align(1),
             axis2: i16 align(1),
             axis3: i16 align(1),
@@ -900,7 +884,7 @@ pub const Response = union(Kind) {
             axis2: f32 align(1),
             axis3: f32 align(1),
         },
-        rsen_off_section_cnt: extern struct {
+        bwd_rsen_off_section_cnt: extern struct {
             axis1: i16 align(1),
             axis2: i16 align(1),
             axis3: i16 align(1),
@@ -910,9 +894,9 @@ pub const Response = union(Kind) {
         /// Bytes 162..165: not read.
         _4: [4]u8,
         over_charge_state: extern struct {
-            axis1: State.Fsm,
-            axis2: State.Fsm,
-            axis3: State.Fsm,
+            axis1: Config.Fsm,
+            axis2: Config.Fsm,
+            axis3: Config.Fsm,
         },
         fwd_rsen_on_pos: extern struct {
             axis1: f32 align(1),
