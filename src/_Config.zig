@@ -29,9 +29,9 @@ overcurrent_timeout: f32,
 pos_offset: f32,
 right_sensor_distance: f32,
 angle_offset: f32, // Can be changed from `set_calibration_info` command
-state: State, // Immutable fields, written from driver
 section_count: SectionCount,
 axes: [3]Axis,
+state: State, // Immutable fields, written from driver
 
 /// Immutable states of driver
 pub const State = struct {
