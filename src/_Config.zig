@@ -28,7 +28,7 @@ hall_cutoff_freq: f32,
 overcurrent_timeout: f32,
 pos_offset: f32,
 right_sensor_distance: f32,
-theta_offset: f32, // Can be changed from `set_calibration_info` command
+angle_offset: f32, // Can be changed from `set_calibration_info` command
 state: State, // Immutable fields, written from driver
 section_count: SectionCount,
 axes: [3]Axis,

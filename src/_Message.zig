@@ -187,11 +187,14 @@ pub const Request = union(Kind) {
     get_gain_current: [0]u8,
     get_gain_speed: [0]u8,
     get_gain_position: [0]u8,
+    get_section_count: [0]u8,
     set_servo: bool,
     set_driver_config: SystemConfig,
     set_gain_current: CurrentGain,
     set_gain_speed: SpeedGain,
     set_gain_position: PositionGain,
+    set_angle_offset: AngleOffset,
+    set_section_count: SectionCount,
 
     pub const SystemConfig = extern struct {
         pub fn fromConfig(config: Config) SystemConfig {
@@ -427,6 +430,131 @@ pub const Request = union(Kind) {
         /// SHDrv just send 100 without reasons in the code.
         _const_deno: u16 align(1) = 100,
     };
+
+    pub const AngleOffset = extern struct {
+        pub fn fromConfig(config: Config) AngleOffset {
+            var result: AngleOffset = undefined;
+            result.angle_offset = config.angle_offset;
+            inline for (config.axes, 1..) |axis, i| {
+                const axis_name = std.fmt.comptimePrint("axis{}", .{i});
+                const position = axis.sensor.position;
+                const section_count = axis.sensor.section_count;
+                @field(result.sensor_off, axis_name) = .{
+                    .fwd_lsen_off_pos = position.off.forward,
+                    .fwd_lsen_off_section_cnt = section_count.off.forward,
+                    .bwd_rsen_off_pos = position.off.backward,
+                    .bwd_rsen_off_section_cnt = section_count.off.backward,
+                };
+                @field(result.base_pos, axis_name) = axis.base_position;
+                @field(result.sensor_on, axis_name) = .{
+                    .fwd_rsen_on_pos = position.on.forward,
+                    .fwd_rsen_on_section_cnt = section_count.on.forward,
+                    .bwd_lsen_on_pos = position.on.backward,
+                    .bwd_lsen_on_section_cnt = section_count.on.backward,
+                };
+            }
+            return result;
+        }
+        angle_offset: f32 align(1),
+        sensor_off: extern struct {
+            axis1: extern struct {
+                fwd_lsen_off_pos: f32 align(1),
+                fwd_lsen_off_section_cnt: i16 align(1),
+                bwd_rsen_off_pos: f32 align(1),
+                bwd_rsen_off_section_cnt: i16 align(1),
+            },
+            axis2: extern struct {
+                fwd_lsen_off_pos: f32 align(1),
+                fwd_lsen_off_section_cnt: i16 align(1),
+                bwd_rsen_off_pos: f32 align(1),
+                bwd_rsen_off_section_cnt: i16 align(1),
+            },
+            axis3: extern struct {
+                fwd_lsen_off_pos: f32 align(1),
+                fwd_lsen_off_section_cnt: i16 align(1),
+                bwd_rsen_off_pos: f32 align(1),
+                bwd_rsen_off_section_cnt: i16 align(1),
+            },
+        },
+        base_pos: extern struct {
+            axis1: f32 align(1),
+            axis2: f32 align(1),
+            axis3: f32 align(1),
+        },
+        sensor_on: extern struct {
+            axis1: extern struct {
+                fwd_rsen_on_pos: f32 align(1),
+                fwd_rsen_on_section_cnt: i16 align(1),
+                bwd_lsen_on_pos: f32 align(1),
+                bwd_lsen_on_section_cnt: i16 align(1),
+            },
+            axis2: extern struct {
+                fwd_rsen_on_pos: f32 align(1),
+                fwd_rsen_on_section_cnt: i16 align(1),
+                bwd_lsen_on_pos: f32 align(1),
+                bwd_lsen_on_section_cnt: i16 align(1),
+            },
+            axis3: extern struct {
+                fwd_rsen_on_pos: f32 align(1),
+                fwd_rsen_on_section_cnt: i16 align(1),
+                bwd_lsen_on_pos: f32 align(1),
+                bwd_lsen_on_section_cnt: i16 align(1),
+            },
+        },
+    };
+
+    pub const SectionCount = extern struct {
+        pub fn fromConfig(config: Config) SectionCount {
+            const disable = config.state.section_count.deactivate_secondary;
+            const max = config.section_count.max;
+            return .{
+                .fwd_left_secondary_disable = .{
+                    .axis2 = disable.left.forward.axis2,
+                    .axis3 = disable.left.forward.axis3,
+                },
+                .fwd_right_secondary_disable = .{
+                    .axis2 = disable.right.forward.axis2,
+                    .axis3 = disable.right.forward.axis3,
+                },
+                .bwd_left_secondary_disable = .{
+                    .axis1 = disable.left.backward.axis1,
+                    .axis2 = disable.left.backward.axis2,
+                },
+                .bwd_right_secondary_disable = .{
+                    .axis1 = disable.right.backward.axis1,
+                    .axis2 = disable.right.backward.axis2,
+                },
+                .max_section_cnt = .{
+                    .axis1 = max.axis1,
+                    .axis2 = max.axis2,
+                    .axis3 = max.axis3,
+                },
+                .skip_cnt = config.section_count.skip,
+            };
+        }
+        fwd_left_secondary_disable: extern struct {
+            axis2: i16 align(1),
+            axis3: i16 align(1),
+        },
+        fwd_right_secondary_disable: extern struct {
+            axis2: i16 align(1),
+            axis3: i16 align(1),
+        },
+        bwd_left_secondary_disable: extern struct {
+            axis1: i16 align(1),
+            axis2: i16 align(1),
+        },
+        bwd_right_secondary_disable: extern struct {
+            axis1: i16 align(1),
+            axis2: i16 align(1),
+        },
+        max_section_cnt: extern struct {
+            axis1: i16 align(1),
+            axis2: i16 align(1),
+            axis3: i16 align(1),
+        },
+        skip_cnt: i16 align(1),
+    };
 };
 
 pub const Response = union(Kind) {
@@ -435,11 +563,14 @@ pub const Response = union(Kind) {
     get_gain_current: CurrentGain,
     get_gain_speed: SpeedGain,
     get_gain_position: PositionGain,
+    get_section_count: SectionCount,
     set_servo: Ack,
     set_driver_config: Ack,
     set_gain_current: Ack,
     set_gain_speed: Ack,
     set_gain_position: Ack,
+    set_angle_offset: Ack,
+    set_section_count: Ack,
 
     pub const SystemConfig = extern struct {
         fn setConfig(self: SystemConfig, config: *Config) void {
@@ -982,6 +1113,123 @@ pub const Response = union(Kind) {
         },
     };
 
+    pub const SectionCount = extern struct {
+        fn setConfig(self: SectionCount, config: *Config) void {
+            const max = self.max_section_cnt;
+            config.section_count = .{
+                .skip = self.skip_cnt,
+                .max = .{
+                    .axis1 = max.axis1,
+                    .axis2 = max.axis2,
+                    .axis3 = max.axis3,
+                },
+            };
+            const fwd_left_disable = self.fwd_left_secondary_disable;
+            const fwd_right_disable = self.fwd_right_secondary_disable;
+            const bwd_left_disable = self.bwd_left_secondary_disable;
+            const bwd_right_disable = self.bwd_right_secondary_disable;
+            const fwd_left_enable = self.fwd_left_inactive_primary_enable;
+            const fwd_right_enable = self.fwd_right_inactive_primary_enable;
+            const bwd_left_enable = self.bwd_left_inactive_primary_enable;
+            const bwd_right_enable = self.bwd_right_inactive_primary_enable;
+            config.state.section_count = .{
+                .deactivate_secondary = .{
+                    .left = .{
+                        .forward = .{
+                            .axis2 = fwd_left_disable.axis2,
+                            .axis3 = fwd_left_disable.axis3,
+                        },
+                        .backward = .{
+                            .axis1 = bwd_left_disable.axis1,
+                            .axis2 = bwd_left_disable.axis2,
+                        },
+                    },
+                    .right = .{
+                        .forward = .{
+                            .axis2 = fwd_right_disable.axis2,
+                            .axis3 = fwd_right_disable.axis3,
+                        },
+                        .backward = .{
+                            .axis1 = bwd_right_disable.axis1,
+                            .axis2 = bwd_right_disable.axis2,
+                        },
+                    },
+                },
+                .activate_primary = .{
+                    .left = .{
+                        .forward = .{
+                            .axis1 = fwd_left_enable.axis1,
+                            .axis2 = fwd_left_enable.axis2,
+                            .axis3 = fwd_left_enable.axis3,
+                        },
+                        .backward = .{
+                            .axis1 = bwd_left_enable.axis1,
+                            .axis2 = bwd_left_enable.axis2,
+                            .axis3 = bwd_left_enable.axis3,
+                        },
+                    },
+                    .right = .{
+                        .forward = .{
+                            .axis1 = fwd_right_enable.axis1,
+                            .axis2 = fwd_right_enable.axis2,
+                            .axis3 = fwd_right_enable.axis3,
+                        },
+                        .backward = .{
+                            .axis1 = bwd_right_enable.axis1,
+                            .axis2 = bwd_right_enable.axis2,
+                            .axis3 = bwd_right_enable.axis3,
+                        },
+                    },
+                },
+            };
+        }
+
+        /// Byte 7 is not used
+        _: u8,
+        fwd_left_secondary_disable: extern struct {
+            axis2: i16 align(1),
+            axis3: i16 align(1),
+        },
+        fwd_right_secondary_disable: extern struct {
+            axis2: i16 align(1),
+            axis3: i16 align(1),
+        },
+        bwd_left_secondary_disable: extern struct {
+            axis1: i16 align(1),
+            axis2: i16 align(1),
+        },
+        bwd_right_secondary_disable: extern struct {
+            axis1: i16 align(1),
+            axis2: i16 align(1),
+        },
+        fwd_left_inactive_primary_enable: extern struct {
+            axis1: i16 align(1),
+            axis2: i16 align(1),
+            axis3: i16 align(1),
+        },
+        fwd_right_inactive_primary_enable: extern struct {
+            axis1: i16 align(1),
+            axis2: i16 align(1),
+            axis3: i16 align(1),
+        },
+        bwd_left_inactive_primary_enable: extern struct {
+            axis1: i16 align(1),
+            axis2: i16 align(1),
+            axis3: i16 align(1),
+        },
+        bwd_right_inactive_primary_enable: extern struct {
+            axis1: i16 align(1),
+            axis2: i16 align(1),
+            axis3: i16 align(1),
+        },
+        max_section_cnt: extern struct {
+            axis1: i16 align(1),
+            axis2: i16 align(1),
+            axis3: i16 align(1),
+        },
+        skip_cnt: i16 align(1),
+    };
+
     pub const Ack = enum(u8) {
         success = 0x00,
         _,
@@ -999,6 +1247,9 @@ pub const Kind = enum(u8) {
     set_gain_current,
     set_gain_speed,
     set_gain_position,
+    set_angle_offset = 0x11,
+    set_section_count = 0x15,
+    get_section_count,
     _,
 };
 
