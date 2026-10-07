@@ -130,6 +130,16 @@ pub fn setConfig(self: Message, config: *Config) void {
     }
 }
 
+pub fn PayloadType(
+    comptime kind: Kind,
+    comptime message_type: Type,
+) type {
+    // Get either `Request` or `Response` type
+    const T = @FieldType(Payload, @tagName(message_type));
+    // Return the payload type
+    return @FieldType(T, @tagName(kind));
+}
+
 pub const ParseError = error{
     /// Length message does not match with the whole message
     MismatchLength,
@@ -1237,7 +1247,7 @@ pub const Kind = enum(u8) {
     _,
 };
 
-pub const Payload = union(Type) {
+const Payload = union(Type) {
     request: Request,
     response: Response,
 };
@@ -1246,16 +1256,6 @@ const Type = enum(u2) {
     request,
     response,
 };
-
-fn PayloadType(
-    comptime kind: Kind,
-    comptime message_type: Type,
-) type {
-    // Get either `Request` or `Response` type
-    const T = @FieldType(Payload, @tagName(message_type));
-    // Return the payload type
-    return @FieldType(T, @tagName(kind));
-}
 
 /// Calculate bcc based on the buffer. The buffer must be the message excluding
 /// the etx (header) and bcc itself.
