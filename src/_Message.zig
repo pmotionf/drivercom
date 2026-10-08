@@ -180,6 +180,7 @@ pub const Header = extern struct {
 };
 
 pub const Request = union(Kind) {
+    ping: [0]u8,
     get_driver_config: [0]u8,
     get_driver_state: [0]u8,
     get_gain_current: [0]u8,
@@ -556,6 +557,7 @@ pub const Request = union(Kind) {
 };
 
 pub const Response = union(Kind) {
+    ping: Ack,
     get_driver_config: SystemConfig,
     get_driver_state: SystemState,
     get_gain_current: CurrentGain,
@@ -1230,7 +1232,8 @@ pub const Response = union(Kind) {
 /// `get_` prefix gets the information required by the `Config`. `set_` prefix
 /// set the mutable configuration to the firmware.
 pub const Kind = enum(u8) {
-    get_driver_config = 0x02,
+    ping = 0x01,
+    get_driver_config,
     get_driver_state,
     get_gain_current,
     get_gain_speed,
