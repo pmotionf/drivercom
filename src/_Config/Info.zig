@@ -7,6 +7,8 @@
 
 pub const Type = []const u8;
 pub const Meta = struct {
+    // Whether the field is usable only on XTS system
+    xts: bool = false,
     description: ?[]const u8 = null,
     unit_short: ?[]const u8 = null,
     unit_long: ?[]const u8 = null,
@@ -173,6 +175,7 @@ __pos_offset: Meta = .{
 },
 right_sensor_distance: Type = "f32",
 __right_sensor_distance: Meta = .{
+    .xts = true,
     .description =
     \\Distance between right sensor and right end of Axis.
     \\Only used in XTS.
