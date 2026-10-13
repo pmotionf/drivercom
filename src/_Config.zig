@@ -1,6 +1,7 @@
 //! This module represents driver's configuration.
 const std = @import("std");
 const Config = @This();
+pub const Info = @import("_Config/Info.zig");
 
 /// Driver ID
 id: u16,
@@ -250,3 +251,7 @@ pub const Entrance = enum(u8) {
     right = 2,
     _,
 };
+
+test {
+    std.testing.refAllDecls(@This());
+}
