@@ -7,6 +7,7 @@ pub const version =
 pub const Config = @import("Config.zig");
 pub const _Config = @import("_Config.zig");
 pub const _Message = @import("_Message.zig");
+pub const _Log = @import("_Log.zig");
 pub const OldConfig = @import("OldConfig.zig");
 pub const Log = @import("Log.zig");
 pub const Message = @import("message.zig").Message;
